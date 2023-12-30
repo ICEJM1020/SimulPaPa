@@ -4,7 +4,9 @@ Author: Xucheng(Timber) Zhang
 Date: 2023-12-28
 """ 
 
-from flask import Blueprint
+from datetime import date
+
+from flask import Blueprint, make_response
 from openai import OpenAI
 
 from config import CONFIG
@@ -13,37 +15,42 @@ route_group = "test"
 bp = Blueprint(route_group, __name__)
 
 @bp.route(f"/{route_group}/server", methods=["POST", "GET"])
-def home():
-    return CONFIG["test_server"] + f"\nCurrent OpenAI User: {CONFIG['openai']['key_owner']}"
+def test_server():
+    return CONFIG["welcome"] + f"\nCurrent OpenAI User: {CONFIG['openai']['key_owner']}"
 
 @bp.route(f"/{route_group}/gpt", methods=["POST", "GET"])
-def about():
-    return test_gpt()
+def test_gpt():
+    gpt_response = _test_gpt()
+    if gpt_response[0]:
+        return  gpt_response[1], 200
+    else:
+        return  gpt_response[1], 502
 
 
 """
 Author: Joon Sung Park (joonspk@stanford.edu)
 Source: https://github.com/joonspk-research/generative_agents/blob/main/reverie/backend_server/test.py
 """
-def test_gpt(): 
+def _test_gpt(): 
     """
     test if GPT return words
     RETURNS: 
     a str of GPT-3's response. 
     """
-    open_ai_client = OpenAI(
-        api_key=CONFIG["openai"]["api_key"],
-        organization=CONFIG["openai"]["organization"],
-    )
-
+    
     try: 
+        open_ai_client = OpenAI(
+            api_key=CONFIG["openai"]["api_key"],
+            organization=CONFIG["openai"]["organization"],
+        )
         completion = open_ai_client.chat.completions.create(
             model="gpt-3.5-turbo", 
-            messages=[{"role": "user", "content": "Tell me what is the date Alan Turing born in the following format: Year:$year$/Month:$month$/Day:$day$"}]
+            messages=[{
+                "role": "user", "content": f"Today is {date.today()}. Tell me how old is Alan Turing born in the following format: Alan Turing was born in Year:$year$/Month:$month$/Day:$day$, and hs is $Age$ if he is alive!"
+                }]
         )
-        return completion.choices[0].message.content
+        return True, completion.choices[0].message.content
     except: 
-        print ("ChatGPT ERROR")
-        return "ChatGPT ERROR"
+        return False, "OpenAI Error"
 
 

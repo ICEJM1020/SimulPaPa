@@ -3,22 +3,27 @@ Description:
 Author: Xucheng(Timber) Zhang
 Date: 2023-12-28
 """ 
-from openai import OpenAI
+from datetime import date
+import json
+
 from config import CONFIG
 
-def generate_description(name, age, disease, city):
+from openai import OpenAI
 
+from .common_prompt import description_prompt
+
+def gpt_description(name, birthday, **kwargs):
+    age = int(date.today().year) - int(birthday.split("-")[-1])
     open_ai_client = OpenAI(
         api_key=CONFIG["openai"]["api_key"],
         organization=CONFIG["openai"]["organization"],
     )
-    
-    prompt = "Generate a description from the following information within 50 words."
-    prompt += f"name={name}, age={age}, disease={disease}, city={city}"
+    prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
     completion = open_ai_client.chat.completions.create(
         model="gpt-3.5-turbo", 
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{
+            # "role": "system", "content": "You are a census taker who knows everyone, and you write detailed descriptions.",
+            "role": "user", "content": prompt
+            }]
     )
-
-    return completion.choices[0].message.content
-
+    return json.loads(completion.choices[0].message.content)

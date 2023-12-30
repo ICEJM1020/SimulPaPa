@@ -4,8 +4,7 @@ Author: Xucheng(Timber) Zhang
 Date: 2023-12-28
 """ 
 
-import sys
-sys.path.append("../")
+from .User import create_user_filetree, delete_user_filetree, init_pool
 
-from .Agents import Agents
-from .description import generate_description
+USER_POOL = User.init_pool()
+
