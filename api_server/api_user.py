@@ -15,7 +15,7 @@ from .utils import *
 
 
 route_group = "user"
-bp = Blueprint(route_group, __name__)
+ubp = Blueprint(route_group, __name__)
 
 
 ########
@@ -23,7 +23,7 @@ bp = Blueprint(route_group, __name__)
 # user manage group
 #
 ########
-@bp.route(f"/{route_group}/create", methods=["GET"])
+@ubp.route(f"/{route_group}/create", methods=["GET"])
 def create_user():
     req_form = request.form
 
@@ -75,7 +75,7 @@ def create_user():
     return response
 
 
-@bp.route(f"/{route_group}/delete/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/delete/<username>", methods=["POST"])
 def delete_user(username):
     status, user_list = check_user(username=username)
     if status:
@@ -103,7 +103,7 @@ def delete_user(username):
     return response
     
 
-@bp.route(f"/{route_group}/upload", methods=["GET"])
+@ubp.route(f"/{route_group}/upload", methods=["GET"])
 def upload_user_file():
     print()
     if "username" not in request.form.keys():
@@ -136,7 +136,7 @@ def upload_user_file():
 # activate user
 #
 ########
-@bp.route(f"/{route_group}/activate/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/activate/<username>", methods=["POST"])
 def activate_user(username):
     status, user_list = check_user(username=username)
     if status:
@@ -162,7 +162,7 @@ def activate_user(username):
     return response
 
 
-@bp.route(f"/{route_group}/deactivate/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/deactivate/<username>", methods=["POST"])
 def deactivate_user(username):
     status, user_list = check_user(username=username)
     if status:
@@ -188,12 +188,38 @@ def deactivate_user(username):
     return response
 
 
+@ubp.route(f"/{route_group}/status/<username>", methods=["POST"])
+def fetch_user_status(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "user_status" : USER_POOL.fetch_user_status(_uuid)
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
 ########
 #
-# fetch group
+# description group
 #
 ########
-@bp.route(f"/{route_group}/fetch/description/<username>", methods=["POST"])
+
+@ubp.route(f"/{route_group}/description/<username>", methods=["POST"])
 def fetch_user_description(username):
     status, user_list = check_user(username=username)
     if status:
@@ -218,15 +244,16 @@ def fetch_user_description(username):
     return response
 
 
-@bp.route(f"/{route_group}/fetch/status/<username>", methods=["POST"])
-def fetch_user_status(username):
+@ubp.route(f"/{route_group}/description/regenerate/<username>", methods=["POST"])
+def regenerate_user_description(username):
     status, user_list = check_user(username=username)
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
+            USER_POOL.generate_user_description(_uuid)
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.fetch_user_status(_uuid)
+                "user_status" : USER_POOL.fetch_user_description(_uuid)
             }
         else:
             return_body = {
@@ -241,5 +268,37 @@ def fetch_user_status(username):
     response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
     response.headers["Content-Type"] = "application/json"
     return response
+
+
+@ubp.route(f"/{route_group}/description/modify/<username>", methods=["GET"])
+def modify_user_description(username):
+    req_form = request.form
+
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            USER_POOL.modify_user_info(_uuid, req_form)
+            return_body = {
+                "status" : True,
+                "user_status" : USER_POOL.fetch_user_description(_uuid)
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+
+
 
 

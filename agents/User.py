@@ -11,8 +11,8 @@ from shutil import rmtree
 from datetime import date
 
 from config import CONFIG
-
 from .description import gpt_description
+from .Agents import AgentsPool
 
 
 def init_pool():
@@ -44,12 +44,21 @@ class UserPool:
         return self.pool[_uuid].get_status()
     
 
+    def modify_user_info(self, _uuid, info):
+        self.pool[_uuid].modify_info(info)
+
+
     def generate_user_description(self, _uuid):
         return self.pool[_uuid].generate_description()
     
 
     def fetch_user_description(self, _uuid):
         return self.pool[_uuid].get_description()
+    
+
+    def fetch_tree_status(self, _uuid):
+        return self.pool[_uuid].agents_pool.fetch_tree_status()
+
 
 
 class User:
@@ -85,7 +94,16 @@ class User:
         if not self.info["description"] or self.info["description"]=="":
             self.generate_description()
 
+        self.agents_pool = AgentsPool(
+            info=self._convert_info(),
+            folder=self.user_folder
+        )
+
+
+    def _convert_info(self):
+        return {**self.info, **self.add_info}
     
+
     def _load_info(self):
         try:
             with open(self.user_folder + "/info.json", "r") as f:
@@ -112,13 +130,15 @@ class User:
                 fake += key + "/"
         return missing, fake
 
+
     def generate_description(self):
         try:
-            info = gpt_description(**{**self.info, **self.add_info})
+            info = gpt_description(**self._convert_info())
             self._fill_info(info)
             self._status = "Generate description successfully"
         except:
             self._status = "Generate description unsuccessfully"
+
 
     def save(self):
         with open(self.user_folder + "/info.json", "w") as f:
@@ -129,12 +149,27 @@ class User:
                 dumps[key] = self.add_info[key]
             json.dump(dumps, fp=f)
     
+
+    def modify_info(self, info):
+        for key in info.keys():
+            if key in self.info.keys():
+                self.info[key] = info[key]
+            elif key in self.add_info.keys():
+                self.add_info[key] = info[key]
+            else:
+                continue
+        self.generate_description()
+        self.save()
+
+
     def get_status(self):
         return self._status
 
 
     def get_description(self):
         return self.info["description"]
+    
+
 
 
 def create_user_filetree(name, birthday, username, **kwargs):
@@ -163,6 +198,7 @@ def delete_user_filetree(_uuid):
         return False
     else:
         return True
+    
 
 if __name__ == "__main__":
     print(create_user_filetree("Timber", "20-10-1998"))

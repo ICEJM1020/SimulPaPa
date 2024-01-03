@@ -12,13 +12,13 @@ from openai import OpenAI
 from config import CONFIG
 
 route_group = "test"
-bp = Blueprint(route_group, __name__)
+tbp = Blueprint(route_group, __name__)
 
-@bp.route(f"/{route_group}/server", methods=["POST", "GET"])
+@tbp.route(f"/{route_group}/server", methods=["POST", "GET"])
 def test_server():
     return CONFIG["welcome"] + f"\nCurrent OpenAI User: {CONFIG['openai']['key_owner']}"
 
-@bp.route(f"/{route_group}/gpt", methods=["POST", "GET"])
+@tbp.route(f"/{route_group}/gpt", methods=["POST", "GET"])
 def test_gpt():
     gpt_response = _test_gpt()
     if gpt_response[0]:
