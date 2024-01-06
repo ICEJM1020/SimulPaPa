@@ -47,3 +47,32 @@ def info_tree_status(username):
     return response
 
 
+
+########
+#
+# agents manage group
+#
+########
+@abp.route(f"/{route_group}/<username>/agents/create", methods=["POST"])
+def create_agents_pool(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "user_status" : USER_POOL.create_agents_pool(_uuid)
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response

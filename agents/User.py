@@ -58,6 +58,10 @@ class UserPool:
 
     def fetch_tree_status(self, _uuid):
         return self.pool[_uuid].agents_pool.fetch_tree_status()
+    
+
+    def create_agents_pool(self, _uuid):
+        return self.pool[_uuid].agents_pool.create_pool()
 
 
 

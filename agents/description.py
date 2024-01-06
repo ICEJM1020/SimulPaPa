@@ -5,7 +5,9 @@ Date: 2023-12-28
 """ 
 from datetime import date
 import json
+import os
 import threading
+import random
 
 from openai import OpenAI
 
@@ -64,7 +66,7 @@ def gpt_description(name, birthday, **kwargs):
 
 class InfoTree():
 
-    def __init__(self, info) -> None:
+    def __init__(self, info, folder) -> None:
         # self.info = {
         #     "name" : None,
         #     "gender" : None,
@@ -81,6 +83,8 @@ class InfoTree():
         #     "occupation" : None
         # }
         self.info = info
+        self.folder = folder
+        self.tree_file = folder + "/tree.json"
         self.tree = {}
 
         self.gpt_client = OpenAI(
@@ -93,9 +97,15 @@ class InfoTree():
         # finish :  finish building the tree
         # building : building is undergoing
         # error :  error in building
+        # loaded : successful loaded from local machine
         self._status = "init"
 
-        self._start_building()
+        if os.path.exists(self.tree_file):
+            with open(self.tree_file, "r") as f:
+                self.tree = json.load(f)
+            self._status = "loaded"
+        else:
+            self._start_building()
 
 
     def _start_building(self):
@@ -105,6 +115,16 @@ class InfoTree():
     
 
     def _build_tree(self):
+        # self._search_city_state(city=self.info["city"], state=self.info["state"])
+        # for idx in self.tree["option"].keys():
+        #         res = self._search_district(
+        #             u_city=self.info["city"],
+        #             u_state=self.info["state"],
+        #             city=self.tree["option"][idx]["city"],
+        #             state=self.tree["option"][idx]["state"],
+        #             district=self.info["district"]
+        #         )
+        #         self.tree["option"][idx]["district"] = res
         try:
             self._search_city_state(city=self.info["city"], state=self.info["state"])
         except:
@@ -120,17 +140,22 @@ class InfoTree():
                 )
                 self.tree["option"][idx]["district"] = res
             self._status = "finish"
-        with open("tree_test.json", "w") as f:
+
+        with open(self.tree_file, "w") as f:
             json.dump(self.tree, f)
 
 
 
     def _search_city_state(self, city, state, size=10):
-        prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development." 
-        prompt += f"Please find me {size} cities with similar conditions from around the world and give the reasons."
-        prompt += "Return your answer in the following JSON format: "
-        prompt += "[{\"city\" : \"city_1\", \"state\" : \"state/province_1\", \"similarity\" : \"similarity_to_given_city_in_decimal\", \"reason\" : \"reason_for_chosen\"}, "
-        prompt += "... , {\"city\" : \"city_N\", \"state\" : \"state/province_N\", \"similarity\" : \"similarity_to_given_city_in_decimal\",  \"reason\" : \"reason_for_chosen\"}]"
+        prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development. " 
+        prompt += f"Please find me {size} cities with similar conditions from around the world and give the reasons. "
+        prompt += "Furthermore, tell me about the races, education and gender statistic in this state. "
+        prompt += "The data should based on real information during 2010 to 2020. "
+        prompt += "Return your answer in the following JSON format without any other information: "
+        prompt += "{\"response\" : [{\"city\" : \"city_1\", \"state\" : \"state/province_1\", \"similarity\" : \"similarity_to_given_city_in_decimal\", "
+        prompt += " \"education\": {\"Primary School\":\"population_percentage_in_decimal\", ..., \"Doctor\":\"population_percentage_in_decimal\"}, "
+        prompt += " \"races\": {\"race_1\":\"race_1_population_percentage_in_decimal\", ...}, \"gender\": {\"male\":\"gender_percentage_in_decimal\", \"female\":gender_percentage_in_decimal}}, ...]}"
+        # prompt += "... , {\"city\" : \"city_N\", \"state\" : \"state/province_N\", \"similarity\" : \"similarity_to_given_city_in_decimal\",  \"reason\" : \"reason_for_chosen\"}]"
 
         completion = self.gpt_client.chat.completions.create(
             model="gpt-3.5-turbo", 
@@ -140,7 +165,8 @@ class InfoTree():
                 }]
         )
         # print(completion.choices[0].message.content)
-        cities = json.loads(completion.choices[0].message.content)
+        cities = json.loads(completion.choices[0].message.content)["response"]
+        # print(cities)
 
         _p = 0.0
         self.tree["option"] = {}
@@ -149,12 +175,17 @@ class InfoTree():
             self.tree["option"][idx] = {
                     "city" : city["city"],
                     "state" : city["state"],
+                    # "education" : city["education"],
+                    # "race" : city["races"],
+                    "education" : {"option":[k for k in city["education"]], "prob":[float(city["education"][k]) for k in city["education"]]},
+                    "race" : {"option":[k for k in city["races"]], "prob":[float(city["races"][k]) for k in city["races"]]},
+                    "gender" : {"option":{0:"male", 1:"female"}, "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
                     "district" : {},
-                    "r" : city["reason"],
                 }
             self.tree["prob"].append(float(city["similarity"]))
             _p += float(city["similarity"])
         self.tree["prob"] = [x / _p for x in self.tree["prob"]]
+        # print(self.tree)
     
 
     def _search_district(self, u_city, u_state, city, state, district, size=3):
@@ -163,7 +194,7 @@ class InfoTree():
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
         # prompt += "Furthermore, tell me about the races, education and gender statistic in this district. The data should based on real information during 2010 to 2020"
         prompt += "Return your answer in the following JSON format: "
-        prompt += "[{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"reason\" : \"reason_for_chosen\", \"streets\":[\"street_1\", ..., \"street_N\"], ...]"
+        prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...]}"
         # prompt += " \"education\": {\"Primary School\":\"population_percentage_in_decimal\", ..., \"Doctor\":\"population_percentage_in_decimal\"}, "
         # prompt += " \"races\": {\"race_1\":\"race_1_population_percentage_in_decimal\", ...}, \"gender\": {\"male\":gender_percentage_in_decimal, \"female\":gender_percentage_in_decimal}}, ...]"
         
@@ -177,7 +208,7 @@ class InfoTree():
         )
         # print(completion.choices[0].message.content)
         try:
-            districts = json.loads(completion.choices[0].message.content)
+            districts = json.loads(completion.choices[0].message.content)["response"]
         except:
             return completion.choices[0].message.content
         else:
@@ -190,13 +221,23 @@ class InfoTree():
                         # "race" : {},
                         # "education" : {},
                         # "gender" : {"option":{0:"male", 1:"female"}, "prob":[district["gender"]["male"], district["gender"]["female"]]},
-                        "r" : district["reason"],
                     }
                 res["prob"].append(float(district["similarity"]))
                 _p += float(district["similarity"])
             res["prob"] = [x / _p for x in res["prob"]]
 
             return res
+    
+
+    def generate_info_dict(self):
+        res = {key:None for key in self.info}
+        city_choice = random.choices([str(i) for i in range(len(self.tree["prob"]))], weights=self.tree["prob"])[0]
+        city = self.tree["option"][city_choice]
+        res["city"] = city["city"]
+        res["state"] = city["state"]
+
+        return res
+
 
     def get_status(self):
         return self._status
