@@ -34,6 +34,7 @@ class UserPool:
     def pop(self, _uuid):
         self.pool[_uuid].save()
         del(self.pool[_uuid])
+        self.save_agents_pool(_uuid)
     
 
     def exist(self, _uuid):
@@ -56,12 +57,27 @@ class UserPool:
         return self.pool[_uuid].get_description()
     
 
+    ############
+    # agents
+    ############
     def fetch_tree_status(self, _uuid):
         return self.pool[_uuid].agents_pool.fetch_tree_status()
     
 
     def create_agents_pool(self, _uuid):
         return self.pool[_uuid].agents_pool.create_pool()
+    
+
+    def fetch_agents_status(self, _uuid):
+        return self.pool[_uuid].agents_pool.fetch_status()
+    
+
+    def save_agents_pool(self, _uuid):
+        return self.pool[_uuid].agents_pool.save_pool()
+    
+
+    def load_agents_pool(self, _uuid):
+        return self.pool[_uuid].agents_pool.load_pool()
 
 
 
@@ -83,9 +99,6 @@ class User:
             "birthday" : None,
             "city" : None,
             "disease" : None,
-            "description" : None,
-        }
-        self.add_info = {
             "street" : None,
             "district" : None,
             "state" : None,
@@ -94,18 +107,15 @@ class User:
             "language" : None,
             "occupation" : None
         }
+        self.description = ""
         self._load_info()
-        if not self.info["description"] or self.info["description"]=="":
+        if self.description=="":
             self.generate_description()
 
         self.agents_pool = AgentsPool(
-            info=self._convert_info(),
+            info=self.info,
             folder=self.user_folder
         )
-
-
-    def _convert_info(self):
-        return {**self.info, **self.add_info}
     
 
     def _load_info(self):
@@ -115,29 +125,28 @@ class User:
         except:
             self._status = "Load information file unsuccessfully"
         else:
-            missing, fake = self._fill_info(info=info)
-            self._status = "Missing information: " + missing + " Following will be generated: " + fake
+            missing = self._fill_info(info=info)
+            self._status = "Missing information: " + missing
     
 
     def _fill_info(self, info):
         missing = ""
-        fake = ""
         for key in self.info.keys():
             if key in info.keys():
                 self.info[key] = info[key]
             else:
                 missing += key + "/"
-        for key in self.add_info.keys():
-            if key in info.keys():
-                self.add_info[key] = info[key]
-            else:
-                fake += key + "/"
-        return missing, fake
+        try:
+            self.description = info["description"]
+        except:
+            self.description = ""
+        
+        return missing
 
 
     def generate_description(self):
         try:
-            info = gpt_description(**self._convert_info())
+            info = gpt_description(**self.info)
             self._fill_info(info)
             self._status = "Generate description successfully"
         except:
@@ -146,11 +155,12 @@ class User:
 
     def save(self):
         with open(self.user_folder + "/info.json", "w") as f:
-            dumps = {"uuid":self._uuid}
+            dumps = {
+                "uuid":self._uuid,
+                "description":self.description
+            }
             for key in self.info.keys():
                 dumps[key] = self.info[key]
-            for key in self.add_info.keys():
-                dumps[key] = self.add_info[key]
             json.dump(dumps, fp=f)
     
 
@@ -158,8 +168,6 @@ class User:
         for key in info.keys():
             if key in self.info.keys():
                 self.info[key] = info[key]
-            elif key in self.add_info.keys():
-                self.add_info[key] = info[key]
             else:
                 continue
         self.generate_description()
@@ -171,7 +179,7 @@ class User:
 
 
     def get_description(self):
-        return self.info["description"]
+        return self.description
     
 
 

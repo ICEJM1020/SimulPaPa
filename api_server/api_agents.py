@@ -59,9 +59,84 @@ def create_agents_pool(username):
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
+            USER_POOL.create_agents_pool(_uuid)
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.create_agents_pool(_uuid)
+                "status" : USER_POOL.fetch_agents_status(_uuid)
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@abp.route(f"/{route_group}/<username>/agents/status", methods=["POST"])
+def fetch_agents_status(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "status" : USER_POOL.fetch_agents_status(_uuid)
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+@abp.route(f"/{route_group}/<username>/agents/savelocal", methods=["POST"])
+def save_agents_pool(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "user_status" : USER_POOL.save_agents_pool(_uuid)
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@abp.route(f"/{route_group}/<username>/agents/loadlocal", methods=["POST"])
+def load_agents_pool(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "user_status" : USER_POOL.load_agents_pool(_uuid)
             }
         else:
             return_body = {

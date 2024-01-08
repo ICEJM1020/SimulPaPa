@@ -34,7 +34,7 @@ def description_prompt(**kwargs):
     # prompt += "The birthday should be in the MM-DD-YYYY format. "
     # prompt += "The demographic of this person should represent the US population sample. "
     prompt += "The generated profile should match the following guidance: <"
-    prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {state}, {zipcode}. "
+    prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
     prompt += "The physical status of {Pronoun} is {diesease}. "
     prompt += "{Pronoun} is a {occupation}"
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
@@ -48,7 +48,7 @@ def description_prompt(**kwargs):
 
 def gpt_description(name, birthday, **kwargs):
     age = int(date.today().year) - int(birthday.split("-")[-1])
-    open_ai_client = OpenAI(
+    open_ai_client = OpenAI( 
         api_key=CONFIG["openai"]["api_key"],
         organization=CONFIG["openai"]["organization"],
     )
@@ -82,7 +82,7 @@ class InfoTree():
         #     "language" : None,
         #     "occupation" : None
         # }
-        self.info = info
+        self.user_info = info
         self.folder = folder
         self.tree_file = folder + "/tree.json"
         self.tree = {}
@@ -115,28 +115,28 @@ class InfoTree():
     
 
     def _build_tree(self):
-        # self._search_city_state(city=self.info["city"], state=self.info["state"])
+        # self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
         # for idx in self.tree["option"].keys():
         #         res = self._search_district(
-        #             u_city=self.info["city"],
-        #             u_state=self.info["state"],
+        #             u_city=self.user_info["city"],
+        #             u_state=self.user_info["state"],
         #             city=self.tree["option"][idx]["city"],
         #             state=self.tree["option"][idx]["state"],
-        #             district=self.info["district"]
+        #             district=self.user_info["district"]
         #         )
         #         self.tree["option"][idx]["district"] = res
         try:
-            self._search_city_state(city=self.info["city"], state=self.info["state"])
+            self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
         except:
             self._status = "error"
         else:
             for idx in self.tree["option"].keys():
                 res = self._search_district(
-                    u_city=self.info["city"],
-                    u_state=self.info["state"],
+                    u_city=self.user_info["city"],
+                    u_state=self.user_info["state"],
                     city=self.tree["option"][idx]["city"],
                     state=self.tree["option"][idx]["state"],
-                    district=self.info["district"]
+                    district=self.user_info["district"]
                 )
                 self.tree["option"][idx]["district"] = res
             self._status = "finish"
@@ -154,8 +154,8 @@ class InfoTree():
         prompt += "Return your answer in the following JSON format without any other information: "
         prompt += "{\"response\" : [{\"city\" : \"city_1\", \"state\" : \"state/province_1\", \"similarity\" : \"similarity_to_given_city_in_decimal\", "
         prompt += " \"education\": {\"Primary School\":\"population_percentage_in_decimal\", ..., \"Doctor\":\"population_percentage_in_decimal\"}, "
-        prompt += " \"races\": {\"race_1\":\"race_1_population_percentage_in_decimal\", ...}, \"gender\": {\"male\":\"gender_percentage_in_decimal\", \"female\":gender_percentage_in_decimal}}, ...]}"
-        # prompt += "... , {\"city\" : \"city_N\", \"state\" : \"state/province_N\", \"similarity\" : \"similarity_to_given_city_in_decimal\",  \"reason\" : \"reason_for_chosen\"}]"
+        prompt += " \"races\": {\"race_1\":\"race_1_population_percentage_in_decimal\", ...}, \"gender\": {\"male\":\"gender_percentage_in_decimal\", \"female\":gender_percentage_in_decimal}}, ...], "
+        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
 
         completion = self.gpt_client.chat.completions.create(
             model="gpt-3.5-turbo", 
@@ -179,7 +179,7 @@ class InfoTree():
                     # "race" : city["races"],
                     "education" : {"option":[k for k in city["education"]], "prob":[float(city["education"][k]) for k in city["education"]]},
                     "race" : {"option":[k for k in city["races"]], "prob":[float(city["races"][k]) for k in city["races"]]},
-                    "gender" : {"option":{0:"male", 1:"female"}, "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
+                    "gender" : {"option":["male", "female"], "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
                     "district" : {},
                 }
             self.tree["prob"].append(float(city["similarity"]))
@@ -192,11 +192,9 @@ class InfoTree():
         prompt = f"{district} is a zone in {u_city}, {u_state}. "
         prompt += "Based on your knowledge, to evaluate the convenience of this district, including the population, the infrastructure, and the medical and educational resources. "
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
-        # prompt += "Furthermore, tell me about the races, education and gender statistic in this district. The data should based on real information during 2010 to 2020"
         prompt += "Return your answer in the following JSON format: "
-        prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...]}"
-        # prompt += " \"education\": {\"Primary School\":\"population_percentage_in_decimal\", ..., \"Doctor\":\"population_percentage_in_decimal\"}, "
-        # prompt += " \"races\": {\"race_1\":\"race_1_population_percentage_in_decimal\", ...}, \"gender\": {\"male\":gender_percentage_in_decimal, \"female\":gender_percentage_in_decimal}}, ...]"
+        prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...], "
+        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
         
 
         completion = self.gpt_client.chat.completions.create(
@@ -218,9 +216,6 @@ class InfoTree():
                 res["option"][idx] = {
                         "district" : district["district"],
                         "street" : district["streets"],
-                        # "race" : {},
-                        # "education" : {},
-                        # "gender" : {"option":{0:"male", 1:"female"}, "prob":[district["gender"]["male"], district["gender"]["female"]]},
                     }
                 res["prob"].append(float(district["similarity"]))
                 _p += float(district["similarity"])
@@ -229,13 +224,68 @@ class InfoTree():
             return res
     
 
+    def _infer_addtional(self, gender, race, location, education, age_range=5):
+        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+        prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
+        prompt += "Based on the gender and race information, firstly figure out a name. Tell me the exact zip code of where he/she lives, and possible spoken language. "
+        prompt += f"Next, the range of the age is {age-age_range}-{age+age_range}, please generate a birthday in this range. "
+        prompt += "Finally, based on all of the provided information and your inference, provide a reasonable occupation for him/her. "
+        prompt += "Return your answer in the following JSON format: "
+        prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", \"language\" : \"language\", \"zipcode\" : \"zipcode\", \"occupation\":\"occupation\"}, "
+        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        
+
+        completion = self.gpt_client.chat.completions.create(
+            model="gpt-3.5-turbo", 
+            # model="gpt-4",
+            messages=[{
+                "role": "user", "content": prompt
+                }]
+        )
+        return json.loads(completion.choices[0].message.content)["response"]
+
+# self.info = {
+# "name" : None,
+# "gender" : None,
+# "race" : None,
+# "birthday" : None,
+# "city" : None,
+#     "disease" : None,
+# "street" : None,
+# "district" : None,
+# "state" : None,
+# "zipcode" : None,
+# "education" : None,
+# "language" : None,
+# "occupation" : None
+# }
     def generate_info_dict(self):
-        res = {key:None for key in self.info}
+        res = {key:None for key in self.user_info}
         city_choice = random.choices([str(i) for i in range(len(self.tree["prob"]))], weights=self.tree["prob"])[0]
         city = self.tree["option"][city_choice]
         res["city"] = city["city"]
         res["state"] = city["state"]
 
+        res["gender"] = random.choices(["male", "female"], weights=city["gender"]["prob"])[0]
+        res["race"] = random.choices(city["race"]["option"][:-1], weights=city["race"]["prob"][:-1])[0]
+        res["education"] = random.choices(city["education"]["option"], weights=city["education"]["prob"])[0]
+
+        district_choice = random.choices([str(i) for i in range(len(city["district"]["prob"]))], weights=city["district"]["prob"])[0]
+        district = city["district"]["option"][district_choice]
+        res["district"] = district["district"]
+        res["street"] = random.choices(district["street"])[0]
+
+        add_info = self._infer_addtional(
+            gender=res["gender"],
+            race=res["race"],
+            education=res["education"],
+            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}"
+        )
+        res["name"] = add_info["name"]
+        res["birthday"] = add_info["birthday"]
+        res["zipcode"] = add_info["zipcode"]
+        res["language"] = add_info["language"]
+        res["occupation"] = add_info["occupation"]
         return res
 
 
