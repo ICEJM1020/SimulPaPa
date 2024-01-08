@@ -9,35 +9,48 @@ from shutil import rmtree
 
 from openai import OpenAI
 
-from .description import *
+from logger import logger
+from agents.Info import *
+
+
 
 class AgentsPool:
 
 
-    def __init__(self, info: dict, folder: str, size:int=10) -> None:
+    def __init__(self, info: dict, user_folder: str, size:int=10) -> None:
         self.info = info
         self.size = size
         self.pool = {}
 
-        self.folder = folder + "/agents"
+        self.user_folder = user_folder
+        self.folder = user_folder + "/agents"
         if not os.path.exists(self.folder):
             os.mkdir(self.folder)
 
-        self.info_tree = InfoTree(info, folder=folder+"/agents")
+        self.info_tree = InfoTree(info, folder=self.folder)
 
         ######################
-        # finish :  finish creating
+        # ready :  finish creating and ready to simulate
         # creating : building is undergoing
         # loading: loading the agents from local machine
         # error {id}:  error in create {id} agent
-        # loaded : successful loaded from local machine
         self.status = "init"
+
+        ######################
+        # finish :  finish simulating
+        # working : building is undergoing
+        # error {id}:  error in create {id} agent
+        self.simul_status = "init"
 
 
     def create_pool(self, ):
-        thread = threading.Thread(target=self._create_pool)
-        self.status = "building"
-        thread.start()
+        logger.info(f"start create agents pool for {self.info['name']}({self.user_folder.split('/')[-1]})")
+        if self.info_tree.get_status() == "ready":
+            thread = threading.Thread(target=self._create_pool)
+            self.status = "building"
+            thread.start()
+        else:
+            logger.info(f"info tree for agents pool of {self.info['name']}({self.user_folder.split('/')[-1]}) has not finished")
         return self.status
     
 
@@ -52,45 +65,70 @@ class AgentsPool:
             else:
                 os.mkdir(agent_folder)
             
-            try:
+            if CONFIG["debug"]:
                 agent_info = self.info_tree.generate_info_dict()
-                self.pool[i] = Agent(index=i, pool_folder=agent_folder, info=agent_info)
-            except:
-                error += f"{i}, "
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
+            else:
+                try:
+                    agent_info = self.info_tree.generate_info_dict()
+                    self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
+                except:
+                    if_err = True
+                    logger.error(f"try to create agent {i} for {self.info['name']}({self.user_folder.split('/')[-1]}) failed")
+                    error += f"{i}, "
         
         if if_err:
-            self.status = "error " + error
+            self.status = "error create" + error
         else:
-            self.status = "finish"
+            self.status = "ready"
 
 
     def load_pool(self, ):
+        logger.info(f"start load agents pool for {self.info['name']}({self.user_folder.split('/')[-1]})")
         thread = threading.Thread(target=self._load_pool)
         self.status = "loading"
         thread.start()
         return self.status
 
 
-    def _load_pool(self, ):
+    def _load_pool(self):
         error = ""
         if_err = False
         for i in range(1, self.size+1):
-            agent_folder = self.folder + "/" + str(i)
             
             try:
-                self.pool[i] = Agent(index=i, pool_folder=agent_folder)
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder)
             except:
+                if_err = True
                 error += f"{i}, "
-        
+                logger.error(f"try to load agent {i} pool for {self.info['name']}({self.user_folder.split('/')[-1]}) failed")
+
         if if_err:
-            self.status = "error " + error
+            self.status = "error load " + error
         else:
-            self.status = "finish"
+            self.status = "ready"
 
 
     def save_pool(self, ):
-        for idx in self.pool:
-            self.pool[idx].save()
+        if self.status=="ready":
+            for idx in self.pool:
+                self.pool[idx].save()
+        elif self.status=="building":
+            raise Exception("Agents pool is under creation")
+        else:
+            pass
+
+
+    def start_simulation(self, day=1):
+        logger.info(f"start simulation for {self.info['name']}({self.user_folder.split('/')[-1]})")
+        thread = threading.Thread(target=self._start_simulation, name=f"{self.user_folder.split('/')[-1]}-simulation", kwargs={"day":day})
+        self.simul_status = "working"
+        thread.start()
+        return self.status
+
+
+    def _start_simulation(self, day=1):
+        pass
 
 
     def fetch_tree_status(self):
@@ -101,12 +139,17 @@ class AgentsPool:
         return self.status
     
 
+    def fetch_simul_status(self):
+        return self.simul_status
+
+
 class Agent:
 
-    def __init__(self, index, pool_folder, info:dict=None) -> None:
+    def __init__(self, index, user_folder, info:dict=None) -> None:
         self.index = index
-        self.info = info
-        self.folder = pool_folder
+        self.info = {key:None for key in CONFIG["info"]}
+        self.user_folder = user_folder
+        self.folder = user_folder + f"/agents/{index}"
 
         # Agent status
         self._status = ""
@@ -115,6 +158,8 @@ class Agent:
 
         if not info:
             self._load_info()
+        else:
+            self._fill_info(info=info)
 
         if self.description=="":
             self.generate_description()
@@ -163,3 +208,7 @@ class Agent:
             for key in self.info.keys():
                 dumps[key] = self.info[key]
             json.dump(dumps, fp=f)
+
+
+
+

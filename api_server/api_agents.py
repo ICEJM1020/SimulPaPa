@@ -8,7 +8,8 @@ from flask import Blueprint, request, make_response
 import json
 
 from config import CONFIG
-from agents import create_user_filetree, delete_user_filetree, USER_POOL
+from logger import logger
+from agents import USER_POOL
 
 from .utils import *
 
@@ -59,11 +60,12 @@ def create_agents_pool(username):
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            USER_POOL.create_agents_pool(_uuid)
+            msg = USER_POOL.create_agents_pool(_uuid)
             return_body = {
                 "status" : True,
-                "status" : USER_POOL.fetch_agents_status(_uuid)
+                "message" : USER_POOL.fetch_agents_status(_uuid) + " " + msg
             }
+            logger.info(f"User {username}'s agents pool has created")
         else:
             return_body = {
                 "status" : False,
@@ -113,6 +115,7 @@ def save_agents_pool(username):
                 "status" : True,
                 "user_status" : USER_POOL.save_agents_pool(_uuid)
             }
+            logger.info(f"User {username}'s agents pool has saved to local machine")
         else:
             return_body = {
                 "status" : False,
@@ -138,6 +141,7 @@ def load_agents_pool(username):
                 "status" : True,
                 "user_status" : USER_POOL.load_agents_pool(_uuid)
             }
+            logger.info(f"User {username}'s agents pool has loaded from local machine")
         else:
             return_body = {
                 "status" : False,

@@ -162,4 +162,5 @@ cython_debug/
 config.py
 .vscode
 .Users
+.logs
 

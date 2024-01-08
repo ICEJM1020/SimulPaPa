@@ -67,21 +67,6 @@ def gpt_description(name, birthday, **kwargs):
 class InfoTree():
 
     def __init__(self, info, folder) -> None:
-        # self.info = {
-        #     "name" : None,
-        #     "gender" : None,
-        #     "race" : None,
-        #     "birthday" : None,
-        #     "city" : None,
-        #     "disease" : None,
-        #     "street" : None,
-        #     "district" : None,
-        #     "state" : None,
-        #     "zipcode" : None,
-        #     "education" : None,
-        #     "language" : None,
-        #     "occupation" : None
-        # }
         self.user_info = info
         self.folder = folder
         self.tree_file = folder + "/tree.json"
@@ -98,52 +83,52 @@ class InfoTree():
         # building : building is undergoing
         # error :  error in building
         # loaded : successful loaded from local machine
-        self._status = "init"
+        self.status = "init"
 
         if os.path.exists(self.tree_file):
             with open(self.tree_file, "r") as f:
                 self.tree = json.load(f)
-            self._status = "loaded"
+            self.status = "loaded"
         else:
             self._start_building()
 
 
     def _start_building(self):
         thread = threading.Thread(target=self._build_tree)
-        self._status = "building"
+        self.status = "building"
         thread.start()
     
 
     def _build_tree(self):
-        # self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
-        # for idx in self.tree["option"].keys():
-        #         res = self._search_district(
-        #             u_city=self.user_info["city"],
-        #             u_state=self.user_info["state"],
-        #             city=self.tree["option"][idx]["city"],
-        #             state=self.tree["option"][idx]["state"],
-        #             district=self.user_info["district"]
-        #         )
-        #         self.tree["option"][idx]["district"] = res
-        try:
+        if CONFIG["debug"]:
             self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
-        except:
-            self._status = "error"
-        else:
             for idx in self.tree["option"].keys():
-                res = self._search_district(
-                    u_city=self.user_info["city"],
-                    u_state=self.user_info["state"],
-                    city=self.tree["option"][idx]["city"],
-                    state=self.tree["option"][idx]["state"],
-                    district=self.user_info["district"]
-                )
-                self.tree["option"][idx]["district"] = res
-            self._status = "finish"
-
-        with open(self.tree_file, "w") as f:
-            json.dump(self.tree, f)
-
+                    res = self._search_district(
+                        u_city=self.user_info["city"],
+                        u_state=self.user_info["state"],
+                        city=self.tree["option"][idx]["city"],
+                        state=self.tree["option"][idx]["state"],
+                        district=self.user_info["district"]
+                    )
+                    self.tree["option"][idx]["district"] = res
+        else:
+            try:
+                self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
+            except:
+                self.status = "error"
+            else:
+                for idx in self.tree["option"].keys():
+                    res = self._search_district(
+                        u_city=self.user_info["city"],
+                        u_state=self.user_info["state"],
+                        city=self.tree["option"][idx]["city"],
+                        state=self.tree["option"][idx]["state"],
+                        district=self.user_info["district"]
+                    )
+                    self.tree["option"][idx]["district"] = res
+                self.status = "finish"
+                with open(self.tree_file, "w") as f:
+                    json.dump(self.tree, f)
 
 
     def _search_city_state(self, city, state, size=10):
@@ -172,7 +157,7 @@ class InfoTree():
         self.tree["option"] = {}
         self.tree["prob"] = []
         for idx, city in enumerate(cities):
-            self.tree["option"][idx] = {
+            self.tree["option"][str(idx)] = {
                     "city" : city["city"],
                     "state" : city["state"],
                     # "education" : city["education"],
@@ -204,16 +189,14 @@ class InfoTree():
                 "role": "user", "content": prompt
                 }]
         )
-        # print(completion.choices[0].message.content)
-        try:
+        
+
+        if CONFIG["debug"]:
             districts = json.loads(completion.choices[0].message.content)["response"]
-        except:
-            return completion.choices[0].message.content
-        else:
             res = {"option":{}, "prob":[]}
             _p = 0.0
             for idx, district in enumerate(districts):
-                res["option"][idx] = {
+                res["option"][str(idx)] = {
                         "district" : district["district"],
                         "street" : district["streets"],
                     }
@@ -222,6 +205,24 @@ class InfoTree():
             res["prob"] = [x / _p for x in res["prob"]]
 
             return res
+        else:
+            try:
+                districts = json.loads(completion.choices[0].message.content)["response"]
+            except:
+                return completion.choices[0].message.content
+            else:
+                res = {"option":{}, "prob":[]}
+                _p = 0.0
+                for idx, district in enumerate(districts):
+                    res["option"][str(idx)] = {
+                            "district" : district["district"],
+                            "street" : district["streets"],
+                        }
+                    res["prob"].append(float(district["similarity"]))
+                    _p += float(district["similarity"])
+                res["prob"] = [x / _p for x in res["prob"]]
+
+                return res
     
 
     def _infer_addtional(self, gender, race, location, education, age_range=5):
@@ -229,9 +230,10 @@ class InfoTree():
         prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
         prompt += "Based on the gender and race information, firstly figure out a name. Tell me the exact zip code of where he/she lives, and possible spoken language. "
         prompt += f"Next, the range of the age is {age-age_range}-{age+age_range}, please generate a birthday in this range. "
-        prompt += "Finally, based on all of the provided information and your inference, provide a reasonable occupation for him/her. "
+        prompt += "Finally, based on all of the provided information and your inference, provide a reasonable occupation for him/her and if he/she is retired. "
         prompt += "Return your answer in the following JSON format: "
-        prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", \"language\" : \"language\", \"zipcode\" : \"zipcode\", \"occupation\":\"occupation\"}, "
+        prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", "
+        prompt += "\"language\" : \"language\", \"zipcode\" : \"zipcode\", \"occupation\":\"occupation\", \"retirement\":\"retired_or_working\"}, "
         prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
         
 
@@ -244,21 +246,7 @@ class InfoTree():
         )
         return json.loads(completion.choices[0].message.content)["response"]
 
-# self.info = {
-# "name" : None,
-# "gender" : None,
-# "race" : None,
-# "birthday" : None,
-# "city" : None,
-#     "disease" : None,
-# "street" : None,
-# "district" : None,
-# "state" : None,
-# "zipcode" : None,
-# "education" : None,
-# "language" : None,
-# "occupation" : None
-# }
+
     def generate_info_dict(self):
         res = {key:None for key in self.user_info}
         city_choice = random.choices([str(i) for i in range(len(self.tree["prob"]))], weights=self.tree["prob"])[0]
@@ -286,10 +274,12 @@ class InfoTree():
         res["zipcode"] = add_info["zipcode"]
         res["language"] = add_info["language"]
         res["occupation"] = add_info["occupation"]
+        res["retirement"] = add_info["retirement"]
+        
         return res
 
 
     def get_status(self):
-        return self._status
+        return self.status
     
 

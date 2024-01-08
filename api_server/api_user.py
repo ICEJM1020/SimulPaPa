@@ -10,6 +10,7 @@ import os
 
 from config import CONFIG
 from agents import create_user_filetree, delete_user_filetree, USER_POOL
+from logger import logger
 
 from .utils import *
 
@@ -62,6 +63,7 @@ def create_user():
                     "name" : req_form['name'],
                     "message" : "Creation successful"
                 }
+                logger.info(f"User {req_form['username']} created")
             except:
                 return_body = {
                     "status" : False,
@@ -85,6 +87,7 @@ def delete_user(username):
                 "status" : True,
                 "message" : f"Successfully delete user: {username}"
             }
+            logger.info(f"User {username} deleted")
         else:
             return_body = {
                 "create_status" : False,
@@ -105,7 +108,6 @@ def delete_user(username):
 
 @ubp.route(f"/{route_group}/upload", methods=["GET"])
 def upload_user_file():
-    print()
     if "username" not in request.form.keys():
         return_body = {
                 "status" : False,
@@ -122,6 +124,7 @@ def upload_user_file():
                 "status" : True,
                 "message" : "Upload successfully"
             }
+            logger.info(f"User {username} uploaded {file.filename}")
         else:
             return_body = {
                 "status" : False,
@@ -152,6 +155,7 @@ def activate_user(username):
                 "status" : True,
                 "message" : "User activated successfully"
             }
+            logger.info(f"User {username} activated")
     else:
         return_body = {
                 "status" : False,
@@ -168,11 +172,19 @@ def deactivate_user(username):
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            USER_POOL.pop(_uuid)
-            return_body = {
-                "status" : True,
-                "user_status" : "User has deactivated"
-            }
+            try:
+                USER_POOL.pop(_uuid)
+            except:
+                return_body = {
+                    "status" : False,
+                    "user_status" : "User failed to deactivate"
+                }
+            else:
+                return_body = {
+                    "status" : True,
+                    "user_status" : "User has deactivated"
+                }
+                logger.info(f"User {username} deactivated")
         else:
             return_body = {
                 "status" : False,

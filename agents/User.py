@@ -11,9 +11,9 @@ from shutil import rmtree
 from datetime import date
 
 from config import CONFIG
-from .description import gpt_description
-from .Agents import AgentsPool
-
+from logger import logger
+from agents.Info import gpt_description
+from agents.Agents import AgentsPool
 
 def init_pool():
     pool = UserPool()
@@ -33,9 +33,9 @@ class UserPool:
     
     def pop(self, _uuid):
         self.pool[_uuid].save()
-        del(self.pool[_uuid])
         self.save_agents_pool(_uuid)
-    
+        del(self.pool[_uuid])
+
 
     def exist(self, _uuid):
         return _uuid in self.pool.keys()
@@ -92,21 +92,7 @@ class User:
         self._status = ""
 
         # user info
-        self.info = {
-            "name" : None,
-            "gender" : None,
-            "race" : None,
-            "birthday" : None,
-            "city" : None,
-            "disease" : None,
-            "street" : None,
-            "district" : None,
-            "state" : None,
-            "zipcode" : None,
-            "education" : None,
-            "language" : None,
-            "occupation" : None
-        }
+        self.info = {key:None for key in CONFIG["info"]}
         self.description = ""
         self._load_info()
         if self.description=="":
@@ -114,7 +100,7 @@ class User:
 
         self.agents_pool = AgentsPool(
             info=self.info,
-            folder=self.user_folder
+            user_folder=self.user_folder
         )
     
 
@@ -123,9 +109,11 @@ class User:
             with open(self.user_folder + "/info.json", "r") as f:
                 info = json.load(f)
         except:
+            logger.error(f"UUID {self._uuid} load information file unsuccessfully")
             self._status = "Load information file unsuccessfully"
         else:
             missing = self._fill_info(info=info)
+            logger.info(f"UUID {self._uuid} missing information: {missing}")
             self._status = "Missing information: " + missing
     
 
@@ -146,8 +134,7 @@ class User:
 
     def generate_description(self):
         try:
-            info = gpt_description(**self.info)
-            self._fill_info(info)
+            self.description = gpt_description(**self.info)["description"]
             self._status = "Generate description successfully"
         except:
             self._status = "Generate description unsuccessfully"
@@ -162,6 +149,7 @@ class User:
             for key in self.info.keys():
                 dumps[key] = self.info[key]
             json.dump(dumps, fp=f)
+        logger.info(f"UUID {self._uuid} save to local")
     
 
     def modify_info(self, info):
@@ -172,6 +160,7 @@ class User:
                 continue
         self.generate_description()
         self.save()
+        logger.info(f"UUID {self._uuid} modified the information")
 
 
     def get_status(self):
@@ -211,8 +200,5 @@ def delete_user_filetree(_uuid):
     else:
         return True
     
-
-if __name__ == "__main__":
-    print(create_user_filetree("Timber", "20-10-1998"))
 
 
