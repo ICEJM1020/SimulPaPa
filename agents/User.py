@@ -7,6 +7,7 @@ Date: 2023-12-29
 import uuid
 import os
 import json
+import threading
 from shutil import rmtree
 from datetime import date
 
@@ -14,6 +15,7 @@ from config import CONFIG
 from logger import logger
 from agents.Info import gpt_description
 from agents.Agents import AgentsPool
+from agents.utils import *
 
 def init_pool():
     pool = UserPool()
@@ -88,8 +90,12 @@ class User:
         self._uuid = _uuid
         self.user_folder = CONFIG["base_dir"] + f"/.Users/{_uuid}"
 
+        ######################
         # user status
-        self._status = ""
+        # ready : ready to do something
+        # working : working on task
+        # error:  error
+        self.status = ""
 
         # user info
         self.info = {key:None for key in CONFIG["info"]}
@@ -98,11 +104,15 @@ class User:
         if self.description=="":
             self.generate_description()
 
+        # agents pool
         self.agents_pool = AgentsPool(
             info=self.info,
             user_folder=self.user_folder
         )
-    
+
+        # activity file
+        self.generate_activity_file()
+
 
     def _load_info(self):
         try:
@@ -110,11 +120,11 @@ class User:
                 info = json.load(f)
         except:
             logger.error(f"UUID {self._uuid} load information file unsuccessfully")
-            self._status = "Load information file unsuccessfully"
+            self.status = "error"
         else:
             missing = self._fill_info(info=info)
             logger.info(f"UUID {self._uuid} missing information: {missing}")
-            self._status = "Missing information: " + missing
+            self.status = "ready"
     
 
     def _fill_info(self, info):
@@ -135,9 +145,11 @@ class User:
     def generate_description(self):
         try:
             self.description = gpt_description(**self.info)["description"]
-            self._status = "Generate description successfully"
+            self.status = "ready"
+            logger.info(f"UUID {self._uuid} generate description successfully")
         except:
-            self._status = "Generate description unsuccessfully"
+            self.status = "error"
+            logger.info(f"UUID {self._uuid} generate description unsuccessfully")
 
 
     def save(self):
@@ -163,14 +175,42 @@ class User:
         logger.info(f"UUID {self._uuid} modified the information")
 
 
+    def generate_activity_file(self):
+        logger.info(f"decompose activity file of {self.info['name']}({self.user_folder.split('/')[-1]})")
+        thread = threading.Thread(target=self._generate_activity_file)
+        self.status = "working"
+        thread.start()
+        return self.status
+    
+
+    def _generate_activity_file(self):
+        csv_files = []
+        for file in os.listdir(self.user_folder):
+            if file.endswith('.csv') and os.path.isfile(os.path.join(self.user_folder, file)):
+                csv_files.append(self.user_folder + "/" + file)
+
+        if csv_files:
+            act_dir = self.user_folder + "/activity_hist"
+            if os.path.exists(act_dir):
+                rmtree(act_dir)
+            os.mkdir(act_dir)
+            
+            decompose_activity_file(csv_files, act_dir)
+
+        else:
+            logger.info(f"There is no activity file of {self.info['name']}({self.user_folder.split('/')[-1]})")
+            self.status = "error"
+
     def get_status(self):
-        return self._status
+        return self.status
 
 
     def get_description(self):
         return self.description
     
 
+    def check_ready(self):
+        return self.status=="ready"
 
 
 def create_user_filetree(name, birthday, username, **kwargs):

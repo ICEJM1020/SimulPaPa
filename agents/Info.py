@@ -79,16 +79,15 @@ class InfoTree():
         
         ######################
         # init : finish init
-        # finish :  finish building the tree
+        # ready :  finish building the tree
         # building : building is undergoing
         # error :  error in building
-        # loaded : successful loaded from local machine
         self.status = "init"
 
         if os.path.exists(self.tree_file):
             with open(self.tree_file, "r") as f:
                 self.tree = json.load(f)
-            self.status = "loaded"
+            self.status = "ready"
         else:
             self._start_building()
 
@@ -126,7 +125,7 @@ class InfoTree():
                         district=self.user_info["district"]
                     )
                     self.tree["option"][idx]["district"] = res
-                self.status = "finish"
+                self.status = "ready"
                 with open(self.tree_file, "w") as f:
                     json.dump(self.tree, f)
 

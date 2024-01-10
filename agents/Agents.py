@@ -11,13 +11,14 @@ from openai import OpenAI
 
 from logger import logger
 from agents.Info import *
-
+from agents.Brain import *
 
 
 class AgentsPool:
 
 
     def __init__(self, info: dict, user_folder: str, size:int=10) -> None:
+        self._uuid = self.user_folder.split('/')[-1]
         self.info = info
         self.size = size
         self.pool = {}
@@ -44,13 +45,13 @@ class AgentsPool:
 
 
     def create_pool(self, ):
-        logger.info(f"start create agents pool for {self.info['name']}({self.user_folder.split('/')[-1]})")
+        logger.info(f"start create agents pool for {self.info['name']}({self._uuid})")
         if self.info_tree.get_status() == "ready":
             thread = threading.Thread(target=self._create_pool)
             self.status = "building"
             thread.start()
         else:
-            logger.info(f"info tree for agents pool of {self.info['name']}({self.user_folder.split('/')[-1]}) has not finished")
+            logger.info(f"info tree for agents pool of {self.info['name']}({self._uuid}) has not finished")
         return self.status
     
 
@@ -74,7 +75,7 @@ class AgentsPool:
                     self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
                 except:
                     if_err = True
-                    logger.error(f"try to create agent {i} for {self.info['name']}({self.user_folder.split('/')[-1]}) failed")
+                    logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
                     error += f"{i}, "
         
         if if_err:
@@ -84,7 +85,7 @@ class AgentsPool:
 
 
     def load_pool(self, ):
-        logger.info(f"start load agents pool for {self.info['name']}({self.user_folder.split('/')[-1]})")
+        logger.info(f"start load agents pool for {self.info['name']}({self._uuid})")
         thread = threading.Thread(target=self._load_pool)
         self.status = "loading"
         thread.start()
@@ -101,7 +102,7 @@ class AgentsPool:
             except:
                 if_err = True
                 error += f"{i}, "
-                logger.error(f"try to load agent {i} pool for {self.info['name']}({self.user_folder.split('/')[-1]}) failed")
+                logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
 
         if if_err:
             self.status = "error load " + error
@@ -120,8 +121,8 @@ class AgentsPool:
 
 
     def start_simulation(self, day=1):
-        logger.info(f"start simulation for {self.info['name']}({self.user_folder.split('/')[-1]})")
-        thread = threading.Thread(target=self._start_simulation, name=f"{self.user_folder.split('/')[-1]}-simulation", kwargs={"day":day})
+        logger.info(f"start simulation for {self.info['name']}({self._uuid})")
+        thread = threading.Thread(target=self._start_simulation, name=f"{self._uuid}-simulation", kwargs={"day":day})
         self.simul_status = "working"
         thread.start()
         return self.status
@@ -146,23 +147,34 @@ class AgentsPool:
 class Agent:
 
     def __init__(self, index, user_folder, info:dict=None) -> None:
+        self._uuid = self.user_folder.split('/')[-1]
         self.index = index
-        self.info = {key:None for key in CONFIG["info"]}
         self.user_folder = user_folder
         self.folder = user_folder + f"/agents/{index}"
+        self.activity_folder = self.folder + "/activity_hist"
+        if not os.path.exists(self.activity_folder):
+            os.mkdir(self.activity_folder)
 
         # Agent status
-        self._status = ""
+        ######################
+        # ready :  finish creating and ready to simulate
+        # creating : building is undergoing
+        # loading: loading the agents from local machine
+        # error {id}:  error in create {id} agent
+        self.status = "init"
 
+        # infomation
+        self.info = {key:None for key in CONFIG["info"]}
         self.description = ""
-
         if not info:
             self._load_info()
         else:
             self._fill_info(info=info)
-
         if self.description=="":
             self.generate_description()
+
+        # brain
+        self.brain = Brain(user_folder=user_folder, agent_folder=self.folder)
 
 
     def _load_info(self):
@@ -170,10 +182,12 @@ class Agent:
             with open(self.folder + "/info.json", "r") as f:
                 info = json.load(f)
         except:
-            self._status = "Load information file unsuccessfully"
+            logger.error(f"{self._uuid} agent({self.index}) load information file unsuccessfully")
+            self.status = "error"
         else:
+            logger.info(f"{self._uuid} agent({self.index}) load information file successfully, missing: {missing}")
             missing = self._fill_info(info=info)
-            self._status = "Missing information: " + missing
+            self.status = "ready"
 
 
     def _fill_info(self, info):
@@ -195,9 +209,13 @@ class Agent:
         try:
             info = gpt_description(**self.info)
             self._fill_info(info)
-            self._status = "Generate description successfully"
         except:
-            self._status = "Generate description unsuccessfully"
+            self.status = "error"            
+            logger.info(f"{self._uuid} agent({self.index}) generate description unsuccessfully")
+        else:
+            self.status = "ready"
+            logger.info(f"{self._uuid} agent({self.index}) generate description successfully")
+
 
 
     def save(self):
@@ -210,5 +228,7 @@ class Agent:
             json.dump(dumps, fp=f)
 
 
+    def check_ready(self):
+        return self.status=="ready"
 
 
