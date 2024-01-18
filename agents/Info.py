@@ -130,9 +130,10 @@ class InfoTree():
                     json.dump(self.tree, f)
 
 
-    def _search_city_state(self, city, state, size=10):
+    def _search_city_state(self, city, state, size=5):
         prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development. " 
-        prompt += f"Please find me {size} cities with similar conditions from around the world and give the reasons. "
+        # prompt += f"Please find me {size} cities with similar conditions from around the world and give the reasons. "
+        prompt += f"Please find me {size} cities with similar conditions in the US. "
         prompt += "Furthermore, tell me about the races, education and gender statistic in this state. "
         prompt += "The data should based on real information during 2010 to 2020. "
         prompt += "Return your answer in the following JSON format without any other information: "

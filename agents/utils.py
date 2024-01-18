@@ -5,6 +5,7 @@ Date: 2024-01-09
 """ 
 
 import os
+import json
 import pandas as pd
 
 
@@ -31,6 +32,15 @@ def decompose_activity_file(files:list, target_folder:str):
             _group["minute"] = _group["time"].apply(lambda x : x[2:4])
 
             _group.to_csv(filepath, index=False)
+
+
+def safe_load_gpt_content(content):
+    try:
+        json_content = json.loads(content)
+    except:
+        return False
+    else:
+        return json_content
 
 
 if __name__ == "__main__":
