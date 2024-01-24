@@ -103,6 +103,7 @@ class User:
         self._load_info()
         if self.description=="":
             self.generate_description()
+            self.save()
 
         # agents pool
         self.agents_pool = AgentsPool(

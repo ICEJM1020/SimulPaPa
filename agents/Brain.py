@@ -22,9 +22,7 @@ class Brain:
     def __init__(self, user_folder, agent_folder, info) -> None:
         self.user_folder = user_folder
         self.agent_folder = agent_folder
-
-        self.long_memory = LongMemory(user_folder=user_folder, agent_folder=agent_folder)
-        self.short_memory = ShortMemory(agent_folder=agent_folder, info=info)
+        self.info = info
 
         ######################
         # ready :  finish creating and ready to simulate
@@ -40,6 +38,10 @@ class Brain:
 
         ## memory related
         self.retrieve_days = 5
+
+    def init_brain(self):
+        self.long_memory = LongMemory(user_folder=self.user_folder, agent_folder=self.agent_folder)
+        self.short_memory = ShortMemory(agent_folder=self.agent_folder, info=self.info)
 
 
     def plan(self, days:int=1, type:str="new"):
@@ -129,7 +131,6 @@ class Brain:
         current_time = datetime.strptime("00:00", "%H:%M") 
         # Circulate through 24 hours in 10-minute increments
         while current_time < datetime.strptime("23:59", "%H:%M"):
-            print(self.short_memory.memory_tree["cur_time"])
             if current_time.minute==0:
                 self.long_memory.save_cache()
                 self.short_memory.save_cache()
@@ -137,6 +138,7 @@ class Brain:
 
 
             self.short_memory.set_current_time(current_time)
+            print(self.short_memory.memory_tree["cur_time"])
 
             self._decide_cur_activity()
             
@@ -229,7 +231,7 @@ class Brain:
         pred_dict = {}
         for i in range(10):
             _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
-            pred_dict[datetime.strftime(_time, "%H:%M")] = "[Fill in]"
+            pred_dict[datetime.strftime(_time, "%H:%M")] = "[Fill Float Heartrate]"
         prompt += json.dumps(pred_dict)
 
         if CONFIG['debug']: print(prompt)
@@ -246,6 +248,8 @@ class Brain:
         if pred:
             self.short_memory.set_current_heartrate(pred)
         else:
+            for key in pred_dict:
+                pred_dict[key] = 0
             self.short_memory.set_current_heartrate(pred_dict)
 
 
@@ -300,7 +304,9 @@ class Brain:
             pred_dict = {}
             for i in range(10):
                 _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
-                pred_dict[datetime.strftime(_time, "%H:%M")] = "[Fill in or 'null']"
+                pred_dict[datetime.strftime(_time, "%H:%M")] = {
+                    "if_chat":"[Fill True_or_False]", 
+                    "conversation":"[Fill conversation]"}
             prompt += json.dumps(pred_dict)
 
             if CONFIG['debug']: print(prompt)
@@ -312,11 +318,13 @@ class Brain:
                     }]
             )
             if CONFIG['debug']: print(completion.choices[0].message.content)
-
+            print(completion.choices[0].message.content)
             pred = safe_load_gpt_content(completion.choices[0].message.content)
             if pred:
                 self.short_memory.set_current_chatbot(pred)
             else:
+                for key in pred_dict:
+                    pred_dict[key]["if_chat"] = False
                 self.short_memory.set_current_chatbot(pred_dict)
 
 
@@ -325,8 +333,9 @@ if __name__ == "__main__":
     brain = Brain(
         user_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
         agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/1",
-        info={'name':'Siphiwe Ndlovu'}
+        info={'name':'John Smith'}
     )
+    brain.init_brain()
     brain.plan()
 
 

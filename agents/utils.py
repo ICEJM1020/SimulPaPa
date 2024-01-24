@@ -8,7 +8,6 @@ import os
 import json
 import pandas as pd
 
-
 def decompose_activity_file(files:list, target_folder:str):
     for file in files:
         df = pd.read_csv(file)
@@ -42,9 +41,3 @@ def safe_load_gpt_content(content):
     else:
         return json_content
 
-
-if __name__ == "__main__":
-    decompose_activity_file(
-        files=["/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/jc-pilot001.csv"],
-        target_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/activity_hist"
-    )

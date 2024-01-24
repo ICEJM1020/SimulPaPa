@@ -18,7 +18,7 @@ class AgentsPool:
 
 
     def __init__(self, info: dict, user_folder: str, size:int=10) -> None:
-        self._uuid = self.user_folder.split('/')[-1]
+        self._uuid = user_folder.split('/')[-1]
         self.info = info
         self.size = size
         self.pool = {}
@@ -66,17 +66,15 @@ class AgentsPool:
             else:
                 os.mkdir(agent_folder)
             
-            if CONFIG["debug"]:
+            try:
                 agent_info = self.info_tree.generate_info_dict()
-                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
+            except:
+                if_err = True
+                logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
+                error += f"{i}, "
             else:
-                try:
-                    agent_info = self.info_tree.generate_info_dict()
-                    self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
-                except:
-                    if_err = True
-                    logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
-                    error += f"{i}, "
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
+                self.pool[i].save()
         
         if if_err:
             self.status = "error create" + error
@@ -96,13 +94,15 @@ class AgentsPool:
         error = ""
         if_err = False
         for i in range(1, self.size+1):
-            
-            try:
+            if CONFIG["debug"]:
                 self.pool[i] = Agent(index=i, user_folder=self.user_folder)
-            except:
-                if_err = True
-                error += f"{i}, "
-                logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
+            else:
+                try:
+                    self.pool[i] = Agent(index=i, user_folder=self.user_folder)
+                except:
+                    if_err = True
+                    error += f"{i}, "
+                    logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
 
         if if_err:
             self.status = "error load " + error
@@ -147,7 +147,7 @@ class AgentsPool:
 class Agent:
 
     def __init__(self, index, user_folder, info:dict=None) -> None:
-        self._uuid = self.user_folder.split('/')[-1]
+        self._uuid = user_folder.split('/')[-1]
         self.index = index
         self.user_folder = user_folder
         self.folder = user_folder + f"/agents/{index}"
@@ -166,7 +166,7 @@ class Agent:
         # infomation
         self.info = {key:None for key in CONFIG["info"]}
         self.description = ""
-        if not info:
+        if info==None:
             self._load_info()
         else:
             self._fill_info(info=info)
@@ -174,7 +174,7 @@ class Agent:
             self.generate_description()
 
         # brain
-        self.brain = Brain(user_folder=user_folder, agent_folder=self.folder)
+        self.brain = Brain(user_folder=user_folder, agent_folder=self.folder, info=self.info)
 
 
     def _load_info(self):
@@ -185,8 +185,8 @@ class Agent:
             logger.error(f"{self._uuid} agent({self.index}) load information file unsuccessfully")
             self.status = "error"
         else:
-            logger.info(f"{self._uuid} agent({self.index}) load information file successfully, missing: {missing}")
             missing = self._fill_info(info=info)
+            logger.info(f"{self._uuid} agent({self.index}) load information file successfully, missing: {missing}")
             self.status = "ready"
 
 
@@ -203,6 +203,11 @@ class Agent:
             self.description = ""
         
         return missing
+    
+
+    def plan(self):
+        self.brain.init_brain()
+        self.brain.plan()
 
 
     def generate_description(self):

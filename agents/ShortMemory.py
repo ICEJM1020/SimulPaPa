@@ -75,13 +75,11 @@ class ShortMemory:
     def set_current_chatbot(self, conv_hist):
         for idx, time in enumerate(conv_hist.keys()):
             content = conv_hist[time]
-            if not content:
-                continue
-            if (not content.lower().startswith("[fill")) or (not content.lower().startswith("[null")):
+            if content["if_chat"]=="True":
                 if idx < 5:
-                    self.memory_tree["chatbot"][time] = conv_hist[time]
+                    self.memory_tree["chatbot"][time] = content["conversation"]
                 else:
-                    self.memory_tree["pred_chatbot"][time] = conv_hist[time]
+                    self.memory_tree["pred_chatbot"][time] = content["conversation"]
 
 
     def set_schedule(self, schedule):
