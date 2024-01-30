@@ -33,10 +33,15 @@ def decompose_activity_file(files:list, target_folder:str):
             _group.to_csv(filepath, index=False)
 
 
-def safe_load_gpt_content(content):
+def safe_load_gpt_content(content, prompt):
     try:
         json_content = json.loads(content)
     except:
+        print("==========")
+        print(prompt)
+        print("==========")
+        print(content)
+        print("==========")
         return False
     else:
         return json_content

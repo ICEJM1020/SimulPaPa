@@ -27,10 +27,15 @@ class LongMemory:
         self.user_act_folder = user_folder + "/activity_hist"
         self.agent_act_folder = agent_folder + "/activity_hist"
 
-        ## user realated、
+        self.loaded = False
+
+        ## files realated、
         self._load_info()
         self.user_act_files = {}
         self.user_last_day = self._search_user_last_day()
+        self.agent_act_files = {}
+        self._search_generated_activity()
+
 
         ## chatgpt
         self.gpt_client = OpenAI(
@@ -41,15 +46,11 @@ class LongMemory:
         # print(self.user_last_day, self.user_act_files)
         ## preference_tree
         self.cache_file = os.path.join(agent_folder, "long_memory_cache.json")
-        if os.path.exists(self.cache_file):
-            with open(self.cache_file, "r") as f:
-                self.pref_tree = json.load(f)
-        else:
-            self.pref_tree = {}
-
-            self.pref_tree["user_chatbot_pref"] = self._summary_user_chatbot_preference()
-
-            self.pref_tree["agent_chatbot_pref"] = self._generate_agent_chatbot_preference()
+        
+        self.memory_tree = {}
+        self.memory_tree["user_chatbot_pref"] = ""
+        self.memory_tree["agent_chatbot_pref"] = ""
+        self.memory_tree["daily_purpose"] = {}
 
 
     def _load_info(self):
@@ -84,7 +85,15 @@ class LongMemory:
         return newest_date.strftime('%m-%d-%Y')
     
 
-    def fetch_user_lastday(self, ):
+    def _search_generated_activity(self, ):
+        for filename in os.listdir(self.agent_act_folder):
+            if filename.endswith('.csv'):
+                # Extract date from filename
+                date_str = filename.split('.')[0]  # Remove the '.csv' part
+                self.agent_act_files[date_str] = os.path.join(self.agent_act_folder, filename)
+    
+
+    def fetch_user_lastday(self):
         return self.user_last_day
     
 
@@ -95,91 +104,58 @@ class LongMemory:
             daily_file = past_date.strftime('%m-%d-%Y') + ".csv"
 
             if os.path.exists(os.path.join(self.agent_act_folder, daily_file)):
-                res[past_date.strftime('%m-%d-%Y')] = self._summary_daily_purpose(os.path.join(self.agent_act_folder, daily_file))
+                res[past_date.strftime('%m-%d-%Y')] = self.memory_tree["daily_purpose"][past_date.strftime('%m-%d-%Y')]
+                # res[past_date.strftime('%m-%d-%Y')] = self._summary_daily_purpose(os.path.join(self.agent_act_folder, daily_file))
             else:
-                res[past_date.strftime('%m-%d-%Y')] = self._summary_daily_purpose(os.path.join(self.user_act_folder, daily_file))
+                _purpose = self._summary_daily_purpose(os.path.join(self.user_act_folder, daily_file))
+                res[past_date.strftime('%m-%d-%Y')] = _purpose
+                self.memory_tree["daily_purpose"][past_date.strftime('%m-%d-%Y')] = _purpose
         return json.dumps(res)
 
 
     def _summary_daily_purpose(self, activity_file):
-        return random.choice(["at-home", "working", "travel", "outdoor"])
+        date = os.path.basename(activity_file).split(".")[0]
+        examples = {
+            "12-05-2023":f"Today is Tuesday, {self.info['name']}'s plan of today is to work on the current project, including several meetings and chat with company CEO. ",
+            "12-04-2023":f"Today is Monday, {self.info['name']}'s plan of today is to work on the currentproject, including talking to product manager about the detail of the product and schedule a meeting with client. ",
+            "12-03-2023":f"Today is Sunday, {self.info['name']}'s plan of today is to travel to National park. ",
+            "12-02-2023":f"Today is Saturday, {self.info['name']}'s plan of today is to stay at home for relex, including clean the room, watch a movie, do some cleaning, etc. ",
+            "12-01-2023":f"Today is Friday, {self.info['name']}'s plan of today is start a new project that will create a new product, including several meetings and talk to team members. ",
+            "11-30-2023":f"Today is Thursday, {self.info['name']}'s plan of today is to finish last project, including prepare a presentation script, go to company auditorium, and hold product launching ceremony. ",
+            "11-29-2023":f"Today is Wednesday, {self.info['name']}'s plan of today is to work on the current project, the product need to be launched tomorrow. {self.info['name']} needs to final check the product, meet with team members. ",
+            "11-28-2023":f"Today is Tuesday, {self.info['name']}'s plan of today is to work on the current project, including meet several clients and talk to team members. ",
+            "11-27-2023":f"Today is Monday, {self.info['name']}'s plan of today is to go to hospital since neck sick. After that, {self.info['name']} wants to work at home. ",
+            "11-26-2023":f"Today is Sunday, {self.info['name']}'s plan of today is to work on a recent project at home, including check the quality of the product, hold meeting with manufacture company, and hold meeting with CEO talked about product progress. ",
+            "11-25-2023":f"Today is Saturday, {self.info['name']}'s plan of today is to stay at home for relex. In the afternoon, {self.info['name']} needs to have dinner with clients at InterContinental Boston. ",
+            "11-24-2023":f"Today is Friday, {self.info['name']}'s plan of today is to work on a recent project, including several meetings and talk to team members. ",
+        }
+
+        return examples[date]
     
 
     def past_daily_schedule(self, cur_date, past_days:int=5):
         pass
 
 
-    def _summary_user_chatbot_preference(self):
+    def fetch_user_chat_hist(self, limit=10):
         chat_history = {}
         # for date, file in self.user_act_files.values():
+        _sum = 0
         for date in self.user_act_files.keys():
             _hist = pd.read_csv(self.user_act_files[date])[['conv_history', 'hour', 'minute']]
             _hist = _hist.dropna(axis=0)
             if not _hist.empty:
                 for _, value in _hist.iterrows():
                     chat_history[f"{date}-{value['hour']}:{value['minute']}"] = value['conv_history']
-
-        prompt = self.user_description
-        prompt += f"In the past several days, {self.user_info['name']} had several interactions with Alexa chatbot. "
-        prompt += f"Here is a json format chat history, the key is the chat time(format as MM-DD-YYYY-hh:mm), the value is the content of the conversation. "
-        prompt += json.dumps(chat_history)
-        prompt += f"Based on personal information and past chat history, can you summarize the chatbot usage preference of {self.user_info['name']}. "
-        prompt += "In order to better describe the preferences, here are some example question may describe a user's preference. "
-        prompt += "1. How often do users use chatbot(times/week or times/day)? 2. During what period of time do users use chatbot? "
-        prompt += "3. What topics do users talk about when using the chatbot (there may be several options)? "
-        prompt += "4. What conversation topics will get positive responses from users (there may be several options)? "
-        # prompt += "5. If available, you can choose some typical Question-Answer pairs to include in your answer."
-        prompt += "Despite these points, there may also be other descriptions that illustrates the user preference. "
-        prompt += "You need to figure out more aspects that may help understanding the user's usage prefernce. "
-        prompt += "To make the estimation more detailed, you can imagine that you are a product manager who want to build up a user profile for a chatbot. "
-        prompt += "Limit your answer in 50 words and format as: 1 : desciprtion, ..., n : description. You could ignore the name in your answer so that you could provide more useful words."
-
-        if CONFIG['debug']:   print(prompt)
-
-        completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:   print(completion.choices[0].message.content)
-        return completion.choices[0].message.content
-    
-
-    def _generate_agent_chatbot_preference(self):
-        prompt = "---\n"
-        prompt += self.user_description
-        prompt += "\n"
-        prompt += f"Here are some points describing {self.user_info['name']}'s usage preference of using Alexa chatbot: \n"
-        prompt += self.pref_tree["user_chatbot_pref"]
-        prompt = "\n---\n"
-        prompt += "There are some potential connections here between chatbot usage preferences and personal information. "
-        prompt += f"Now, Alexa want to depict a new usage prefernce for {self.info['name']}. {self.description} \n"
-        prompt += "In order to better describe the preferences, here are some example question may describe a user's preference. "
-        prompt += "1. How often do users use chatbot(times/week or times/day)? 2. During what period of time do users use chatbot? "
-        prompt += "3. What topics do users talk about when using the chatbot (there may be several options)? "
-        prompt += "4. What conversation topics will get positive responses from users (there may be several options)? "
-        # prompt += "5. If available, you can choose some typical Question-Answer pairs to include in your answer."
-        prompt += "Despite these points, there may also be other descriptions that illustrates the user preference. "
-        prompt += "You need to figure out more aspects that may help understanding the user's usage prefernce. "
-        prompt += "To make the estimation more detailed, you can imagine that you are a product manager who want to build up a user profile for a chatbot. "
-        prompt += "Limit your answer in 50 words and format as: 1 : desciprtion, ..., n : description. You could ignore the name in your answer so that you could provide more useful words."
-
-        if CONFIG['debug']:   print(prompt)
-
-        completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
-        return completion.choices[0].message.content
+                    _sum += 1
+                    if _sum > limit:
+                        return chat_history
+        return chat_history
     
 
     def _fetch_heart_rate(self, activity_df:pd.DataFrame, hour:int=None, minute:int or list=None):
+        hr = "heartrate" if "heartrate" in activity_df.columns else "garmin_hr"
+
         activity_df = activity_df.dropna(axis=0)
         activity_df = activity_df[activity_df['hour']==hour]
         if (not minute==None) and (not hour==None):
@@ -192,7 +168,7 @@ class LongMemory:
         if not activity_df.empty:
             for _, value in activity_df.iterrows():
                 _time = datetime.strptime(f"{int(value['hour'])}:{int(value['minute'])}", "%H:%M")
-                res += f"[{datetime.strftime(_time, '%H:%M')}]:{value['garmin_hr']};"
+                res += f"[{datetime.strftime(_time, '%H:%M')}]:{value[hr]};"
         return res
 
 
@@ -203,7 +179,11 @@ class LongMemory:
         time_end = datetime.strftime(time_end, "%H:%M")
         res = f"In {date}, from {time_start} to {time_end}, {self.info['name']}'s heart rate record history is:"
         
-        activity_df = pd.read_csv(self.user_act_files[date])[['garmin_hr', 'hour', 'minute']]
+        if date in self.user_act_files:
+            activity_df = pd.read_csv(self.user_act_files[date])[['garmin_hr', 'hour', 'minute']]
+        else:
+            activity_df = pd.read_csv(self.agent_act_files[date])[['heartrate', 'hour', 'minute']]
+
         for i in range(min):
             _time = datetime.strptime(time_start, "%H:%M") + timedelta(minutes=i)
             res += self._fetch_heart_rate(activity_df, _time.hour, _time.minute)
@@ -222,7 +202,7 @@ class LongMemory:
 
         for i in range(1, days+1):
             fetch_date = cur_date_datetime - timedelta(days=i)
-            res += f"{datetime.strftime(fetch_date, '%m-%d-%Y')}:\n"
+            res += f"{datetime.strftime(fetch_date, '%m-%d-%Y')}: "
             if fetch_date <= user_last_day_datetime:
                 activity_df = pd.read_csv(self.user_act_files[datetime.strftime(fetch_date, '%m-%d-%Y')])[['garmin_hr', 'hour', 'minute']]
             else:
@@ -261,7 +241,7 @@ class LongMemory:
 
         for i in range(1, days+1):
             fetch_date = cur_date_datetime - timedelta(days=i)
-            res += f"{datetime.strftime(fetch_date, '%m-%d-%Y')}:\n"
+            res += f"{datetime.strftime(fetch_date, '%m-%d-%Y')}: "
             if fetch_date <= user_last_day_datetime:
                 activity_df = pd.read_csv(self.user_act_files[datetime.strftime(fetch_date, '%m-%d-%Y')])[['conv_history', 'hour', 'minute']]
             else:
@@ -273,7 +253,17 @@ class LongMemory:
         return res
             
     
+    def record_daily_purpose(self, date, purpose):
+        self.memory_tree["daily_purpose"][date] = purpose
+
+
 
     def save_cache(self):
         with open(self.cache_file, "w") as f:
-            json.dump(self.pref_tree, f)
+            json.dump(self.memory_tree, f)
+
+
+    def load_cache(self):
+        if os.path.exists(self.cache_file):
+            with open(self.cache_file, "r") as f:
+                self.memory_tree = json.load(f)

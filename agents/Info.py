@@ -247,7 +247,7 @@ class InfoTree():
         prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
         prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
         prompt += "Return your answer in the following JSON format: "
-        prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
+        prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary_format_as\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
         prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
         

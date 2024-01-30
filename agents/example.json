@@ -1,0 +1,32 @@
+{
+    "schedule":{
+        "purpose" : "Today is weekday, Emily Johnson's plan of today is to work on a recent project, including several meetings and chat with company CEO.",
+        "schedule" : "{'00:00-06:30': 'Sleep', '06:30-06:45': 'Wake up and stretch', '06:45-07:00': 'Get ready for the day', '07:00-07:30': 'Have a nutritious breakfast', '07:30-08:00': 'Shower and get dressed', '08:00-08:15': 'Check emails and messages', '08:15-09:00': 'Prepare for meetings', '09:00-10:00': 'Meeting with project team', '10:00-10:15': 'Short break', '10:15-11:00': 'Continue working on project', '11:00-11:30': 'Meeting with company CEO', '11:30-11:45': 'Review project progress', '11:45-12:30': 'Lunch at Starbucks', '12:30-14:00': 'Work on latest project tasks', '14:00-14:15': 'Coffee break', '14:15-15:30': 'Complete project documentation', '15:30-16:00': 'Review project budget', '16:00-16:15': 'Stretch and relax', '16:15-17:15': 'Submit project report', '17:15-18:00': 'Wrap up work for the day', '18:00-18:15': 'Commute home by subway', '18:15-18:30': 'Relax and unwind', '18:30-19:00': 'Exercise and stay active', '19:00-19:30': 'Dinner time', '19:30-20:30': 'Read a book for leisure', '20:30-21:00': 'Catch up on news', '21:00-22:00': 'Spend time with family/friends', '22:00-22:15': 'Prepare for bedtime', '22:15-23:59': 'Sleep'}",
+        "event" : "Dinner at Bonefish Grill; Lunch at The Pink Door; Work on her paintings for her upcoming show; Visit hospital; Reviewing and organizing recent project files; Drink at a bar; Relax and read a book; Take a nap at office; Commute to work by bus"
+    },
+    "task_decompose":[
+        "working on the kindergarten lesson plan from 09:00-12:00pm (format in JSON, key as activity, value as duration in minutes): \n{\"reviewing the kindergarten curriculum standards\" : 15,\"brainstorming ideas for the lesson\" : 30,\"creating the lesson plan\" : 30,\"creating materials for the lesson\" : 30,\"taking a break\" : 15,\"reviewing the lesson plan\" : 30,\"making final changes to the lesson plan\" : 15,\"printing the lesson plan\" : 10, \"putting the lesson plan in her bag\" : 5}"
+    ],
+    "activity":{
+        "activity" : "Browse Reddit for relax; Take away a coffee at Starbucks; Browse Twitter for relax; Check emails; Respond client's E-mail; Talk to designer Tompson; Jog for 10 minutes; Do Burpee to reduce fat; Prepare a slide for meeting; Write a page of product introduction; "
+    },
+    "location":[
+            "{\"activity\":\"Eat Lunch at Starbucks\", \"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550",
+            "{\"activity\":\"Eat Lunch at Pink Door\", \"location\":\"Pink Door, 1919 Post Alley, Seattle, WA 98101\", \"latitude\":47.610407, \"longitude\":-122.342615",
+            "{\"activity\":\"Grocery shopping at Whole Foods\", \"location\":\"Whole Foods, 2210 Westlake Ave, Seattle, WA 98121\", \"latitude\":47.618328, \"longitude\":-122.338246",
+            "{\"activity\":\"Exercise at Golds Gym\", \"location\":\"Golds Gym, 1220 Howell St, Seattle, WA 98101\", \"latitude\":47.617575, \"longitude\":-122.330503",
+            "{\"activity\":\"Work at Amazon HQ\", \"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020"
+        ]
+    ,
+    "location_summary":{
+        "record:": "[12:58] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":{\"location\":\"\", \"latitude\":47.607283, \"longitude\":-122.334550}} \n[12:59] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":{\"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550}}\n[13:00] {\"activity\":\"Take a nap at office\", \"location\":{\"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020}}\n[13:01] {\"activity\":\"Take a nap at office\", \"location\":{\"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020}}",
+        "summary": "At 13:00, change location from Starbucks, 1125 4th Ave, Seattle, WA 98101 (latitude:47.607283, longitude:-122.334550) to Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109 (latitude:47.622412, longitude:-122.337020), since finished Eat Lunch at Starbucks and went to Take a nap at office. "
+    },
+    "chat_conv" : [
+        "Alexa:Hello! I'm Coco, your friendly chatbot. How's your day going so far?;\nUser:Going good but it's pretty tired.\nalexa:I see, what made your day tiring?\n;User:are just too many soft to do today so I went to school to have a course in the morning and then I have a meeting in the afternoon afterwards my boyfriend went to the airport so I was him and then I come back home there are even more readings. ",
+        "Alexa:How did the meeting in the afternoon go?;user:Other question: meeting was OK so we are trying to revise our paper it was it was OK;Alexa:Sounds productive.",
+        "Alexa:Can you tell me more about your visit to the airport?;user:Yes(positive response) so my boyfriend visited me in Boston and then it's time for him to come back to Elena so he drove actually V drove to the airport so my boyfriend come came back to Elena,",
+        "Alexa:How did you feel about your day overall?;user:I/My have pretty complex feeling of the day cause you know my boyfriend went to the airport and laughed to atlander but it was also a really productive day,alexa:I understand. It sounds like a bittersweet day. Thanks for sharing your day with me."
+    ]
+    
+}
