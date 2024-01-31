@@ -57,8 +57,8 @@ def gpt_description(name, birthday, **kwargs):
     
     prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
     completion = open_ai_client.chat.completions.create(
-        model="gpt-3.5-turbo", 
-        # model="gpt-4",
+        model = CONFIG["openai"]["model"], 
+        
         messages=[{
             # "role": "system", "content": "You are a census taker who knows everyone, and you write detailed descriptions.",
             "role": "user", "content": prompt
@@ -148,8 +148,8 @@ class InfoTree():
 
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
+            model = CONFIG["openai"]["model"], 
+            
             messages=[{
                 "role": "user", "content": prompt
                 }]
@@ -188,8 +188,8 @@ class InfoTree():
         
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
+            model = CONFIG["openai"]["model"], 
+            
             messages=[{
                 "role": "user", "content": prompt
                 }]
@@ -226,8 +226,8 @@ class InfoTree():
         
 
         completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
+            model = CONFIG["openai"]["model"], 
+            
             messages=[{
                 "role": "user", "content": prompt
                 }]
@@ -253,8 +253,8 @@ class InfoTree():
         
 
         completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
+            model = CONFIG["openai"]["model"], 
+            
             messages=[{
                 "role": "user", "content": prompt
                 }]

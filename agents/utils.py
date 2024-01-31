@@ -6,7 +6,14 @@ Date: 2024-01-09
 
 import os
 import json
+import sys
+sys.path.append(os.path.abspath('./'))
+
 import pandas as pd
+from openai import OpenAI
+
+from config import CONFIG
+
 
 def decompose_activity_file(files:list, target_folder:str):
     for file in files:
@@ -33,15 +40,35 @@ def decompose_activity_file(files:list, target_folder:str):
             _group.to_csv(filepath, index=False)
 
 
-def safe_load_gpt_content(content, prompt):
+def safe_chat(prompt, repeat=5):
+    if CONFIG['debug']: print(prompt)
+    chat_client = OpenAI(
+            api_key=CONFIG["openai"]["api_key"],
+            organization=CONFIG["openai"]["organization"],
+        )
+    for i in range(repeat):
+        completion = chat_client.chat.completions.create(
+            model=CONFIG["openai"]["model"], 
+            messages=[{
+                "role": "user", "content": prompt
+                }]
+        )
+        gpt_response = safe_load_gpt_content(completion.choices[0].message.content, prompt)
+        if gpt_response: 
+            return True, gpt_response
+    return False, completion.choices[0].message.content
+
+def safe_load_gpt_content(content:str, prompt:str):
     try:
+        content = content.replace("\n", "")
         json_content = json.loads(content)
     except:
-        print("==========")
-        print(prompt)
-        print("==========")
-        print(content)
-        print("==========")
+        if CONFIG['debug']:
+            print("==========")
+            print(prompt)
+            print("==========")
+            print(content)
+            print("==========")
         return False
     else:
         return json_content

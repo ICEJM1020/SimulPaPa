@@ -120,8 +120,7 @@ class Brain:
         if CONFIG['debug']:   print(prompt)
 
         completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
+            model = CONFIG["openai"]["model"],
             messages=[{
                 "role": "user", "content": prompt
                 }]
@@ -152,8 +151,7 @@ class Brain:
         if CONFIG['debug']:   print(prompt)
 
         completion = self.gpt_client.chat.completions.create(
-            model="gpt-3.5-turbo", 
-            # model="gpt-4",
+            model = CONFIG["openai"]["model"], 
             messages=[{
                 "role": "user", "content": prompt
                 }]
@@ -182,8 +180,7 @@ class Brain:
         # prompt += "On the other hand,  including occupation and physical status, may also influence the decision of the daily purpose. "
         # prompt += "For example, product manager will design product, but software engineer will program; Someone is illed, he/she may go to hospital. "
         # prompt += "Combined with your knowledge about the date of today, what do you think about the main purpose of today. "
-        prompt += f"Return your answer in the following JSON format without any other information: "
-        prompt += "{\"daily_purpose\" : \"description_of_daily_purpose\"}"
+        prompt += f"Return your answer without any other information: "
 
         if CONFIG['debug']: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -193,7 +190,7 @@ class Brain:
                 }]
         )
         if CONFIG['debug']:  print(completion.choices[0].message.content)
-        return json.loads(completion.choices[0].message.content)["daily_purpose"]
+        return completion.choices[0].message.content
     
 
     def _create_halfhour_activity(self):
@@ -218,16 +215,22 @@ class Brain:
         prompt += "Return your answer in the following JSON format without any other information: "
         prompt += json.dumps(schedule)
 
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "system", "content": "You are a helpful assistant to design daily schedules for the olderly.",
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
-        return json.loads(completion.choices[0].message.content)
+        # if CONFIG['debug']: print(prompt)
+        # completion = self.gpt_client.chat.completions.create(
+        #     model=CONFIG["openai"]["model"], 
+        #     messages=[{
+        #         "role": "system", "content": "You are a helpful assistant to design daily schedules for the olderly.",
+        #         "role": "user", "content": prompt
+        #         }]
+        # )
+        # if CONFIG['debug']:  print(completion.choices[0].message.content)
+        # return json.loads(completion.choices[0].message.content)
+
+        success, response = safe_chat(prompt=prompt)
+        if success:
+            return response
+        else:
+            raise Exception("GPT Chat response error. \n" + prompt + "\n" + response)
     
 
     def _create_halfhour_range_activity(self):
@@ -255,18 +258,24 @@ class Brain:
                     prompt += f"Daily purpose:\n{self.examples['schedule']['purpose']}\n"
                     prompt += f"Schedule:\n{self.examples['schedule']['schedule']}\n"
         prompt += "Return your answer in the following JSON format without any other information: "
-        prompt += "{\"start_time_HH:MM-end_time_HH:MM\":\"activity\", ...}"
+        prompt += "{\"[00:00]-[end_time_HH:MM]\":\"activity\", \"[start_time_HH:MM]-[end_time_HH:MM]\":\"activity\", ..., \"[start_time_HH:MM]-[23:59]\":\"activity\"}"
 
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "system", "content": "You are a helpful assistant to design daily schedules for the olderly.",
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
-        return json.loads(completion.choices[0].message.content)
+        # if CONFIG['debug']: print(prompt)
+        # completion = self.gpt_client.chat.completions.create(
+        #     model=CONFIG["openai"]["model"], 
+        #     messages=[{
+        #         "role": "system", "content": "You are a helpful assistant to design daily schedules for the olderly.",
+        #         "role": "user", "content": prompt
+        #         }]
+        # )
+        # if CONFIG['debug']:  print(completion.choices[0].message.content)
+        # return json.loads(completion.choices[0].message.content)
+        success, response = safe_chat(prompt=prompt)
+        if success:
+            return response
+        else:
+            raise Exception("GPT Chat response error. \n" + prompt + "\n" + response)
+
 
 
     ########################
@@ -297,7 +306,8 @@ class Brain:
             
             ### Multi-modality prdiction
             self._predict_heartrate()
-            self._predict_chatbot()
+            if current_time.minute // 30 == 0:
+                self._predict_chatbot(pred_minutes=30)
             self._predict_location()
             current_time += timedelta(minutes=5)
 
@@ -354,19 +364,24 @@ class Brain:
             prompt += "Return your answer in the following JSON format without any other information: "
             prompt += "{\"activity\":\"[Fill in]\"}"
 
-            if CONFIG['debug']: print(prompt)
-            completion = self.gpt_client.chat.completions.create(
-                model=CONFIG["openai"]["model"], 
-                messages=[{
-                    "role": "user", "content": prompt
-                    }]
-            )
-            if CONFIG['debug']:  print(completion.choices[0].message.content)
-            activity = json.loads(completion.choices[0].message.content)["activity"]
-            self.short_memory.set_current_activity(activity=activity)
+            # if CONFIG['debug']: print(prompt)
+            # completion = self.gpt_client.chat.completions.create(
+            #     model=CONFIG["openai"]["model"], 
+            #     messages=[{
+            #         "role": "user", "content": prompt
+            #         }]
+            # )
+            # if CONFIG['debug']:  print(completion.choices[0].message.content)
+            # activity = json.loads(completion.choices[0].message.content)["activity"]
+            success, response = safe_chat(prompt=prompt)
+            if success:
+                self.short_memory.set_current_activity(activity=response["activity"])
+            else:
+                self.short_memory.set_current_activity(activity=self.short_memory.get_current_schedule())
+            
 
 
-    def _predict_heartrate(self):
+    def _predict_heartrate(self, pred_minutes=5):
         prompt = self.long_memory.description
         prompt += self.short_memory.cur_time_summary()
         prompt += self.short_memory.cur_activity_summary()
@@ -401,44 +416,44 @@ class Brain:
         #
         #
 
-        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s heart rate for next 10 minutes, with 1 minute increment, "
-        prompt += f"starting from {self.short_memory.memory_tree['cur_time']}. "
-        prompt += "There may be some useful information about the heart rate in the past records or same time in past days, like the heart rate may not skyrocket in a short time. "
+        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s heart rate for next {pred_minutes} minutes, with 1 minute increment. "
+        prompt += "There may be some useful information about the heart rate in the past records or same time in past days. "
         prompt += f"There may be some useful information during relevent or similar activities, these records may indicate that {self.long_memory.info['name']}'s heart rate value in similar conditions. "
-        prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
         prompt += f"You need to be careful about the age and physical status of {self.long_memory.info['name']}. "
         prompt += f"And also, you need to consider what {self.long_memory.info['name']} is doing or just did, the heart rate may be influenced by the activities. "
         prompt += "The heart rate also needs to be consistent with physiological facts. "
         prompt += "It is unlikely to remain the same in a short period of time, but fluctuates up and down within a reasonable range. "
-        prompt += "And the prediction should also be reasonable in realistic scenario. "
+        prompt += "And the prediction should also be reasonable in realistic scenario, like the heart rate may not skyrocket in a short time. "
+        prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
+        prompt += "This prediction may be based on past activities and time in past 5 minutes. Based on current status of time and activity, you may make some changes. "
         prompt += "Return your answer in the following JSON format without any other information: "
 
         pred_dict = {}
-        for i in range(10):
+        for i in range(pred_minutes):
             _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
             pred_dict[datetime.strftime(_time, "%H:%M")] = "integer_heartrate"
         prompt += json.dumps(pred_dict)
 
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "system", "content": "You are a wearable watch recoding heart rate.",
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
+        # if CONFIG['debug']: print(prompt)
+        # completion = self.gpt_client.chat.completions.create(
+        #     model=CONFIG["openai"]["model"], 
+        #     messages=[{
+        #         "role": "system", "content": "You are a wearable watch recoding heart rate.",
+        #         "role": "user", "content": prompt
+        #         }]
+        # )
+        # if CONFIG['debug']:  print(completion.choices[0].message.content)
 
-        pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-        if pred:
-            self.short_memory.set_current_heartrate(pred)
+        success, pred = safe_chat(prompt=prompt)
+        if success:
+            self.short_memory.set_current_heartrate(pred, pred_minutes)
         else:
             for key in pred_dict:
                 pred_dict[key] = 0
-            self.short_memory.set_current_heartrate(pred_dict)
+            self.short_memory.set_current_heartrate(pred_dict, pred_minutes)
 
 
-    def _predict_chatbot(self):
+    def _predict_chatbot(self, pred_minutes=5, past_hours=2, last_days=5, last_hours=2):
         if "sleep" in self.short_memory.get_current_activity().lower():
             return 0
         else:
@@ -450,35 +465,37 @@ class Brain:
             prompt += self.short_memory.cur_activity_summary()
             prompt += self.short_memory.past_activities_summary()
 
-            prompt += "Here is a summary of Chatbot records in the past 6 hours: "
-            prompt += self._summary_chatbot_history(self.short_memory.past_chatbot_records(hour=6))
+            prompt += f"Here is a summary of Chatbot records in the past {past_hours} hours: "
+            prompt += self._summary_chatbot_history(self.short_memory.past_chatbot_records(hour=past_hours))
             prompt += "\n"
             prompt += self.short_memory.pred_chatbot_summary()
             prompt += "\n"
 
-            prompt += "Here is a summary of Chatbot records in the last 5 days during recent 2 hours: "
+            prompt += f"Here is a summary of Chatbot records in the last {last_days} days during recent {last_hours} hours: "
             prompt += self._summary_chatbot_history(self.long_memory.past_period_chatbot_summary(
                     cur_date=self.short_memory.memory_tree['today'], 
-                    days=5,
+                    days=last_days,
                     time_start=self.short_memory.memory_tree['cur_time'],
-                    hours=2
+                    hours=last_hours
                 ))
 
-            prompt += f"Now, imagine you are the Chatbot, you need to guess what {self.long_memory.info['name']} may ask in the next 10 minutes, starting from {self.short_memory.memory_tree['cur_time']}. "
-            prompt += f"And based on the question {self.long_memory.info['name']} may ask, hou would you respond"
-            prompt += f"You need to think carefully about {self.long_memory.info['name']}'s usage preference. The frequency and topics are the most import factors that may impact the usage. "
-            prompt += "The useage frequency should match the user's usage preference. The past history in past 6 hours may be useful to prompt you if to use Chatbot in your prediction. "
-            prompt += "For example, if someone only uses chatbot several times per week, he/she may only use one or two times in one day. "
+            prompt += f"Now, imagine you are the Chatbot, you need to predict that if {self.long_memory.info['name']} will use Chatbot in the next {pred_minutes} minutes. "
+            prompt += "If he/she will use Chatbot, what question would be asked, and based on the question what would you respond. "
+            prompt += f"{self.long_memory.info['name']}'s Chatbot usage preference is imporatant. The frequency and topics are the most import factors that may impact the usage. "
+            prompt += f"The useage frequency should match the user's usage preference. The records in past {past_hours} hours could restrict your prediction to match the prefernece frequency. "
+            prompt += "For example, if someone only uses chatbot several times per week, he/she may only use one or two times in one day. This means that if he/she used Chatbot in the past few hours, he/she probably won't use it again."
             prompt += "Correspondingly, if someone use chatbot a lot of times per week, even per day, he/she may use it every hour if he/she wish to. "
             prompt += "Another important point is the current activity and time, the usage of the ChatBot (or the chat topic) must accord with the someone's current status. "
             prompt += "For example, during a meeting, someone cannot use ChatBot; during the morning routine, someone may ask the weather of today; during the commute to work, someone may ask about the trafic. "
             prompt += "And the usage records of last few days in the same time period may indicate if the user want to use the chatbot or what is the topic that may be talked currently. "
-            prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
-            prompt += "If you think there will be a interaction, you must to think about the following question: \n"
-            prompt += "1. What is the topic of this conversation?\n"
-            prompt += "2. Based on this topic, what should you ask?\n"
-            prompt += "3. How could you generate a gentle utterance that may get positive response?\n"
-            prompt += "4. How long will the conversation last? Some conversation may happen in 1 min, others may not.\n"
+            prompt += f"There may also be first {past_hours//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
+            prompt += "If you have predict the usage, you need to think why you made that decision based on past activities and time in past 5 minutes. "
+            prompt += "Based on current status of time and activity, you may make some changes. "
+            # prompt += "If you think there will be a interaction, you must to think about the following question: \n"
+            # prompt += "1. What is the topic of this conversation?\n"
+            # prompt += "2. Based on this topic, what should you ask?\n"
+            # prompt += "3. How could you generate a gentle utterance that may get positive response?\n"
+            # prompt += "4. How long will the conversation last? Some conversation may happen in 1 min, others may not.\n"
             if self.have_examples:
                 if "chat_conv" in self.examples.keys():
                     prompt += "Here are some examples of the conversation that may help you:\n"
@@ -488,31 +505,32 @@ class Brain:
             prompt += "Return your answer in the following JSON format without any other information: "
 
             pred_dict = {}
-            for i in range(10):
+            for i in range(pred_minutes):
                 _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
                 pred_dict[datetime.strftime(_time, "%H:%M")] = {
                     "if_chat":"[Fill True_or_False]", 
-                    "conversation":"[Fill conversation]"}
+                    "conversation":"[Fill conversation if need chat]"}
             prompt += json.dumps(pred_dict)
 
-            if CONFIG['debug']: print(prompt)
-            completion = self.gpt_client.chat.completions.create(
-                model=CONFIG["openai"]["model"], 
-                messages=[{
-                    "role": "user", "content": prompt
-                    }]
-            )
-            if CONFIG['debug']: print(completion.choices[0].message.content)
-            pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-            if pred:
-                self.short_memory.set_current_chatbot(pred)
+            # if CONFIG['debug']: print(prompt)
+            # completion = self.gpt_client.chat.completions.create(
+            #     model=CONFIG["openai"]["model"], 
+            #     messages=[{
+            #         "role": "user", "content": prompt
+            #         }]
+            # )
+            # if CONFIG['debug']: print(completion.choices[0].message.content)
+            # pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
+            success, pred = safe_chat(prompt=prompt)
+            if success:
+                self.short_memory.set_current_chatbot(pred, pred_minutes)
             else:
                 for key in pred_dict:
-                    pred_dict[key]["if_chat"] = False
-                self.short_memory.set_current_chatbot(pred_dict)
+                    pred_dict[key]["if_chat"] = "False"
+                self.short_memory.set_current_chatbot(pred_dict, pred_minutes)
 
 
-    def _predict_location(self):
+    def _predict_location(self, pred_minutes=5):
         prompt = self.long_memory.description
         prompt += f"The longitude and latitude of the home of {self.long_memory.info['name']} is {self.long_memory.info['home_longitude']} and {self.long_memory.info['home_latitude']}. "
         prompt += f"The longitude and latitude of the company building of {self.long_memory.info['name']} is {self.long_memory.info['work_longitude']} and {self.long_memory.info['work_latitude']}. "
@@ -546,6 +564,7 @@ class Brain:
         prompt += "Like you are staying at home, but locations are different when you are sleeping or eating. "
         prompt += "On the other side, you need to think about if the usage is logical and reasonable, for example, you won't move too far from past location. "
         prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
+        prompt += "This prediction may be based on past activities and time in past 5 minutes. Based on current status of time and activity, you may make some changes. "
         if self.have_examples:
             if "location" in self.examples.keys():
                 prompt += "\nHere are some examples of the activity and corresponding location with their longitude and latitude: \n"
@@ -554,33 +573,34 @@ class Brain:
         prompt += "Return your answer in the following JSON format without any other information: "
 
         pred_dict = {}
-        for i in range(10):
+        for i in range(pred_minutes):
             _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
             pred_dict[datetime.strftime(_time, "%H:%M")] = {
-                "location":"[real_address]", 
-                "longitude":"[longitude_format_as_xx.xxxxxx]",
+                "location" : "[real_address]", 
+                "longitude" : "[longitude_format_as_xx.xxxxxx]",
                 "latitude" : "[latitude_format_as_xx.xxxxxx]"
                 }
         prompt += json.dumps(pred_dict)
 
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                # "role": "system", "content": "Imagine that you are a wearable GPS that recodrs user's location changes.",
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']: print(completion.choices[0].message.content)
-        pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-        if pred:
-            self.short_memory.set_current_location(pred)
+        # if CONFIG['debug']: print(prompt)
+        # completion = self.gpt_client.chat.completions.create(
+        #     model=CONFIG["openai"]["model"], 
+        #     messages=[{
+        #         # "role": "system", "content": "Imagine that you are a wearable GPS that recodrs user's location changes.",
+        #         "role": "user", "content": prompt
+        #         }]
+        # )
+        # if CONFIG['debug']: print(completion.choices[0].message.content)
+        # pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
+        success, pred = safe_chat(prompt=prompt)
+        if success:
+            self.short_memory.set_current_location(pred, pred_minutes)
         else: 
             for key in pred_dict:
                 pred_dict[key]["location"] = "Home"
                 pred_dict[key]["longitude"] = self.long_memory.info["home_longitude"]
                 pred_dict[key]["latitude"] = self.long_memory.info["home_latitude"]
-            self.short_memory.set_current_location(pred_dict)
+            self.short_memory.set_current_location(pred_dict, pred_minutes)
 
 
     ########################
@@ -608,17 +628,18 @@ class Brain:
         prompt += "Your answer should be without any other information. "
         prompt += "{\"subtask\":\"duration_minutes_in_integer\", ...}"
 
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
+        # if CONFIG['debug']: print(prompt)
+        # completion = self.gpt_client.chat.completions.create(
+        #     model=CONFIG["openai"]["model"], 
+        #     messages=[{
+        #         "role": "user", "content": prompt
+        #         }]
+        # )
+        # if CONFIG['debug']:  print(completion.choices[0].message.content)
+        # decomposed = safe_load_gpt_content(completion.choices[0].message.content, prompt)
 
-        decomposed = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-        if decomposed:
+        success, decomposed = safe_chat(prompt=prompt)
+        if success:
             self.short_memory.set_task_decompose(decomposed=decomposed)
         else:
             self.short_memory.set_task_decompose(decomposed = {f"{event}" : f"{duration}"})
@@ -629,7 +650,7 @@ class Brain:
         prompt += "You need to summarize the Chatbot history in the past. "
         prompt += "To obtain the answer, you need to figure out "
         prompt += "what are the topcis that mostly talked, and how about the frequency (exact times per hour)? "
-        prompt += "Limit your answer in 50 words."
+        prompt += "Limit your answer in 100 words. Please return your summary only."
 
         if CONFIG['debug']: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -680,6 +701,6 @@ if __name__ == "__main__":
         # info={'name':'Emily Johnson'}
     )
     brain.init_brain()
-    brain.plan(days=1, type="new")
+    brain.plan(days=5, type="new")
 
 

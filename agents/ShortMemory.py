@@ -54,9 +54,9 @@ class ShortMemory:
         self.memory_tree["activities"][self.memory_tree["cur_time"]] = activity
 
 
-    def set_current_location(self, location_dict):
+    def set_current_location(self, location_dict, minutes):
         for idx, time in enumerate(location_dict.keys()):
-            if idx<5:
+            if idx < minutes // 2:
                 self.memory_tree["location"][time] = {
                     "location":location_dict[time]["location"],
                     "latitude":location_dict[time]["latitude"],
@@ -69,19 +69,19 @@ class ShortMemory:
                     "longitude":location_dict[time]["longitude"]
                 }
 
-    def set_current_heartrate(self, heartrate):
+    def set_current_heartrate(self, heartrate, minutes):
         for idx, time in enumerate(heartrate.keys()):
             hr = str(heartrate[time])
-            if idx<5:
+            if idx < minutes // 2:
                 self.memory_tree["heartrate"][time] = 0 if hr.startswith("[Fill") else hr
             else:
                 self.memory_tree["pred_heartrate"][time] = 0 if hr.startswith("[Fill") else hr
 
-    def set_current_chatbot(self, conv_hist):
+    def set_current_chatbot(self, conv_hist, minutes):
         for idx, time in enumerate(conv_hist.keys()):
             content = conv_hist[time]
             if content["if_chat"]=="True":
-                if idx < 5:
+                if idx < minutes // 2:
                     self.memory_tree["chatbot"][time] = content["conversation"]
                 else:
                     self.memory_tree["pred_chatbot"][time] = content["conversation"]
