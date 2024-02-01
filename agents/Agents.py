@@ -203,11 +203,6 @@ class Agent:
             self.description = ""
         
         return missing
-    
-
-    def plan(self):
-        self.brain.init_brain()
-        self.brain.plan()
 
 
     def generate_description(self):
@@ -222,6 +217,8 @@ class Agent:
             logger.info(f"{self._uuid} agent({self.index}) generate description successfully")
 
 
+    def start_planing(self, days=5):
+        pass
 
     def save(self):
         with open(self.folder + "/info.json", "w") as f:

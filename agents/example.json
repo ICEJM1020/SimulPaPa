@@ -11,15 +11,27 @@
         "activity" : "Browse Reddit for relax; Take away a coffee at Starbucks; Browse Twitter for relax; Check emails; Respond client's E-mail; Talk to designer Tompson; Jog for 10 minutes; Do Burpee to reduce fat; Prepare a slide for meeting; Write a page of product introduction; "
     },
     "location":[
-            "{\"activity\":\"Eat Lunch at Starbucks\", \"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550",
-            "{\"activity\":\"Eat Lunch at Pink Door\", \"location\":\"Pink Door, 1919 Post Alley, Seattle, WA 98101\", \"latitude\":47.610407, \"longitude\":-122.342615",
-            "{\"activity\":\"Grocery shopping at Whole Foods\", \"location\":\"Whole Foods, 2210 Westlake Ave, Seattle, WA 98121\", \"latitude\":47.618328, \"longitude\":-122.338246",
-            "{\"activity\":\"Exercise at Golds Gym\", \"location\":\"Golds Gym, 1220 Howell St, Seattle, WA 98101\", \"latitude\":47.617575, \"longitude\":-122.330503",
-            "{\"activity\":\"Work at Amazon HQ\", \"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020"
+            "\"activity\":\"Eat Lunch at Starbucks\", \"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\"",
+            "\"activity\":\"Eat Lunch at Pink Door\", \"location\":\"Pink Door, 1919 Post Alley, Seattle, WA 98101\"",
+            "\"activity\":\"Grocery shopping at Whole Foods\", \"location\":\"Whole Foods, 2210 Westlake Ave, Seattle, WA 98121\"",
+            "\"activity\":\"Exercise at Golds Gym\", \"location\":\"Golds Gym, 1220 Howell St, Seattle, WA 98101\"",
+            "\"activity\":\"Work at Amazon HQ\", \"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\""
         ]
     ,
     "location_summary":{
-        "record:": "[12:58] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":{\"location\":\"\", \"latitude\":47.607283, \"longitude\":-122.334550}} \n[12:59] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":{\"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550}}\n[13:00] {\"activity\":\"Take a nap at office\", \"location\":{\"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020}}\n[13:01] {\"activity\":\"Take a nap at office\", \"location\":{\"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020}}",
+        "record:": "[12:58] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", } \n[12:59] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\"}\n[13:00] {\"activity\":\"Take a nap at office\", \"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\"}\n[13:01] {\"activity\":\"Take a nap at office\", \"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\"}",
+        "summary": "At 13:00, change location from Starbucks, 1125 4th Ave, Seattle, WA 98101 to Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109, since finished Eat Lunch at Starbucks and went to Take a nap at office. "
+    },
+    "location_LaLong":[
+        "{\"activity\":\"Eat Lunch at Starbucks\", \"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550",
+        "{\"activity\":\"Eat Lunch at Pink Door\", \"location\":\"Pink Door, 1919 Post Alley, Seattle, WA 98101\", \"latitude\":47.610407, \"longitude\":-122.342615",
+        "{\"activity\":\"Grocery shopping at Whole Foods\", \"location\":\"Whole Foods, 2210 Westlake Ave, Seattle, WA 98121\", \"latitude\":47.618328, \"longitude\":-122.338246",
+        "{\"activity\":\"Exercise at Golds Gym\", \"location\":\"Golds Gym, 1220 Howell St, Seattle, WA 98101\", \"latitude\":47.617575, \"longitude\":-122.330503",
+        "{\"activity\":\"Work at Amazon HQ\", \"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020"
+        ]
+    ,
+    "location_summary_LaLong":{
+        "record:": "[12:58] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":{\"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550}} \n[12:59] {\"activity\":\"Eat Lunch at Starbucks\", \"location\":{\"location\":\"Starbucks, 1125 4th Ave, Seattle, WA 98101\", \"latitude\":47.607283, \"longitude\":-122.334550}}\n[13:00] {\"activity\":\"Take a nap at office\", \"location\":{\"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020}}\n[13:01] {\"activity\":\"Take a nap at office\", \"location\":{\"location\":\"Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109\", \"latitude\":47.622412, \"longitude\":-122.337020}}",
         "summary": "At 13:00, change location from Starbucks, 1125 4th Ave, Seattle, WA 98101 (latitude:47.607283, longitude:-122.334550) to Amazon HQ Company, 410 Terry Ave N, Seattle, WA 98109 (latitude:47.622412, longitude:-122.337020), since finished Eat Lunch at Starbucks and went to Take a nap at office. "
     },
     "chat_conv" : [

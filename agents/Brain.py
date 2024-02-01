@@ -532,8 +532,8 @@ class Brain:
 
     def _predict_location(self, pred_minutes=5):
         prompt = self.long_memory.description
-        prompt += f"The longitude and latitude of the home of {self.long_memory.info['name']} is {self.long_memory.info['home_longitude']} and {self.long_memory.info['home_latitude']}. "
-        prompt += f"The longitude and latitude of the company building of {self.long_memory.info['name']} is {self.long_memory.info['work_longitude']} and {self.long_memory.info['work_latitude']}. "
+        # prompt += f"The longitude and latitude of the home of {self.long_memory.info['name']} is {self.long_memory.info['home_longitude']} and {self.long_memory.info['home_latitude']}. "
+        # prompt += f"The longitude and latitude of the company building of {self.long_memory.info['name']} is {self.long_memory.info['work_longitude']} and {self.long_memory.info['work_latitude']}. "
         prompt += self.short_memory.cur_time_summary()
         prompt += self.short_memory.cur_activity_summary()
 
@@ -554,20 +554,22 @@ class Brain:
         #         activity=self.short_memory.memory_tree["cur_activity"]
         #     )
 
-        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location (both the longitude and latitude) in the next 10 minutes, with 1 minute increment, "
-        prompt += f"starting from {self.short_memory.memory_tree['cur_time']}. "
+        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location in the next 10 minutes, starting from {self.short_memory.memory_tree['cur_time']}."
+        # prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location (both the longitude and latitude) in the next 10 minutes, starting from {self.short_memory.memory_tree['cur_time']}. "
         prompt += f"You need to think carefully about {self.long_memory.info['name']}'s usual location in this time period and when doing similar activities. "
-        prompt += f"The home location and company location maybe the most frequent location that {self.long_memory.info['name']} may stay. "
+        # prompt += f"The home location and company location maybe the most frequent location that {self.long_memory.info['name']} may stay. "
+        prompt += f"The home location and company address of {self.long_memory.info['name']} has provided. "
         prompt += "When predict the future location, you need to conside the current activity, for example, when commute to work the location should be on the route between home and company. "
-        prompt += "Or, when doing exercise or travelling, the location may be at a gym or park. "
-        prompt += "Worth to be noticed is that even staying in the same place, the longitude and latitude will slightly change based on current activity. "
-        prompt += "Like you are staying at home, but locations are different when you are sleeping or eating. "
+        prompt += "Or, when doing exercise or travelling, the location may be at a gym near the company or a national park. "
+        # prompt += "Worth to be noticed is that even staying in the same place, the longitude and latitude will slightly change based on current activity. "
+        # prompt += "Like you are staying at home, but locations are different when you are sleeping or eating. "
         prompt += "On the other side, you need to think about if the usage is logical and reasonable, for example, you won't move too far from past location. "
         prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
         prompt += "This prediction may be based on past activities and time in past 5 minutes. Based on current status of time and activity, you may make some changes. "
         if self.have_examples:
             if "location" in self.examples.keys():
-                prompt += "\nHere are some examples of the activity and corresponding location with their longitude and latitude: \n"
+                # prompt += "\nHere are some examples of the activity and corresponding location with their longitude and latitude: \n"
+                prompt += "\nHere are some examples of the activity and corresponding location address: \n"
                 for _item in self.examples["location"]:
                     prompt += _item + "\n"
         prompt += "Return your answer in the following JSON format without any other information: "
@@ -577,8 +579,8 @@ class Brain:
             _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
             pred_dict[datetime.strftime(_time, "%H:%M")] = {
                 "location" : "[real_address]", 
-                "longitude" : "[longitude_format_as_xx.xxxxxx]",
-                "latitude" : "[latitude_format_as_xx.xxxxxx]"
+                # "longitude" : "[longitude_format_as_xx.xxxxxx]",
+                # "latitude" : "[latitude_format_as_xx.xxxxxx]"
                 }
         prompt += json.dumps(pred_dict)
 
@@ -598,8 +600,8 @@ class Brain:
         else: 
             for key in pred_dict:
                 pred_dict[key]["location"] = "Home"
-                pred_dict[key]["longitude"] = self.long_memory.info["home_longitude"]
-                pred_dict[key]["latitude"] = self.long_memory.info["home_latitude"]
+                # pred_dict[key]["longitude"] = self.long_memory.info["home_longitude"]
+                # pred_dict[key]["latitude"] = self.long_memory.info["home_latitude"]
             self.short_memory.set_current_location(pred_dict, pred_minutes)
 
 
@@ -668,7 +670,8 @@ class Brain:
         prompt = location_history
         prompt += "You need to summarize the location records in the past. "
         prompt += "To obtain the answer, you need to figure out summarize the path of the location changes, "
-        prompt += "which should include the name, longitude, and latitude of the key location, time of when the location changes. "
+        # prompt += "which should include the name, longitude, and latitude of the key location, time of when the location changes. "
+        prompt += "which should include the address of the key location, time of when the location changes. "
         if self.have_examples:
             if "location_summary" in self.examples.keys():
                 prompt += "\nHere is an examples of how to summarize the changes of location: \n"

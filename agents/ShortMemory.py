@@ -59,14 +59,14 @@ class ShortMemory:
             if idx < minutes // 2:
                 self.memory_tree["location"][time] = {
                     "location":location_dict[time]["location"],
-                    "latitude":location_dict[time]["latitude"],
-                    "longitude":location_dict[time]["longitude"]
+                    # "latitude":location_dict[time]["latitude"],
+                    # "longitude":location_dict[time]["longitude"]
                 }
             else:
                 self.memory_tree["pred_location"][time] = {
                     "location":location_dict[time]["location"],
-                    "latitude":location_dict[time]["latitude"],
-                    "longitude":location_dict[time]["longitude"]
+                    # "latitude":location_dict[time]["latitude"],
+                    # "longitude":location_dict[time]["longitude"]
                 }
 
     def set_current_heartrate(self, heartrate, minutes):
@@ -313,8 +313,8 @@ class ShortMemory:
 
             if time in self.memory_tree["location"].keys():
                 time_dict["location"] = self.memory_tree["location"][time]["location"]
-                time_dict['longitude'] = self.memory_tree["location"][time]["longitude"]
-                time_dict['latitude'] = self.memory_tree["location"][time]["latitude"]
+                # time_dict['longitude'] = self.memory_tree["location"][time]["longitude"]
+                # time_dict['latitude'] = self.memory_tree["location"][time]["latitude"]
             
             if sche_start <= datetime.strptime(time, "%H:%M") < sche_end:
                 time_dict['schedule'] = list(self.memory_tree["daily_schedule"].values())[cur_sche_index]
