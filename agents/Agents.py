@@ -128,8 +128,9 @@ class AgentsPool:
         return self.status
 
 
-    def _start_simulation(self, day=1):
-        pass
+    def _start_simulation(self, days=1):
+        for agent in self.pool:
+            agent.start_planing(days=days)
 
 
     def fetch_tree_status(self):
@@ -217,8 +218,14 @@ class Agent:
             logger.info(f"{self._uuid} agent({self.index}) generate description successfully")
 
 
-    def start_planing(self, days=5):
-        pass
+    def start_planing(self, days=1):
+        self.brain.init_brain()
+        self.brain.plan(days=days, type="new")
+
+    def continue_planing(self, days=1):
+        self.brain.init_brain()
+        self.brain.plan(days=days, type="continue")
+
 
     def save(self):
         with open(self.folder + "/info.json", "w") as f:

@@ -85,6 +85,10 @@ class LongMemory:
         return newest_date.strftime('%m-%d-%Y')
     
 
+    def update_memory(self):
+        self._search_generated_activity()
+        self.save_cache()
+        
     def _search_generated_activity(self, ):
         for filename in os.listdir(self.agent_act_folder):
             if filename.endswith('.csv'):

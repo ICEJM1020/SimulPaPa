@@ -64,7 +64,7 @@ class Brain:
         if type=="new":
             user_last_day = self.long_memory.fetch_user_lastday()
             for i in range(1, days+1):
-                planing_day = datetime.strptime(user_last_day, '%m-%d-%Y') + timedelta(days=1)
+                planing_day = datetime.strptime(user_last_day, '%m-%d-%Y') + timedelta(days=i)
                 planing_days.append(planing_day.strftime('%m-%d-%Y'))
             cur_time = "00:00"
         elif type=="continue":
@@ -73,7 +73,7 @@ class Brain:
             agent_last_day = self.short_memory.get_today()
             cur_time = self.short_memory.get_cur_time()
             for i in range(0, days):
-                planing_day = datetime.strptime(agent_last_day, '%m-%d-%Y') + timedelta(days=1)
+                planing_day = datetime.strptime(agent_last_day, '%m-%d-%Y') + timedelta(days=i)
                 planing_days.append(planing_day.strftime('%m-%d-%Y'))
         else:
             raise Exception("plan type error!")
@@ -92,7 +92,7 @@ class Brain:
 
             self._shift_window_pred(cur_time)
 
-            self.long_memory.save_cache()
+            self.long_memory.update_memory()
             self.short_memory.save_pred_file()
             self.short_memory.clear_cache()
             cur_time = "00:00"
@@ -381,7 +381,7 @@ class Brain:
             
 
 
-    def _predict_heartrate(self, pred_minutes=5):
+    def _predict_heartrate(self, pred_minutes=10):
         prompt = self.long_memory.description
         prompt += self.short_memory.cur_time_summary()
         prompt += self.short_memory.cur_activity_summary()
@@ -424,8 +424,8 @@ class Brain:
         prompt += "The heart rate also needs to be consistent with physiological facts. "
         prompt += "It is unlikely to remain the same in a short period of time, but fluctuates up and down within a reasonable range. "
         prompt += "And the prediction should also be reasonable in realistic scenario, like the heart rate may not skyrocket in a short time. "
-        prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
-        prompt += "This prediction may be based on past activities and time in past 5 minutes. Based on current status of time and activity, you may make some changes. "
+        prompt += f"There may also be first {pred_minutes//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
+        prompt += f"This prediction may be based on past activities and time in past {pred_minutes//2} minutes. Based on current status of time and activity, you may make some changes. "
         prompt += "Return your answer in the following JSON format without any other information: "
 
         pred_dict = {}
@@ -453,7 +453,7 @@ class Brain:
             self.short_memory.set_current_heartrate(pred_dict, pred_minutes)
 
 
-    def _predict_chatbot(self, pred_minutes=5, past_hours=2, last_days=5, last_hours=2):
+    def _predict_chatbot(self, pred_minutes=10, past_hours=2, last_days=5, last_hours=2):
         if "sleep" in self.short_memory.get_current_activity().lower():
             return 0
         else:
@@ -489,7 +489,7 @@ class Brain:
             prompt += "For example, during a meeting, someone cannot use ChatBot; during the morning routine, someone may ask the weather of today; during the commute to work, someone may ask about the trafic. "
             prompt += "And the usage records of last few days in the same time period may indicate if the user want to use the chatbot or what is the topic that may be talked currently. "
             prompt += f"There may also be first {past_hours//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
-            prompt += "If you have predict the usage, you need to think why you made that decision based on past activities and time in past 5 minutes. "
+            prompt += f"If you have predict the usage, you need to think why you made that decision based on past activities and time in past {pred_minutes//2} minutes. "
             prompt += "Based on current status of time and activity, you may make some changes. "
             # prompt += "If you think there will be a interaction, you must to think about the following question: \n"
             # prompt += "1. What is the topic of this conversation?\n"
@@ -530,7 +530,7 @@ class Brain:
                 self.short_memory.set_current_chatbot(pred_dict, pred_minutes)
 
 
-    def _predict_location(self, pred_minutes=5):
+    def _predict_location(self, pred_minutes=10):
         prompt = self.long_memory.description
         # prompt += f"The longitude and latitude of the home of {self.long_memory.info['name']} is {self.long_memory.info['home_longitude']} and {self.long_memory.info['home_latitude']}. "
         # prompt += f"The longitude and latitude of the company building of {self.long_memory.info['name']} is {self.long_memory.info['work_longitude']} and {self.long_memory.info['work_latitude']}. "
@@ -554,7 +554,7 @@ class Brain:
         #         activity=self.short_memory.memory_tree["cur_activity"]
         #     )
 
-        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location in the next 10 minutes, starting from {self.short_memory.memory_tree['cur_time']}."
+        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location in the next {pred_minutes} minutes, starting from {self.short_memory.memory_tree['cur_time']}."
         # prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location (both the longitude and latitude) in the next 10 minutes, starting from {self.short_memory.memory_tree['cur_time']}. "
         prompt += f"You need to think carefully about {self.long_memory.info['name']}'s usual location in this time period and when doing similar activities. "
         # prompt += f"The home location and company location maybe the most frequent location that {self.long_memory.info['name']} may stay. "
@@ -564,8 +564,8 @@ class Brain:
         # prompt += "Worth to be noticed is that even staying in the same place, the longitude and latitude will slightly change based on current activity. "
         # prompt += "Like you are staying at home, but locations are different when you are sleeping or eating. "
         prompt += "On the other side, you need to think about if the usage is logical and reasonable, for example, you won't move too far from past location. "
-        prompt += "There may also be first 5 minutes of predcition in your last prediction, which may provide some useful information for you. "
-        prompt += "This prediction may be based on past activities and time in past 5 minutes. Based on current status of time and activity, you may make some changes. "
+        prompt += f"There may also be first {pred_minutes//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
+        prompt += f"This prediction may be based on past activities and time in past {pred_minutes//2} minutes. Based on current status of time and activity, you may make some changes. "
         if self.have_examples:
             if "location" in self.examples.keys():
                 # prompt += "\nHere are some examples of the activity and corresponding location with their longitude and latitude: \n"
@@ -698,10 +698,11 @@ class Brain:
 
 if __name__ == "__main__":
     brain = Brain(
-        user_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
-        agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/1",
-        info={'name':'David Lee'}
+        user_folder="/home/ubuntu/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
+        agent_folder="/home/ubuntu/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/2",
+        # info={'name':'David Lee'}
         # info={'name':'Emily Johnson'}
+        info={'name':'Jason Nguyen'}
     )
     brain.init_brain()
     brain.plan(days=5, type="new")
