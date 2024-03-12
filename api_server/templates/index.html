@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/owl-carousel/css/owl.theme.default.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/jqvmap/css/jqvmap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
 
 </head>
 
@@ -90,14 +91,14 @@
                 <ul class="metismenu" id="menu">
                     <li class="nav-label first">Main Menu</li>
                     <li>
-                      <a href="javascript:void()" aria-expanded="false"><i
+                      <a href="/index" aria-expanded="false"><i
                         class="icon icon-world-2"></i><span class="nav-text">Dashboard</span></a>
                     </li>
                     <li class="nav-label">Users</li>
                     <li><a class="has-arrow" href="javascript:void()" aria-expanded="false"><i
                                 class="icon icon-single-04"></i><span class="nav-text">Users</span></a>
-                        <ul aria-expanded="false">
-                            <li><a href="./app-profile.html">Name</a></li>
+                        <ul id="user_list" aria-expanded="false">
+                            
                         </ul>
                     </li>
                 </ul>
@@ -169,7 +170,7 @@
 
 
     <script src="{{ url_for('static', filename='js/dashboard/dashboard-1.js') }}"></script>
-    <script src="{{ url_for('static', filename='custom.js')}}"></script>
+    <script src="{{ url_for('static', filename='custom.js') }}"></script>
 
 
 

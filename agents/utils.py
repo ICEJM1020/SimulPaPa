@@ -7,10 +7,13 @@ Date: 2024-01-09
 import os
 import json
 import sys
+import re
+from typing import Dict, List, Any
 sys.path.append(os.path.abspath('./'))
 
 import pandas as pd
 from openai import OpenAI
+from langchain_core.callbacks import BaseCallbackHandler
 
 from config import CONFIG
 
@@ -72,4 +75,50 @@ def safe_load_gpt_content(content:str, prompt:str):
         return False
     else:
         return json_content
+
+
+"""
+copyright: https://github.com/langchain-ai/langchain/issues/6628#issuecomment-1906776820
+print full prompts in langchain
+"""
+class CustomHandler(BaseCallbackHandler):
+    def __init__(self, verbose, **kwargs) -> None:
+        self._verbose = verbose
+        super().__init__(**kwargs)
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> Any:
+        formatted_prompts = "\n".join(prompts)
+        if self._verbose: print(f"Prompt:\n{formatted_prompts}")
+        # output = chain.invoke({"info": input_text}, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+
+
+def label_list_to_str(labels:list):
+    res = ""
+    for label in labels:
+        res += label
+        res += "; "
+    return res
+
+def parse_reg_activity(content):
+    try:
+        match = re.search(
+                r"\{.*\}", content.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
+            )
+        json_str = ""
+        if match:
+            json_str = match.group()
+        json_object = json.loads(json_str, strict=False)
+        
+        answer = json_object["answer"] 
+        if re.search(r'\b(Yes)\b', answer):
+            return True, json_object["activity"], json_object["sensor_summary"]
+        elif re.search(r'\b(No)\b', answer):
+            return False, json_object["activity"], json_object["sensor_summary"]
+        else:
+            raise Exception(f"Parse recognition answer error\n{content}")
+    except:
+        raise Exception(f"Parse recognition answer error\n{content}")
+
 

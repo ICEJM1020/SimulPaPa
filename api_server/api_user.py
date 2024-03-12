@@ -24,11 +24,11 @@ ubp = Blueprint(route_group, __name__)
 # user manage group
 #
 ########
-@ubp.route(f"/{route_group}/create", methods=["GET"])
+@ubp.route(f"/{route_group}/create", methods=["GET", "POST"])
 def create_user():
     req_form = request.form
 
-    for key in ["name" ,"gender","race","birthday","city","disease"]:
+    for key in ["name" ,"gender","birthday","city"]:
         if not (key in req_form):
             return_body = {
                 "status" : False,
@@ -106,7 +106,7 @@ def delete_user(username):
     return response
     
 
-@ubp.route(f"/{route_group}/upload", methods=["GET"])
+@ubp.route(f"/{route_group}/upload", methods=["POST"])
 def upload_user_file():
     if "username" not in request.form.keys():
         return_body = {
@@ -134,12 +134,28 @@ def upload_user_file():
     response.headers["Content-Type"] = "application/json"
     return response
 
+@ubp.route(f"/{route_group}/all", methods=["POST", "GET"])
+def fetch_all_user():
+    return_body = {}
+    try:
+        with open(CONFIG["base_dir"] + "/.Users/users.json", "r") as f:
+            users = json.load(f)
+    except:
+        return_body['msg'] = "Fail to open users database"
+    else:
+        return_body['msg'] = "success"
+        return_body['users'] = users
+
+    response = make_response(json.dumps(return_body), 200 if return_body else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
 ########
 #
 # activate user
 #
 ########
-@ubp.route(f"/{route_group}/activate/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/activate/<username>", methods=["POST", "GET"])
 def activate_user(username):
     status, user_list = check_user(username=username)
     if status:
@@ -166,7 +182,7 @@ def activate_user(username):
     return response
 
 
-@ubp.route(f"/{route_group}/deactivate/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/deactivate/<username>", methods=["POST", "POST"])
 def deactivate_user(username):
     status, user_list = check_user(username=username)
     if status:
@@ -200,7 +216,7 @@ def deactivate_user(username):
     return response
 
 
-@ubp.route(f"/{route_group}/status/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/status/<username>", methods=["POST", "POST"])
 def fetch_user_status(username):
     status, user_list = check_user(username=username)
     if status:
@@ -231,7 +247,7 @@ def fetch_user_status(username):
 #
 ########
 
-@ubp.route(f"/{route_group}/description/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/description/<username>", methods=["POST", "GET"])
 def fetch_user_description(username):
     status, user_list = check_user(username=username)
     if status:
@@ -239,7 +255,7 @@ def fetch_user_description(username):
         if USER_POOL.exist(_uuid):
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.fetch_user_description(_uuid)
+                "description" : USER_POOL.fetch_user_description(_uuid)
             }
         else:
             return_body = {
@@ -256,7 +272,7 @@ def fetch_user_description(username):
     return response
 
 
-@ubp.route(f"/{route_group}/description/regenerate/<username>", methods=["POST"])
+@ubp.route(f"/{route_group}/description/regenerate/<username>", methods=["POST", "GET"])
 def regenerate_user_description(username):
     status, user_list = check_user(username=username)
     if status:
@@ -265,7 +281,7 @@ def regenerate_user_description(username):
             USER_POOL.generate_user_description(_uuid)
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.fetch_user_description(_uuid)
+                "description" : USER_POOL.fetch_user_description(_uuid)
             }
         else:
             return_body = {
@@ -282,7 +298,7 @@ def regenerate_user_description(username):
     return response
 
 
-@ubp.route(f"/{route_group}/description/modify/<username>", methods=["GET"])
+@ubp.route(f"/{route_group}/description/modify/<username>", methods=["GET", "POST"])
 def modify_user_description(username):
     req_form = request.form
 
@@ -293,7 +309,7 @@ def modify_user_description(username):
             USER_POOL.modify_user_info(_uuid, req_form)
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.fetch_user_description(_uuid)
+                "description" : USER_POOL.fetch_user_description(_uuid)
             }
         else:
             return_body = {

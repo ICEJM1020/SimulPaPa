@@ -1,0 +1,105 @@
+{
+    "prefix" : "{description}. Now he/she just got up and needs to plan events for today, start from {start_date} {start_time}. ",
+    "event_examples" : ["Sleep", "Work", "Shower", "Bath", "Meeting", "Study", "Breakfast", "Dinner", "Shower", "Commute", "Cinema Movie", "Office chat"],
+    "schedule_example_prompt" : "{description} Here is a schedule of him/her from {start_time} to the evening sleep: {schedule}",
+    "schedule_examples" : [
+        {
+            "description" : "Timber Zhang is graduate school student who prefers to work and study at-home, and feels energetic in the afternoon and evening. He recently works on a research project.",
+            "start_time" :"02-01-2024 08:30",
+            "schedule" : [
+                {"start_time" : "02-01-2024 08:30", "end_time" : "02-01-2024 09:00", "event" : "Morning routine"},
+                {"start_time" : "02-01-2024 09:00", "end_time" : "02-01-2024 09:15", "event" : "Breakfast"},
+                {"start_time" : "02-01-2024 09:15", "end_time" : "02-01-2024 10:00", "event" : "Nap"},
+                {"start_time" : "02-01-2024 10:00", "end_time" : "02-01-2024 10:30", "event" : "E-mail check"},
+                {"start_time" : "02-01-2024 10:30", "end_time" : "02-01-2024 11:00", "event" : "Meeting"},
+                {"start_time" : "02-01-2024 11:00", "end_time" : "02-01-2024 12:00", "event" : "Study"},
+                {"start_time" : "02-01-2024 12:00", "end_time" : "02-01-2024 13:00", "event" : "Lunch outside"},
+                {"start_time" : "02-01-2024 13:00", "end_time" : "02-01-2024 15:30", "event" : "Nap"},
+                {"start_time" : "02-01-2024 15:30", "end_time" : "02-01-2024 16:00", "event" : "Mobile game"},
+                {"start_time" : "02-01-2024 16:00", "end_time" : "02-01-2024 16:30", "event" : "Commute (to office)"},
+                {"start_time" : "02-01-2024 16:30", "end_time" : "02-01-2024 17:00", "event" : "Office chat"},
+                {"start_time" : "02-01-2024 17:00", "end_time" : "02-01-2024 19:00", "event" : "Work"},
+                {"start_time" : "02-01-2024 19:00", "end_time" : "02-01-2024 20:30", "event" : "Dinner with collegues"},
+                {"start_time" : "02-01-2024 20:30", "end_time" : "02-01-2024 23:30", "event" : "Work"},
+                {"start_time" : "02-01-2024 23:30", "end_time" : "02-02-2024 00:15", "event" : "Commute (to home)"},
+                {"start_time" : "02-02-2024 00:15", "end_time" : "02-02-2024 00:30", "event" : "Shower"},
+                {"start_time" : "02-02-2024 00:30", "end_time" : "02-02-2024 01:00", "event" : "Smartphone leisure"},
+                {"start_time" : "02-02-2024 01:15", "end_time" : "02-02-2024 09:00", "event" : "Sleep"}
+            ]
+        },
+        {
+            "description" : "Angel V is graduate school student who has usually kept a steady daily lifestyle, gets up early and sleep early. She is extroverted and likes to do things with friends. She does not have too many works recently.",
+            "start_time" :"02-01-2024 07:30",
+            "schedule" : [
+                {"start_time" : "02-01-2024 07:30", "end_time" : "02-01-2024 07:45", "event" : "Morning routine"},
+                {"start_time" : "02-01-2024 07:45", "end_time" : "02-01-2024 08:30", "event" : "Morning exercise (Yoga)"},
+                {"start_time" : "02-01-2024 08:30", "end_time" : "02-01-2024 08:45", "event" : "Breakfast"},
+                {"start_time" : "02-01-2024 08:45", "end_time" : "02-01-2024 09:15", "event" : "Commute (to office)"},
+                {"start_time" : "02-01-2024 09:15", "end_time" : "02-01-2024 10:00", "event" : "To-Do events check"},
+                {"start_time" : "02-01-2024 10:00", "end_time" : "02-01-2024 11:30", "event" : "Work"},
+                {"start_time" : "02-01-2024 11:30", "end_time" : "02-01-2024 12:30", "event" : "Lunch outside"},
+                {"start_time" : "02-01-2024 12:30", "end_time" : "02-01-2024 13:30", "event" : "Office chat"},
+                {"start_time" : "02-01-2024 13:30", "end_time" : "02-01-2024 14:15", "event" : "Nap"},
+                {"start_time" : "02-01-2024 14:15", "end_time" : "02-01-2024 14:30", "event" : "Coffee break"},
+                {"start_time" : "02-01-2024 14:30", "end_time" : "02-01-2024 16:00", "event" : "Work"},
+                {"start_time" : "02-01-2024 16:00", "end_time" : "02-01-2024 17:00", "event" : "Meeting"},
+                {"start_time" : "02-01-2024 17:00", "end_time" : "02-01-2024 17:45", "event" : "Commute (to shooping mall)"},
+                {"start_time" : "02-01-2024 17:45", "end_time" : "02-01-2024 19:00", "event" : "Friends dinner"},
+                {"start_time" : "02-01-2024 19:00", "end_time" : "02-01-2024 19:30", "event" : "Milk Tea chat"},
+                {"start_time" : "02-01-2024 19:30", "end_time" : "02-01-2024 21:30", "event" : "Cinema Movie"},
+                {"start_time" : "02-01-2024 21:30", "end_time" : "02-01-2024 22:30", "event" : "Commute (to home)"},
+                {"start_time" : "02-01-2024 22:30", "end_time" : "02-01-2024 23:15", "event" : "Bath"},
+                {"start_time" : "02-01-2024 23:15", "end_time" : "02-02-2024 00:30", "event" : "Bed time leisure (TV series)"},
+                {"start_time" : "02-02-2024 00:30", "end_time" : "02-02-2024 08:00", "event" : "Sleep"}
+            ]
+        }
+    ],
+    "schedule_examples_backup" : [
+        {
+            "description" : "Timber Zhang is graduate school student who prefers to work and study at-home, and feels energetic in the afternoon and evening. He recently works on a research project.",
+            "start_time" :"02-02-2024 09:00",
+            "schedule" : [        
+                {"start_time" : "02-02-2024 09:00", "end_time" : "02-02-2024 09:15", "event" : "Morning routine"},
+                {"start_time" : "02-02-2024 09:15", "end_time" : "02-02-2024 10:30", "event" : "Meeting"},
+                {"start_time" : "02-02-2024 10:30", "end_time" : "02-02-2024 11:00", "event" : "Work"},
+                {"start_time" : "02-02-2024 11:00", "end_time" : "02-02-2024 11:30", "event" : "Brunch"},
+                {"start_time" : "02-02-2024 11:30", "end_time" : "02-02-2024 12:00", "event" : "Commute (to office)"},
+                {"start_time" : "02-02-2024 12:00", "end_time" : "02-02-2024 14:30", "event" : "Work"},
+                {"start_time" : "02-02-2024 14:30", "end_time" : "02-02-2024 15:30", "event" : "Nap"},
+                {"start_time" : "02-02-2024 15:30", "end_time" : "02-02-2024 16:00", "event" : "Afternoon tea"},
+                {"start_time" : "02-02-2024 16:00", "end_time" : "02-02-2024 19:00", "event" : "Work"},
+                {"start_time" : "02-01-2024 19:00", "end_time" : "02-01-2024 20:30", "event" : "Dinner with collegues"},
+                {"start_time" : "02-01-2024 20:30", "end_time" : "02-01-2024 23:00", "event" : "Computer game"},
+                {"start_time" : "02-01-2024 23:00", "end_time" : "02-02-2024 23:30", "event" : "Commute (to home)"},
+                {"start_time" : "02-02-2024 23:30", "end_time" : "02-02-2024 00:30", "event" : "Bath"},
+                {"start_time" : "02-02-2024 00:30", "end_time" : "02-02-2024 08:30", "event" : "Sleep"}
+            ]
+        },
+        {
+            "description" : "Angel V is graduate school student who has usually kept a steady daily lifestyle, gets up early and sleep early. She is extroverted and likes to do things with friends. She does not have too many works recently.",
+            "start_time" :"02-02-2024 08:00",
+            "schedule" : [
+                {"start_time" : "02-02-2024 08:00", "end_time" : "02-02-2024 08:15", "event" : "Morning routine"},
+                {"start_time" : "02-02-2024 08:15", "end_time" : "02-02-2024 09:00", "event" : "Morning exercise (Jog)"},
+                {"start_time" : "02-02-2024 09:00", "end_time" : "02-02-2024 09:30", "event" : "Commute (to office)"},
+                {"start_time" : "02-02-2024 09:30", "end_time" : "02-02-2024 10:00", "event" : "Breakfast (take-away)"},
+                {"start_time" : "02-02-2024 10:00", "end_time" : "02-02-2024 11:45", "event" : "Work"},
+                {"start_time" : "02-02-2024 11:45", "end_time" : "02-02-2024 12:30", "event" : "Lunch (take-away)"},
+                {"start_time" : "02-02-2024 12:30", "end_time" : "02-02-2024 13:00", "event" : "Office chat"},
+                {"start_time" : "02-02-2024 13:00", "end_time" : "02-02-2024 14:00", "event" : "Nap"},
+                {"start_time" : "02-02-2024 14:00", "end_time" : "02-02-2024 16:00", "event" : "Work"},
+                {"start_time" : "02-02-2024 16:00", "end_time" : "02-02-2024 16:30", "event" : "Afternoon tea"},
+                {"start_time" : "02-02-2024 16:30", "end_time" : "02-02-2024 18:00", "event" : "Work"},
+                {"start_time" : "02-02-2024 18:00", "end_time" : "02-02-2024 19:30", "event" : "Dinner with collegues"},
+                {"start_time" : "02-02-2024 19:30", "end_time" : "02-02-2024 20:00", "event" : "Video chat (with mom)"},
+                {"start_time" : "02-02-2024 20:00", "end_time" : "02-02-2024 22:00", "event" : "Work"},
+                {"start_time" : "02-02-2024 22:00", "end_time" : "02-02-2024 22:30", "event" : "Commute (to home)"},
+                {"start_time" : "02-02-2024 22:30", "end_time" : "02-02-2024 22:45", "event" : "Shower"},
+                {"start_time" : "02-02-2024 22:45", "end_time" : "02-02-2024 23:00", "event" : "Video chat (with boyfriend)"},
+                {"start_time" : "02-02-2024 23:00", "end_time" : "02-02-2024 23:45", "event" : "Bed time leisure (short video)"},
+                {"start_time" : "02-02-2024 23:45", "end_time" : "02-03-2024 07:45", "event" : "Sleep"}
+            ]
+        }
+    ],
+    "suffix" : "Create a daily schedule for him/her, start from {start_date} {start_time} to today's evening sleep (end up with sleep event). The minimum time chunk for a event is fifty minutes. The maximum number of events within one day is twenty. Here are some examples of the schedule events: {event_examples}. You could be more creative to generate more possible events. The duration time of each activity should be realistic, e.g. sleeping may take 6 hours, take a cup of coffee may only need 15 minutes. The schedule needs to fit this person's lifestyle and behavioral personality. It is necessary to pay attention to the impact of sleep and anxiety on the activities of the day.\n {format_instructions}"
+}

@@ -1,96 +1,185 @@
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Input the Following Information to Create a User</h5>
+            <span class="card-text">(*) indicates Required Information</span>
+        </div>
+        <div class="card-body">
+            <div class="basic-form">
+                <form id="create_user_form">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="username">Username (Used to index the user)(*)</label>
+                            <input type="text" class="form-control" name="username">
+                        </div>
+                        <div class="form-group col-md-6"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="name">Name(*)</label>
+                            <input type="text" class="form-control" name="name">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="gender">Gender(*)</label>
+                            <select class="form-control" name="gender">
+                                <option>None</option>
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group  col-md-4">
+                            <label for="race">Race</label>
+                            <select class="form-control" name="race">
+                                <option>None</option>
+                                <option>White</option>
+                                <option>Black</option>
+                                <option>Indian</option>
+                                <option>Asian</option>
+                                <option>Pacific Islander</option>
+                                <option>Other</option>
+                            </select>
+                            
+                        </div>
+                    </div>
+    
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="birthday">Birthday(*)</label>
+                            <input type="date" class="form-control" name="birthday">
+                        </div>
+                        <div class="form-group col-md-8">
+                            <label for="disease">Disease</label>
+                            <input type="text" class="form-control" name="disease" placeholder="Multiple inputs supported">
+                        </div>
+                    </div>
+    
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="building">Building</label>
+                            <input type="text" class="form-control" name="building">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="street">Street</label>
+                            <input type="text" class="form-control" name="street">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="district">District</label>
+                            <input type="text" class="form-control" name="district">
+                        </div>
+                    </div>
+    
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="city">City(*)</label>
+                            <input type="text" class="form-control" name="city">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="state">State</label>
+                            <input type="text" class="form-control" name="state">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="zipcode">Zipcode</label>
+                            <input type="text" class="form-control" name="zipcode">
+                        </div>
+                    </div>
+    
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="education">Education</label>
+                            <select class="form-control" name="education">
+                                <option>None</option>
+                                <option>Primary School</option>
+                                <option>Middle School</option>
+                                <option>High School</option>
+                                <option>College</option>
+                                <option>Bachelor</option>
+                                <option>Master</option>
+                                <option>Doctor</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="language">Speaking Language</label>
+                            <input type="text" class="form-control" name="language">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-8">
+                            <label for="industry">Industry</label>
+                            <select class="form-control" name="industry">
+                                <option>None</option>
+                                <option>Management, business, and financial</option>
+                                <option>Computer, engineering, and science</option>
+                                <option>Education, legal, community service, arts, and medical</option>
+                                <option>Healthcare practitioners and technical</option>
+                                <option>Healthcare support</option>
+                                <option>Protective service</option>
+                                <option>Food preparation and serving related</option>
+                                <option>Building and grounds cleaning and maintenance</option>
+                                <option>Personal care and service</option>
+                                <option>Sales and related</option>
+                                <option>Office and administrative support</option>
+                                <option>Farming, fishing, and forestry</option>
+                                <option>Construction and extraction</option>
+                                <option>Installation, maintenance, and repair</option>
+                                <option>Production</option>
+                                <option>Transportation</option>
+                                <option>Material moving"
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="occupation">Occupation</label>
+                            <input type="text" class="form-control" name="occupation">
+                        </div>
+                    </div>
+    
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="income">Income</label>
+                            <select class="form-control" name="income">
+                                <option>None</option>
+                                <option>$0-$49,999</option>
+                                <option>$50,000-$74,999</option>
+                                <option>$75,000-$99,999</option>
+                                <option>$100,000-$149,999</option>
+                                <option>$150,000 or more</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group col-md-6">
+                            <label for="retirement">Retirement</label>
+                            <select class="form-control" name="retirement">
+                                <option>None</option>
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="company">Company</label>
+                        <input type="text" class="form-control" name="company">
+                    </div>
+    
+                    <div class="form-group">
+                        <label for="work_addr">Work Address</label>
+                        <input type="text" class="form-control" name="work_addr">
+                    </div>
 
-<form>
-    <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" class="form-control" id="name">
-    </div>
-    <div class="form-group">
-        <label for="gender">Gender</label>
-        <select class="form-control" id="gender">
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="race">Race</label>
-        <input type="text" class="form-control" id="race">
-    </div>
-    <div class="form-group">
-        <label for="birthday">Birthday</label>
-        <input type="date" class="form-control" id="birthday">
-    </div>
-    <div class="form-group">
-        <label for="disease">Disease</label>
-        <input type="text" class="form-control" id="disease">
-    </div>
-    <div class="form-row">
-        <div class="form-group col-md-6">
-            <label for="building">Building</label>
-            <input type="text" class="form-control" id="building">
-        </div>
-        <div class="form-group col-md-6">
-            <label for="street">Street</label>
-            <input type="text" class="form-control" id="street">
+
+                <div class="row">
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-primary mb-2">Submit</button>
+                    </div>
+                    <div class="col-4">
+                        <button type="random" class="btn btn-primary mb-4">Random Create</button>
+                    </div>
+                </div>
+                    
+                </form>
+            </div>
         </div>
     </div>
-    <div class="form-group">
-        <label for="district">District</label>
-        <input type="text" class="form-control" id="district">
-    </div>
-    <div class="form-group">
-        <label for="city">City</label>
-        <input type="text" class="form-control" id="city">
-    </div>
-    <div class="form-group">
-        <label for="state">State</label>
-        <input type="text" class="form-control" id="state">
-    </div>
-    <div class="form-group">
-        <label for="zipcode">Zipcode</label>
-        <input type="text" class="form-control" id="zipcode">
-    </div>
-    <div class="form-group">
-        <label for="home_longitude">Home Longitude</label>
-        <input type="text" class="form-control" id="home_longitude">
-    </div>
-    <div class="form-group">
-        <label for="home_latitude">Home Latitude</label>
-        <input type="text" class="form-control" id="home_latitude">
-    </div>
-    <div class="form-group">
-        <label for="education">Education</label>
-        <input type="text" class="form-control" id="education">
-    </div>
-    <div class="form-group">
-        <label for="language">Language</label>
-        <input type="text" class="form-control" id="language">
-    </div>
-    <div class="form-group">
-        <label for="income">Income</label>
-        <input type="number" class="form-control" id="income">
-    </div>
-    <div class="form-group">
-        <label for="industry">Industry</label>
-        <input type="text" class="form-control" id="industry">
-    </div>
-    <div class="form-group">
-        <label for="occupation">Occupation</label>
-        <input type="text" class="form-control" id="occupation">
-    </div>
-    <div class="form-group">
-        <label for="retirement">Retirement</label>
-        <select class="form-control" id="retirement">
-            <option>Yes</option>
-            <option>No</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="company">Company</label>
-        <input type="text" class="form-control" id="company">
-    </div>
-    <div class="form-group">
-        <label for="work_addr">Work Address</label>
-        <input type="text" class="form-control" id="work_addr">
-    </div>
-</form>
+</div>
+

@@ -27,6 +27,10 @@ def dashboard(name=None):
 def create_user(name=None):
     return render_template('create_user.html', name=name)
 
+@mbp.route('/user')
+def user_page(name=None):
+    return render_template('user.html', name=name)
+
 
 """
 Test route

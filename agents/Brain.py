@@ -11,700 +11,400 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.abspath('./'))
 
 from openai import OpenAI
+from langchain.output_parsers import PydanticOutputParser
+from langchain.chains import LLMChain
+from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts import PromptTemplate, FewShotPromptTemplate
+from langchain_openai import ChatOpenAI
 
 from config import CONFIG
 from agents.ShortMemory import ShortMemory
 from agents.LongMemory import LongMemory
+from agents.dantic import *
 from agents.utils import *
 
 
 class Brain:
-    def __init__(self, user_folder, agent_folder, info) -> None:
+    def __init__(self, 
+                 user_folder, 
+                 agent_folder, 
+                 info,
+                 schedule_type:str = "free",
+                 activities_by_labels:bool = True,
+                 labels:list[str] = [],
+                 retry_times = 5,
+                 verbose = False
+            ) -> None:
         self.user_folder = user_folder
         self.agent_folder = agent_folder
         self.info = info
 
-        ######################
-        # ready :  finish creating and ready to simulate
-        # creating : building is undergoing
-        # loading: loading the agents from local machine
-        # error:  error in planing
-        self.status = "init"
+        ########
+        # Memory
+        ########
+        try:
+            prompts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
+            with open(os.path.join(prompts_folder, "prompt_schedule.json"), "r") as f:
+                self._schedule_prompts = json.load(fp=f)
+            with open(os.path.join(prompts_folder, "prompt_decompose.json"), "r") as f:
+                self._decompose_prompts = json.load(fp=f)
+            with open(os.path.join(prompts_folder, "prompt_utils.json"), "r") as f:
+                self._utils_prompts = json.load(fp=f)
+            with open(os.path.join(prompts_folder, "prompt_activity.json"), "r") as f:
+                self._activity_prompts = json.load(fp=f)
+        except:
+            raise Exception("No prompts file")
 
-        self.gpt_client = OpenAI(
-            api_key=CONFIG["openai"]["api_key"],
-            organization=CONFIG["openai"]["organization"],
-        )
-
-        ## memory related
-        self.retrieve_days = 5
-
-        ## examples
-        self.have_examples = False
-        if os.path.exists(os.path.dirname(os.path.abspath(__file__))+"/examples.json"):
-            self.have_examples = True
-            with open(os.path.dirname(os.path.abspath(__file__))+"/examples.json") as f:
-                self.examples = json.load(f)
+        ########
+        # free schedule or use label
+        ########
+        if schedule_type == "label":
+            if not labels:
+                raise Exception("schedule_type \"label\" need to set the parameter \"labels\", which is a list of of possible activities.")
+            else:
+                self.free = False
+                self.labels = labels
+        else:
+            self.free = True
+        ## if use labels to generate activities
+        self.activities_by_labels = activities_by_labels
+    
+        ########
+        # Memory
+        ########
+        self.short_memory = None
+        self.long_memory = None
+        
+        ########
+        # utils
+        ########
+        self._output_cache = ""
+        self._output_cache_length = 500
+        self._out_activity_file = os.path.join(agent_folder, "activity.csv")
+        with open(self._out_activity_file, "w") as f:
+            f.write("time,activity,planning_activity,event,sensor_summary\n")
+        self._retry_times = retry_times
+        self._verbose = verbose
 
             
 
     def init_brain(self):
-        self.long_memory = LongMemory(user_folder=self.user_folder, agent_folder=self.agent_folder)
-        self.short_memory = ShortMemory(agent_folder=self.agent_folder, info=self.info)
+        self.long_memory = LongMemory(info=self.info, user_folder=self.user_folder, agent_folder=self.agent_folder)
+        self.short_memory = ShortMemory(agent_folder=self.agent_folder)
 
-        if not self.long_memory.memory_tree["user_chatbot_pref"]:
-            self.long_memory.memory_tree["user_chatbot_pref"] = self._summary_user_chatbot_preference()
-        if not self.long_memory.memory_tree["agent_chatbot_pref"]:
-            self.long_memory.memory_tree["agent_chatbot_pref"] = self._generate_agent_chatbot_preference()
-
-
-    def plan(self, days:int=1, type:str="new"):
-        
-        planing_days = []
-        if type=="new":
-            user_last_day = self.long_memory.fetch_user_lastday()
-            for i in range(1, days+1):
-                planing_day = datetime.strptime(user_last_day, '%m-%d-%Y') + timedelta(days=i)
-                planing_days.append(planing_day.strftime('%m-%d-%Y'))
-            cur_time = "00:00"
-        elif type=="continue":
-            self.short_memory.load_cache()
-            self.long_memory.load_cache()
-            agent_last_day = self.short_memory.get_today()
-            cur_time = self.short_memory.get_cur_time()
-            for i in range(0, days):
-                planing_day = datetime.strptime(agent_last_day, '%m-%d-%Y') + timedelta(days=i)
-                planing_days.append(planing_day.strftime('%m-%d-%Y'))
-        else:
-            raise Exception("plan type error!")
-        
-
-        for i in range(days):
-            if cur_time=="00:00":
-                self.short_memory.set_today(planing_days[i])
-                self.short_memory.set_purpose(self._define_one_day_purpose())
-                self.long_memory.record_daily_purpose(self.short_memory.get_today(), self.short_memory.get_today_purpose())
-
-                # _schedule = self._create_halfhour_activity()
-                _schedule = self._create_halfhour_range_activity()
-                if CONFIG['debug']: print(_schedule)
-                self.short_memory.set_schedule(_schedule)
-
-            self._shift_window_pred(cur_time)
-
-            self.long_memory.update_memory()
-            self.short_memory.save_pred_file()
-            self.short_memory.clear_cache()
-            cur_time = "00:00"
+        # if not self.long_memory.memory_tree["user_chatbot_pref"]:
+        #     self.long_memory.memory_tree["user_chatbot_pref"] = self._summary_user_chatbot_preference()
+        # if not self.long_memory.memory_tree["agent_chatbot_pref"]:
+        #     self.long_memory.memory_tree["agent_chatbot_pref"] = self._generate_agent_chatbot_preference()
 
 
-    def _summary_user_chatbot_preference(self):
+    def plan(
+            self, 
+            days:int=1, 
+            start_time:str="00:00", 
+            end_time:str="23:59",
+            base_date:datetime=datetime.strptime("02-01-2024", '%m-%d-%Y')
+            ):
+        try:
+            start_time_dt = datetime.strptime(start_time, "%H:%M")
+            del(start_time_dt)
+        except:
+            print(f"start_time format error {start_time} (should be HH:MM). Set to 00:00")
 
-        chat_history = self.long_memory.fetch_user_chat_hist()
-
-        prompt = self.long_memory.user_description
-        prompt += f"In the past several days, {self.long_memory.user_info['name']} had several interactions with Alexa chatbot. "
-        prompt += f"Here is a json format chat history, the key is the chat time(format as MM-DD-YYYY-hh:mm), the value is the content of the conversation. "
-        prompt += json.dumps(chat_history)
-        prompt += f"Based on personal information and past chat history, can you summarize the chatbot usage preference of {self.long_memory.user_info['name']}. "
-        prompt += "In order to better describe the preferences, here are some example question may describe a user's preference. "
-        prompt += "1. How often do users use chatbot(times/week or times/day)? 2. During what period of time do users use chatbot? "
-        prompt += "3. What topics do users talk about when using the chatbot (there may be several options)? "
-        prompt += "4. What conversation topics will get positive responses from users (there may be several options)? "
-        # prompt += "5. If available, you can choose some typical Question-Answer pairs to include in your answer."
-        prompt += "Despite these points, there may also be other descriptions that illustrates the user preference. "
-        prompt += "You need to figure out more aspects that may help understanding the user's usage prefernce. "
-        prompt += "To make the estimation more detailed, you can imagine that you are a product manager who want to build up a user profile for a chatbot. "
-        prompt += "Limit your answer in 50 words and format as: 1 : desciprtion, ..., n : description. You could ignore the name in your answer so that you could provide more useful words."
-
-        if CONFIG['debug']:   print(prompt)
-
-        completion = self.gpt_client.chat.completions.create(
-            model = CONFIG["openai"]["model"],
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:   print(completion.choices[0].message.content)
-        return completion.choices[0].message.content
-
-
-    def _generate_agent_chatbot_preference(self):
-        prompt = "---\n"
-        prompt += self.long_memory.user_description
-        prompt += "\n"
-        prompt += f"Here are some points describing {self.long_memory.user_info['name']}'s usage preference of using Alexa chatbot: \n"
-        prompt += self.long_memory.memory_tree["user_chatbot_pref"]
-        prompt = "\n---\n"
-        prompt += "There are some potential connections here between chatbot usage preferences and personal information. "
-        prompt += f"Now, Alexa want to depict a new usage prefernce for {self.long_memory.user_info['name']}. {self.long_memory.user_description} \n"
-        prompt += "In order to better describe the preferences, here are some example question may describe a user's preference. "
-        prompt += "1. How often do users use chatbot(times/week or times/day)? 2. During what period of time do users use chatbot? "
-        prompt += "3. What topics do users talk about when using the chatbot (there may be several options)? "
-        prompt += "4. What conversation topics will get positive responses from users (there may be several options)? "
-        # prompt += "5. If available, you can choose some typical Question-Answer pairs to include in your answer."
-        prompt += "Despite these points, there may also be other descriptions that illustrates the user preference. "
-        prompt += "You need to figure out more aspects that may help understanding the user's usage prefernce. "
-        prompt += "To make the estimation more detailed, you can imagine that you are a product manager who want to build up a user profile for a chatbot. "
-        prompt += "Limit your answer in 50 words and format as: 1 : desciprtion, ..., n : description. You could ignore the name in your answer so that you could provide more useful words."
-
-        if CONFIG['debug']:   print(prompt)
-
-        completion = self.gpt_client.chat.completions.create(
-            model = CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
-        return completion.choices[0].message.content
-
-
-    ########################
-    ####
-    #### Daily level planing
-    ####
-    ########################
-    def _define_one_day_purpose(self):
-        prompt = self.long_memory.description
-        prompt += f"Today is {self.short_memory.memory_tree['today']}. "
-        prompt += f"For last {self.retrieve_days} days, {self.long_memory.info['name']}'s main purpose of every day is "
-        prompt += f"{self.long_memory.past_daily_purpose(self.short_memory.memory_tree['today'], self.retrieve_days)}. "
-        prompt += "Fisrtly, based on the daily purpose of past days and personal information, plus your knowledge about the date of today, what will be the new new purpose of today? "
-        prompt += "To think about the new purpose, let's think step bu step:\n"
-        prompt += f"step 1: in the past days, {self.long_memory.info['name']} mostly did what? Like, design a new product, travel to the national park. \n"
-        prompt += f"step 2: Today is a weekday or weekend?\n"
-        prompt += f"step 3: since {self.long_memory.info['name']} has done such things, what could be the next step? "
-        prompt += "Like, correspondingly, talk about the new product to teammates, stay at home and Photoshop the pictures, or if he/she is illed so that plan a trip to hospital.\n"
-        prompt += f"step 4: Summarize the new daily purpose. \n"
-        # prompt += "On the other hand,  including occupation and physical status, may also influence the decision of the daily purpose. "
-        # prompt += "For example, product manager will design product, but software engineer will program; Someone is illed, he/she may go to hospital. "
-        # prompt += "Combined with your knowledge about the date of today, what do you think about the main purpose of today. "
-        prompt += f"Return your answer without any other information: "
-
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
-        return completion.choices[0].message.content
-    
-
-    def _create_halfhour_activity(self):
-        # hourly_schedule = {f"{i}:00":"to_be_determined" for i in range(24)}
-        schedule = { }
-        for h in range(24):
-            for m in ["00", "30"]:
-            # for m in ["00", "10", "20", "30", "40", "50"]:
-                _time = datetime.strptime(f"{h}:{m}", "%H:%M")
-                schedule[datetime.strftime(_time, "%H:%M")] = "[Fill in]"
-
-        prompt = self.long_memory.description
-        prompt += f"{self.short_memory.today_summary()}. "
-        prompt += f"Now, {self.long_memory.info['name']} want to determine a schedule for today. "
-        # prompt += f"For past {self.retrieve_days}, {self.long_memory.info['name']}'s daily schedules are: "
-        # prompt += f"{self.long_memory.past_daily_schedule()}"
-        prompt += "Based on personal information and past daily purpose, combined with your knowledge about the date of today, can you fill the schedule? "
-        prompt += "Please make your plan as detailed as possible, using a phrase about 3-5 words, except sleep you can just use \"Sleep\", "
-        prompt += "here are some examples of the activities: "
-        prompt += "wake up, complete the morning routine, eat breakfast, read a book, take a nap, relax, prepare for bed, and so on. "
-        prompt += "You need to be creative to imagine what else could do besides these examples. "
-        prompt += "Return your answer in the following JSON format without any other information: "
-        prompt += json.dumps(schedule)
-
-        # if CONFIG['debug']: print(prompt)
-        # completion = self.gpt_client.chat.completions.create(
-        #     model=CONFIG["openai"]["model"], 
-        #     messages=[{
-        #         "role": "system", "content": "You are a helpful assistant to design daily schedules for the olderly.",
-        #         "role": "user", "content": prompt
-        #         }]
-        # )
-        # if CONFIG['debug']:  print(completion.choices[0].message.content)
-        # return json.loads(completion.choices[0].message.content)
-
-        success, response = safe_chat(prompt=prompt)
-        if success:
-            return response
-        else:
-            raise Exception("GPT Chat response error. \n" + prompt + "\n" + response)
-    
-
-    def _create_halfhour_range_activity(self):
-        prompt = self.long_memory.description
-        prompt += f"{self.short_memory.today_summary()}. "
-        prompt += f"Now, {self.long_memory.info['name']} want to determine a schedule for today. "
-        # prompt += f"For past {self.retrieve_days}, {self.long_memory.info['name']}'s daily schedules are: "
-        # prompt += f"{self.long_memory.past_daily_schedule()}"
-        prompt += "Based on personal information and past daily purpose, combined with your knowledge about the date of today, can you fill the schedule? "
-        prompt += "The schedule should start from 00:00, and end at 23:59, with each time period has a duration of 15 minutes or multiples thereof. "
-        prompt += "for example \"00:00-07:30\":\"sleep\", \"07:30-08:00\":\"shower\", \"10:00-12:00\":\"work\", \"15:45-16:00\":\"coffee break\""
-        prompt += "And of course, everyday will start with sleep and end with sleep. "
-        prompt += "You need to consider the relationship between each adjacent activities, and make sure that the time is reasonable and enough to finish that activity. "
-        prompt += "Like, if you want to commute for somewhere, you need to think about the transportation tool (bus, car, subway) and distance to decide the time for commute. "
-        prompt += "Or, if you plan to have a break for afternoon tea, maybe you need just 15 minutes. "
-        prompt += "Please make your plan as detailed as possible, using a phrase about 5 words. Except sleep or sleep-related activities you can just use \"Sleep\" or \"sleep\". "
-        if self.have_examples:
-            if "schedule" in self.examples.keys():
-                if "event" in self.examples["schedule"]:
-                    prompt += "\nHere are some examples of the activities: "
-                    prompt += self.examples["schedule"]["event"]
-                    prompt += " You need to be creative to imagine what else could do besides these examples. \n"
-                if ("purpose" in self.examples["schedule"]) and ("schedule" in self.examples["schedule"]):
-                    prompt += "\nHere is pair of daily purpose and schdule example: \n"
-                    prompt += f"Daily purpose:\n{self.examples['schedule']['purpose']}\n"
-                    prompt += f"Schedule:\n{self.examples['schedule']['schedule']}\n"
-        prompt += "Return your answer in the following JSON format without any other information: "
-        prompt += "{\"[00:00]-[end_time_HH:MM]\":\"activity\", \"[start_time_HH:MM]-[end_time_HH:MM]\":\"activity\", ..., \"[start_time_HH:MM]-[23:59]\":\"activity\"}"
-
-        # if CONFIG['debug']: print(prompt)
-        # completion = self.gpt_client.chat.completions.create(
-        #     model=CONFIG["openai"]["model"], 
-        #     messages=[{
-        #         "role": "system", "content": "You are a helpful assistant to design daily schedules for the olderly.",
-        #         "role": "user", "content": prompt
-        #         }]
-        # )
-        # if CONFIG['debug']:  print(completion.choices[0].message.content)
-        # return json.loads(completion.choices[0].message.content)
-        success, response = safe_chat(prompt=prompt)
-        if success:
-            return response
-        else:
-            raise Exception("GPT Chat response error. \n" + prompt + "\n" + response)
-
-
-
-    ########################
-    ####
-    #### minutes level planing & data estimation
-    ####
-    ########################
-    def _shift_window_pred(self, cur_time=None):
-        #### Start at midnight
-        if cur_time:
-            current_time = datetime.strptime(cur_time, "%H:%M")
-        else:
-            current_time = datetime.strptime("00:00", "%H:%M")
-
-        #### Circulate through 24 hours in 5-minute increments
-        while current_time < datetime.strptime("23:59", "%H:%M"):
-
-            new_slot = self.short_memory.set_current_time(current_time)
-            #### activity in prediction
-            # self._decide_cur_activity()
-            #### activity by decomposing
-            if new_slot:
-                self._decompose_task(new_slot["slot"], new_slot["event"])
-            self._decide_decomposed_task()
-
-            print(self.short_memory.memory_tree["cur_time"], self.short_memory.memory_tree["cur_activity"])
-            # print(self.short_memory.memory_tree["cur_schedule"], self.short_memory.memory_tree["cur_halfhour"])
+        self.short_memory.cur_date = base_date
+        self.short_memory.cur_time = start_time
+        ## create end_time to end the simulation in that time
+        self.end_time = base_date + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
+        for _ in range(days + 1):
             
-            ### Multi-modality prdiction
-            self._predict_heartrate()
-            if current_time.minute // 30 == 0:
-                self._predict_chatbot(pred_minutes=30)
-            self._predict_location()
-            current_time += timedelta(minutes=5)
-
-
-            ### regular save
-            if current_time.minute==0:
-                self.long_memory.save_cache()
-                self.short_memory.save_cache()
-                self.short_memory.save_pred_file()
-
-
-    def _decide_decomposed_task(self):
-        cur_decomposed = self.short_memory.fetch_task_decompose()
-
-        _activity = list(cur_decomposed.keys())[0]
-        _duration = int(cur_decomposed[_activity])
-
-        if _duration > 0:
-            cur_decomposed[_activity] = str(_duration - 5)
-        elif len(cur_decomposed.keys()) < 2:
-            _activity = _activity
-        else:
-            _activity = list(cur_decomposed.keys())[1]
-            cur_decomposed[_activity] = str(int(cur_decomposed[_activity]) - 5)
-            del cur_decomposed[list(cur_decomposed.keys())[0]]
-            self.short_memory.set_task_decompose(cur_decomposed)
-        activity = _activity
-
-        self.short_memory.set_current_activity(activity=activity)
-
-
-    def _decide_cur_activity(self):
-        if "sleep" in self.short_memory.get_current_schedule().lower():
-            self.short_memory.set_current_activity(activity="sleep")
-        else:
-            prompt = self.long_memory.description
-            prompt += self.short_memory.today_summary()
-            prompt += self.short_memory.cur_time_summary()
-            prompt += self.short_memory.cur_schedule_summary()
-            prompt += self.short_memory.past_activities_summary(min=30)
-            # prompt += self.long_memory.past_activities_summary(cur_time=, halfhour=, items=)
-            prompt += f"Now, {self.long_memory.info['name']} need to decide an activity for next 5 minutes. "
-            prompt += f"Do you think what is the best activity based on {self.long_memory.info['name']}'s plan of today and past activities. "
-            prompt += "Firstly, the plan of current time period is most important for decision, you need choose an activity that can be done within this time period. "
-            prompt += "For example during the work hour you may text to manager, join a meeting, write a e-mail; during morning routine, you may dress up, brush teeth, take a shower. "
-            prompt += "And the coherence between activities are also important, for example if you eat food in last 5 miutes, you cannot do sports in the next 5 minutes. "
-            prompt += "Secondly, you need to carefully think about the last activity, since not some activities may take a longer time, for example hold a meeting for 60 minutes. "
-            prompt += "But there may also be some could be done in a short time, for example take a coffee break for 10 minutes, check e-mails for 5 minutes. "
-            prompt += "Your choice of activity should be specific using a short phrase about 5 words to better describe the work you are doing. "
-            if self.have_examples:
-                prompt += "\nHere are some examples of the activity: \n"
-                prompt += self.examples["activity"]["activity"]
-                prompt += "\n"
-            prompt += "Return your answer in the following JSON format without any other information: "
-            prompt += "{\"activity\":\"[Fill in]\"}"
-
-            # if CONFIG['debug']: print(prompt)
-            # completion = self.gpt_client.chat.completions.create(
-            #     model=CONFIG["openai"]["model"], 
-            #     messages=[{
-            #         "role": "user", "content": prompt
-            #         }]
-            # )
-            # if CONFIG['debug']:  print(completion.choices[0].message.content)
-            # activity = json.loads(completion.choices[0].message.content)["activity"]
-            success, response = safe_chat(prompt=prompt)
-            if success:
-                self.short_memory.set_current_activity(activity=response["activity"])
-            else:
-                self.short_memory.set_current_activity(activity=self.short_memory.get_current_schedule())
-            
-
-
-    def _predict_heartrate(self, pred_minutes=10):
-        prompt = self.long_memory.description
-        prompt += self.short_memory.cur_time_summary()
-        prompt += self.short_memory.cur_activity_summary()
-        prompt += self.short_memory.past_activities_summary()
-
-        # summary past X miutes heartrate
-        hr_summary, lack = self.short_memory.past_heartrate_summary(min=60)
-        if lack>0:
-            time_start = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") - timedelta(minutes=lack)
-            last_day = datetime.strptime(self.short_memory.memory_tree['today'], "%m-%d-%Y") - timedelta(days=1)
-            hr_summary += self.long_memory.past_heartrate_summary(
-                    date=datetime.strftime(last_day, "%m-%d-%Y"), 
-                    time_start=datetime.strftime(time_start, "%H:%M"),
-                    min=lack
-                )
-        prompt += hr_summary
-
-        # heart rate in this period in last prediction
-        prompt += self.short_memory.pred_heartrate_summary()
-        
-        # summary period heart rate in past X days in XX:XX-XX:XX
-        prompt += self.long_memory.past_period_heartrate_summary(
-                cur_date=self.short_memory.memory_tree['today'], 
-                days=7,
-                time_start=self.short_memory.memory_tree['cur_time'],
-                mins=10
+            _schedule = self._create_range_schedule(
+                start_date=self.short_memory.cur_date,
+                start_time=self.short_memory.cur_time
             )
+            self.short_memory.schedule =_schedule.dump_dict()
+            if CONFIG["debug"]: print(self.short_memory.schedule)
 
-        #
-        #
-        # TODO relevent activities
-        #
-        #
+            response = self._run_schedule()
+            self.save_info()
 
-        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s heart rate for next {pred_minutes} minutes, with 1 minute increment. "
-        prompt += "There may be some useful information about the heart rate in the past records or same time in past days. "
-        prompt += f"There may be some useful information during relevent or similar activities, these records may indicate that {self.long_memory.info['name']}'s heart rate value in similar conditions. "
-        prompt += f"You need to be careful about the age and physical status of {self.long_memory.info['name']}. "
-        prompt += f"And also, you need to consider what {self.long_memory.info['name']} is doing or just did, the heart rate may be influenced by the activities. "
-        prompt += "The heart rate also needs to be consistent with physiological facts. "
-        prompt += "It is unlikely to remain the same in a short period of time, but fluctuates up and down within a reasonable range. "
-        prompt += "And the prediction should also be reasonable in realistic scenario, like the heart rate may not skyrocket in a short time. "
-        prompt += f"There may also be first {pred_minutes//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
-        prompt += f"This prediction may be based on past activities and time in past {pred_minutes//2} minutes. Based on current status of time and activity, you may make some changes. "
-        prompt += "Return your answer in the following JSON format without any other information: "
+            if response:
+                return True
+            
+    def _run_schedule(self):
+        self.save_info()
+        
+        ## decompose the first event
+        self._decompose()
+        while True:
+            self.short_memory.cur_activity = self.short_memory.planning_activity
 
-        pred_dict = {}
-        for i in range(pred_minutes):
-            _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
-            pred_dict[datetime.strftime(_time, "%H:%M")] = "integer_heartrate"
-        prompt += json.dumps(pred_dict)
+            ## save to local file
+            self.save_activity()
+            print(f"[{self.short_memory.cur_time}] {self.short_memory.cur_event['event']}-{self.short_memory.cur_activity} ")
 
-        # if CONFIG['debug']: print(prompt)
-        # completion = self.gpt_client.chat.completions.create(
-        #     model=CONFIG["openai"]["model"], 
-        #     messages=[{
-        #         "role": "system", "content": "You are a wearable watch recoding heart rate.",
-        #         "role": "user", "content": prompt
-        #         }]
-        # )
-        # if CONFIG['debug']:  print(completion.choices[0].message.content)
+            ###############
+            ## Update time and check end
+            ###############
+            self.short_memory.cur_time = self.short_memory.cur_time_dt + timedelta(minutes=1)
+            if self.short_memory.cur_time_dt == datetime.strptime("00:00", "%H:%M"):
+                self.short_memory.cur_date = self.short_memory.cur_date_dt + timedelta(days=1)
 
-        success, pred = safe_chat(prompt=prompt)
-        if success:
-            self.short_memory.set_current_heartrate(pred, pred_minutes)
-        else:
-            for key in pred_dict:
-                pred_dict[key] = 0
-            self.short_memory.set_current_heartrate(pred_dict, pred_minutes)
+            if self.short_memory.check_new_event():
+                self._decompose()
 
+            if self.short_memory.check_end_schedule():
+                return False
+            
+            if self.short_memory.date_time_dt >= self.end_time:
+                return True
 
-    def _predict_chatbot(self, pred_minutes=10, past_hours=2, last_days=5, last_hours=2):
-        if "sleep" in self.short_memory.get_current_activity().lower():
-            return 0
-        else:
-            prompt = self.long_memory.description
-            prompt += f"{self.long_memory.info['name']}'s usage preference of using Alexa chatbot is: "
-            prompt += self.long_memory.memory_tree["agent_chatbot_pref"]
-            prompt += "\n"
-            prompt += self.short_memory.cur_time_summary()
-            prompt += self.short_memory.cur_activity_summary()
-            prompt += self.short_memory.past_activities_summary()
-
-            prompt += f"Here is a summary of Chatbot records in the past {past_hours} hours: "
-            prompt += self._summary_chatbot_history(self.short_memory.past_chatbot_records(hour=past_hours))
-            prompt += "\n"
-            prompt += self.short_memory.pred_chatbot_summary()
-            prompt += "\n"
-
-            prompt += f"Here is a summary of Chatbot records in the last {last_days} days during recent {last_hours} hours: "
-            prompt += self._summary_chatbot_history(self.long_memory.past_period_chatbot_summary(
-                    cur_date=self.short_memory.memory_tree['today'], 
-                    days=last_days,
-                    time_start=self.short_memory.memory_tree['cur_time'],
-                    hours=last_hours
-                ))
-
-            prompt += f"Now, imagine you are the Chatbot, you need to predict that if {self.long_memory.info['name']} will use Chatbot in the next {pred_minutes} minutes. "
-            prompt += "If he/she will use Chatbot, what question would be asked, and based on the question what would you respond. "
-            prompt += f"{self.long_memory.info['name']}'s Chatbot usage preference is imporatant. The frequency and topics are the most import factors that may impact the usage. "
-            prompt += f"The useage frequency should match the user's usage preference. The records in past {past_hours} hours could restrict your prediction to match the prefernece frequency. "
-            prompt += "For example, if someone only uses chatbot several times per week, he/she may only use one or two times in one day. This means that if he/she used Chatbot in the past few hours, he/she probably won't use it again."
-            prompt += "Correspondingly, if someone use chatbot a lot of times per week, even per day, he/she may use it every hour if he/she wish to. "
-            prompt += "Another important point is the current activity and time, the usage of the ChatBot (or the chat topic) must accord with the someone's current status. "
-            prompt += "For example, during a meeting, someone cannot use ChatBot; during the morning routine, someone may ask the weather of today; during the commute to work, someone may ask about the trafic. "
-            prompt += "And the usage records of last few days in the same time period may indicate if the user want to use the chatbot or what is the topic that may be talked currently. "
-            prompt += f"There may also be first {past_hours//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
-            prompt += f"If you have predict the usage, you need to think why you made that decision based on past activities and time in past {pred_minutes//2} minutes. "
-            prompt += "Based on current status of time and activity, you may make some changes. "
-            # prompt += "If you think there will be a interaction, you must to think about the following question: \n"
-            # prompt += "1. What is the topic of this conversation?\n"
-            # prompt += "2. Based on this topic, what should you ask?\n"
-            # prompt += "3. How could you generate a gentle utterance that may get positive response?\n"
-            # prompt += "4. How long will the conversation last? Some conversation may happen in 1 min, others may not.\n"
-            if self.have_examples:
-                if "chat_conv" in self.examples.keys():
-                    prompt += "Here are some examples of the conversation that may help you:\n"
-                    for conv in self.examples["chat_conv"]:
-                        prompt += conv
-                        prompt += "\n"
-            prompt += "Return your answer in the following JSON format without any other information: "
-
-            pred_dict = {}
-            for i in range(pred_minutes):
-                _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
-                pred_dict[datetime.strftime(_time, "%H:%M")] = {
-                    "if_chat":"[Fill True_or_False]", 
-                    "conversation":"[Fill conversation if need chat]"}
-            prompt += json.dumps(pred_dict)
-
-            # if CONFIG['debug']: print(prompt)
-            # completion = self.gpt_client.chat.completions.create(
-            #     model=CONFIG["openai"]["model"], 
-            #     messages=[{
-            #         "role": "user", "content": prompt
-            #         }]
-            # )
-            # if CONFIG['debug']: print(completion.choices[0].message.content)
-            # pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-            success, pred = safe_chat(prompt=prompt)
-            if success:
-                self.short_memory.set_current_chatbot(pred, pred_minutes)
+    ###############
+    ## create the schedule
+    ###############
+    def _create_range_schedule(self,start_date,start_time) -> Schedule:
+        for try_idx in range(self._retry_times):
+            try:
+                _schedule = self._create_range_schedule_chat(
+                    start_date=start_date,
+                    start_time=start_time,
+                )
+                assert len(_schedule.schedule) > 0
+            except:
+                if try_idx + 1 == self._retry_times:
+                    raise Exception(f"Event schedule generation failed {self._retry_times} times")
+                else:
+                    continue
             else:
-                for key in pred_dict:
-                    pred_dict[key]["if_chat"] = "False"
-                self.short_memory.set_current_chatbot(pred_dict, pred_minutes)
+                return _schedule
 
-
-    def _predict_location(self, pred_minutes=10):
-        prompt = self.long_memory.description
-        # prompt += f"The longitude and latitude of the home of {self.long_memory.info['name']} is {self.long_memory.info['home_longitude']} and {self.long_memory.info['home_latitude']}. "
-        # prompt += f"The longitude and latitude of the company building of {self.long_memory.info['name']} is {self.long_memory.info['work_longitude']} and {self.long_memory.info['work_latitude']}. "
-        prompt += self.short_memory.cur_time_summary()
-        prompt += self.short_memory.cur_activity_summary()
-
-        prompt += self._summary_location_history(self.short_memory.past_location_summary())
-
-        prompt += self.short_memory.pred_location_summary()
-
-
-        # prompt += self.long_memory.past_period_location_summary(
-        #         cur_date=self.short_memory.memory_tree['today'], 
-        #         days=5,
-        #         time_start=self.short_memory.memory_tree['cur_time'],
-        #         mins=5
-        #     )
-        # prompt += self.long_memory.past_activity_location_summary(
-        #         cur_date=self.short_memory.memory_tree['today'], 
-        #         days=5,
-        #         activity=self.short_memory.memory_tree["cur_activity"]
-        #     )
-
-        prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location in the next {pred_minutes} minutes, starting from {self.short_memory.memory_tree['cur_time']}."
-        # prompt += f"Now, you need to predict {self.long_memory.info['name']}'s location (both the longitude and latitude) in the next 10 minutes, starting from {self.short_memory.memory_tree['cur_time']}. "
-        prompt += f"You need to think carefully about {self.long_memory.info['name']}'s usual location in this time period and when doing similar activities. "
-        # prompt += f"The home location and company location maybe the most frequent location that {self.long_memory.info['name']} may stay. "
-        prompt += f"The home location and company address of {self.long_memory.info['name']} has provided. "
-        prompt += "When predict the future location, you need to conside the current activity, for example, when commute to work the location should be on the route between home and company. "
-        prompt += "Or, when doing exercise or travelling, the location may be at a gym near the company or a national park. "
-        # prompt += "Worth to be noticed is that even staying in the same place, the longitude and latitude will slightly change based on current activity. "
-        # prompt += "Like you are staying at home, but locations are different when you are sleeping or eating. "
-        prompt += "On the other side, you need to think about if the usage is logical and reasonable, for example, you won't move too far from past location. "
-        prompt += f"There may also be first {pred_minutes//2} minutes of predcition in your last prediction, which may provide some useful information for you. "
-        prompt += f"This prediction may be based on past activities and time in past {pred_minutes//2} minutes. Based on current status of time and activity, you may make some changes. "
-        if self.have_examples:
-            if "location" in self.examples.keys():
-                # prompt += "\nHere are some examples of the activity and corresponding location with their longitude and latitude: \n"
-                prompt += "\nHere are some examples of the activity and corresponding location address: \n"
-                for _item in self.examples["location"]:
-                    prompt += _item + "\n"
-        prompt += "Return your answer in the following JSON format without any other information: "
-
-        pred_dict = {}
-        for i in range(pred_minutes):
-            _time = datetime.strptime(self.short_memory.memory_tree['cur_time'], "%H:%M") + timedelta(minutes=i)
-            pred_dict[datetime.strftime(_time, "%H:%M")] = {
-                "location" : "[real_address]", 
-                # "longitude" : "[longitude_format_as_xx.xxxxxx]",
-                # "latitude" : "[latitude_format_as_xx.xxxxxx]"
-                }
-        prompt += json.dumps(pred_dict)
-
-        # if CONFIG['debug']: print(prompt)
-        # completion = self.gpt_client.chat.completions.create(
-        #     model=CONFIG["openai"]["model"], 
-        #     messages=[{
-        #         # "role": "system", "content": "Imagine that you are a wearable GPS that recodrs user's location changes.",
-        #         "role": "user", "content": prompt
-        #         }]
-        # )
-        # if CONFIG['debug']: print(completion.choices[0].message.content)
-        # pred = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-        success, pred = safe_chat(prompt=prompt)
-        if success:
-            self.short_memory.set_current_location(pred, pred_minutes)
-        else: 
-            for key in pred_dict:
-                pred_dict[key]["location"] = "Home"
-                # pred_dict[key]["longitude"] = self.long_memory.info["home_longitude"]
-                # pred_dict[key]["latitude"] = self.long_memory.info["home_latitude"]
-            self.short_memory.set_current_location(pred_dict, pred_minutes)
-
-
-    ########################
-    ####
-    #### tool functions
-    ####
-    ########################
-    def _decompose_task(self, time_slot, event):
-        time1 = datetime.strptime(time_slot.split("-")[0], "%H:%M")
-        time2 = datetime.strptime(time_slot.split("-")[1], "%H:%M")
-        duration = (time2 - time1).total_seconds() / 60
-
-        prompt = self.long_memory.description
-        prompt += self.short_memory.today_summary()
-        prompt += self.short_memory.cur_time_summary()
-        prompt += self.short_memory.cur_schedule_summary()
-        prompt += f"In 5 min increments, list the subtasks {self.long_memory.info['name']} does when {self.long_memory.info['name']} is working on "
-        prompt += f"{event} during {time_slot}. The duration of all subtask should fullfill current time slot, which is {duration} minutes. "
-        if self.have_examples:
-                if "task_decompose" in self.examples.keys():
-                    prompt += "\nHere are some examples of how to decompose the work: \n"
-                    prompt += self.examples["task_decompose"][0]
-                    prompt += "\n"
-        prompt += "Return your answer in the following JSON format, the key represents the subtask (description about 5 words), the value represents the duration time (minutes integer)."
-        prompt += "Your answer should be without any other information. "
-        prompt += "{\"subtask\":\"duration_minutes_in_integer\", ...}"
-
-        # if CONFIG['debug']: print(prompt)
-        # completion = self.gpt_client.chat.completions.create(
-        #     model=CONFIG["openai"]["model"], 
-        #     messages=[{
-        #         "role": "user", "content": prompt
-        #         }]
-        # )
-        # if CONFIG['debug']:  print(completion.choices[0].message.content)
-        # decomposed = safe_load_gpt_content(completion.choices[0].message.content, prompt)
-
-        success, decomposed = safe_chat(prompt=prompt)
-        if success:
-            self.short_memory.set_task_decompose(decomposed=decomposed)
-        else:
-            self.short_memory.set_task_decompose(decomposed = {f"{event}" : f"{duration}"})
-
-
-    def _summary_chatbot_history(self, chat_history):
-        prompt = chat_history
-        prompt += "You need to summarize the Chatbot history in the past. "
-        prompt += "To obtain the answer, you need to figure out "
-        prompt += "what are the topcis that mostly talked, and how about the frequency (exact times per hour)? "
-        prompt += "Limit your answer in 100 words. Please return your summary only."
-
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "user", "content": prompt
-                }]
+    def _create_range_schedule_chat(
+                self,
+                start_date,
+                start_time,
+                llm_temperature=1.0,
+            ) -> Schedule:
+        
+        # Generate schedule examples
+        # We need to add .replace("{", "{{").replace("}", "}}") after serialising as JSON
+        schedule_examples = []
+        for idx, entry in enumerate(self._schedule_prompts['schedule_examples']):
+            schedule_examples.append({
+                    "description": entry["description"], 
+                    "start_time": entry["start_time"],
+                    "schedule":[]
+                })
+            for event_entry in entry["schedule"]:
+                schedule_examples[idx]["schedule"].append(
+                        ScheduleEntry.model_validate(event_entry).model_dump_json().replace("{", "{{").replace("}", "}}")
+                        # json.dumps(event_entry).replace("{", "{{").replace("}", "}}")
+                    )
+        example_prompt = PromptTemplate(
+            input_variables=["description", "start_time", "schedule"],
+            template=self._schedule_prompts["schedule_example_prompt"]
         )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
 
-        return completion.choices[0].message.content
+        ## schedule few-shots examples
+        schedule_parser = PydanticOutputParser(pydantic_object=Schedule)
+
+        prompt = FewShotPromptTemplate(
+            examples=schedule_examples,
+            example_prompt=example_prompt,
+            prefix=self._schedule_prompts["prefix"],
+            suffix=self._schedule_prompts["suffix"],
+            input_variables=['description', 'start_date', 'start_time'],
+            partial_variables={"format_instructions": schedule_parser.get_format_instructions()},
+        )
+
+        chain = LLMChain(
+            llm=ChatOpenAI(
+                    api_key=CONFIG["openai"]["api_key"],
+                    organization=CONFIG["openai"]["organization"],
+                    model_name='gpt-3.5-turbo-16k',
+                    temperature=llm_temperature,
+                    verbose=self._verbose,
+                ),
+                prompt=prompt,
+            )
+        
+        results = chain.invoke(input={
+            'description':self.long_memory.description,
+            'start_date':start_date,
+            'start_time':start_time,
+            "event_examples":label_list_to_str(self._schedule_prompts["event_examples"])
+        }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        response = results['text'].replace("24:00", "23:59")
+        return schedule_parser.parse(response)
+          
+            
+    ###############
+    ## Decompose the schedule event
+    ###############
+    def _decompose(self):
+        decompose = self._decompose_task().dump_list()
+        self.short_memory.cur_decompose = decompose
+        if CONFIG["debug"]: print(decompose)
+
+    def _decompose_task(self, re_decompose=False) -> Decompose:
+        for try_idx in range(self._retry_times):
+            try:
+                _decompose = self._decompose_task_chat(re_decompose)
+                assert len(_decompose.decompose) > 0
+            except:
+                if try_idx + 1 == self._retry_times:
+                    raise Exception(f"Event decompose failed {self.short_memory.cur_event_str} {self._retry_times} times")
+                else:
+                    continue
+            else:
+                return _decompose
+
+    def _decompose_task_chat(self, re_decompose, llm_temperature=1.0):
+        # Generate decompose examples
+        decompose_examples = []
+        for idx, entry in enumerate(self._decompose_prompts['example']):
+            decompose_examples.append({
+                    "event": entry["event"], 
+                    "cur_activity" : entry["cur_activity"],
+                    "options" : entry["options"] if self.activities_by_labels else "",
+                    "decompose":[]
+                })
+            for event_entry in entry["decompose"]:
+                decompose_examples[idx]["decompose"].append(
+                        DecomposeEntry.model_validate(event_entry).model_dump_json().replace("{", "{{").replace("}", "}}")
+                        # json.dumps(event_entry).replace("{", "{{").replace("}", "}}")
+                    )
+        example_prompt = PromptTemplate(
+            input_variables=["event", "cur_activity", "options", "decompose"],
+            template=self._decompose_prompts["example_prompt"]
+        )
+
+        ## event decompose few-shots examples
+        decompose_parser = PydanticOutputParser(pydantic_object=Decompose)
+        
+        prompt = FewShotPromptTemplate(
+            examples=decompose_examples,
+            example_prompt=example_prompt,
+            prefix=self._decompose_prompts["re_prefix"] if re_decompose else self._decompose_prompts["prefix"],
+            suffix=self._decompose_prompts["suffix"],
+            input_variables=['description', 'past_activity_summary','cur_activity', 'cur_event', 'cur_time', 'end_time'],
+            partial_variables={"format_instructions": decompose_parser.get_format_instructions()},
+        )
+
+        chain = LLMChain(
+            llm=ChatOpenAI(
+                    api_key=CONFIG["openai"]["api_key"],
+                    organization=CONFIG["openai"]["organization"],
+                    model_name='gpt-3.5-turbo-16k',
+                    temperature=llm_temperature,
+                    verbose=self._verbose,
+                ),
+                prompt=prompt,
+            )
+        
+        results = chain.invoke(input={
+            'description':self.long_memory.description,
+            'cur_time':self.short_memory.date_time if re_decompose else self.short_memory.cur_event['start_time'],
+            'end_time':self.short_memory.cur_event['end_time'],
+            'cur_activity':self.short_memory.cur_activity,
+            'cur_event':self.short_memory.cur_event['event'],
+            'past_activity_summary':self._summary_activity(),
+        }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+
+        response = results['text'].replace("24:00", "23:59")
+        return decompose_parser.parse(response)
+
+
+    def _summary_activity(self):
+        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["activity_summary"])
+        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
+
+        records = self.short_memory.fetch_records(num_items=30)
+        records_str = ""
+        for record in records:
+            records_str += f"[{record['time']}] Event[{record['schedule_event']}] Activity[{record['activity']}]\n"
+        if not records_str:
+            records_str += "No Records."
+
+        request = chat_prompt.format_prompt(records = records_str).to_messages()
+
+        model = ChatOpenAI(
+                api_key=CONFIG["openai"]["api_key"],
+                organization=CONFIG["openai"]["organization"],
+                model_name='gpt-3.5-turbo',
+                temperature=0.5,
+                verbose=self._verbose
+            )
+        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        if CONFIG["debug"]: print(results.content)
+        return results.content
+
+
+    def _recognize_activity(self):
+        for try_idx in range(self._retry_times):
+            try:
+                reg_res = self._recognize_activity_chat()
+            except:
+                if try_idx + 1 == self._retry_times:
+                    return True, None, "Null"
+                else:
+                    continue
+            else:
+                return reg_res
     
+    def _recognize_activity_chat(self):
+        
+        human_prompt = HumanMessagePromptTemplate.from_template(self._activity_prompts["prompt"])
+        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
+        
+        request = chat_prompt.format_prompt(
+            description=self.long_memory.description,
+            cur_time=self.short_memory.cur_time,
+            past_activity_summary=self._summary_activity(),
+            observation=self.long_memory.summary_sensor_data(cur_time=self.short_memory.cur_time_dt, cur_date=self.short_memory.cur_date_dt),
+            cur_activity=self.short_memory.planning_activity,
+            options=label_list_to_str(self.short_memory.cur_activity_set)
+        ).to_messages()
 
-    def _summary_location_history(self, location_history):
-        prompt = location_history
-        prompt += "You need to summarize the location records in the past. "
-        prompt += "To obtain the answer, you need to figure out summarize the path of the location changes, "
-        # prompt += "which should include the name, longitude, and latitude of the key location, time of when the location changes. "
-        prompt += "which should include the address of the key location, time of when the location changes. "
-        if self.have_examples:
-            if "location_summary" in self.examples.keys():
-                prompt += "\nHere is an examples of how to summarize the changes of location: \n"
-                prompt += "Records:\n"
-                prompt += self.examples["location_summary"]["record"]
-                prompt += "\nSummary:\n"
-                prompt += self.examples["location_summary"]["summary"]
-                prompt += "\n"
+        model = ChatOpenAI(
+                api_key=CONFIG["openai"]["api_key"],
+                organization=CONFIG["openai"]["organization"],
+                model_name='gpt-3.5-turbo',
+                temperature=0.5,
+                verbose=self._verbose
+            )
+        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        if CONFIG["debug"]: print(results.content)
+        return parse_reg_activity(results.content)
 
-        prompt += "The max length of your answer is 200 words. Please return your summary only."
 
-        if CONFIG['debug']: print(prompt)
-        completion = self.gpt_client.chat.completions.create(
-            model=CONFIG["openai"]["model"], 
-            messages=[{
-                "role": "user", "content": prompt
-                }]
-        )
-        if CONFIG['debug']:  print(completion.choices[0].message.content)
+    def save_info(self):
+        info = {}
 
-        return completion.choices[0].message.content
+        info["description"] = self.long_memory.description
+        info["schedule"] = self.short_memory.schedule
+
+        with open(os.path.join(self.agent_folder, "info.json"), "w") as f:
+            json.dump(info, fp=f)
+    
+    def save_activity(self):
+        # "time, activity, event, feature_summary\n"
+        self._output_cache += self.short_memory.csv_record()
+
+        if len(self._output_cache) >= self._output_cache_length:
+            with open(self._out_activity_file, "a+") as f:
+                f.write(self._output_cache)
+            self._output_cache = ""
 
 
 
 if __name__ == "__main__":
     brain = Brain(
-        user_folder="/home/ubuntu/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
-        agent_folder="/home/ubuntu/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/2",
+        user_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
+        agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/8",
         # info={'name':'David Lee'}
         # info={'name':'Emily Johnson'}
-        info={'name':'Jason Nguyen'}
+        info={'name':'Emily Johnson'}
     )
     brain.init_brain()
-    brain.plan(days=5, type="new")
+    brain.plan()
 
 

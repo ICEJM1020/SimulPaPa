@@ -23,7 +23,7 @@ abp = Blueprint(route_group, __name__)
 # info tree group
 #
 ########
-@abp.route(f"/{route_group}/<username>/infotree/status", methods=["POST"])
+@abp.route(f"/{route_group}/<username>/infotree/status", methods=["POST", "GET"])
 def info_tree_status(username):
     status, user_list = check_user(username=username)
     if status:
@@ -54,7 +54,7 @@ def info_tree_status(username):
 # agents manage group
 #
 ########
-@abp.route(f"/{route_group}/<username>/agents/create", methods=["POST"])
+@abp.route(f"/{route_group}/<username>/agents/create", methods=["POST", "GET"])
 def create_agents_pool(username):
     status, user_list = check_user(username=username)
     if status:
@@ -81,7 +81,7 @@ def create_agents_pool(username):
     return response
 
 
-@abp.route(f"/{route_group}/<username>/agents/status", methods=["POST"])
+@abp.route(f"/{route_group}/<username>/agents/status", methods=["POST", "GET"])
 def fetch_agents_status(username):
     status, user_list = check_user(username=username)
     if status:
@@ -105,7 +105,7 @@ def fetch_agents_status(username):
     response.headers["Content-Type"] = "application/json"
     return response
 
-@abp.route(f"/{route_group}/<username>/agents/savelocal", methods=["POST"])
+@abp.route(f"/{route_group}/<username>/agents/savelocal", methods=["POST", "GET"])
 def save_agents_pool(username):
     status, user_list = check_user(username=username)
     if status:
@@ -131,7 +131,7 @@ def save_agents_pool(username):
     return response
 
 
-@abp.route(f"/{route_group}/<username>/agents/loadlocal", methods=["POST"])
+@abp.route(f"/{route_group}/<username>/agents/loadlocal", methods=["POST", "GET"])
 def load_agents_pool(username):
     status, user_list = check_user(username=username)
     if status:

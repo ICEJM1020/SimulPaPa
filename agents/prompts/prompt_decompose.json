@@ -1,0 +1,48 @@
+{
+    "prefix" : "{description}\n\n{past_activity_summary}\n\nNow ({cur_time}), he/she is {cur_activity} and want to decompose current schedule event into several activities, {cur_event}.",
+    "re_prefix" : "{description}\n\n{past_activity_summary}.\n\nAt {cur_time}, he/she has changed idea and want to do {cur_activity}. So he/she need to re-decompose remaining schedule event ({cur_event}) start from {cur_time} and end at {end_time}.",
+    "example_prompt" : "Current activity is {cur_activity}. Given these options:{options}. Here is an example of how to decompose a schedule event, {event}: {decompose}",
+    "example" : [
+        {
+            "event":"{{\"start_time\" : \"02-01-2024 10:00\", \"end_time\" : \"02-01-2024 11:00\", \"event\" : \"Meeting\"}}",
+            "cur_activity" : "Sitting at officedesk",
+            "options" : "Given these options which could be expanded: Scheduling follow-up events, Cleaning up the meeting space, Networking with participants, Problem-solving collaboratively, Taking a brief smoking break, Grabbing a quick soda, Adjusting the room setup.",
+            "decompose":[
+                {"activity":"Walking to the meeting room", "start_time":"02-01-2024 10:00", "duration":"2 minutes", "end_time":"02-01-2024 10:02"},
+                {"activity":"Reviewing and modifying agendas", "start_time":"02-01-2024 10:02","duration":"10 minutes", "end_time":"02-01-2024 10:12"},
+                {"activity":"Joining Q&A Session", "start_time":"02-01-2024 10:12","duration":"10 minutes", "end_time":"02-01-2024 10:22"},
+                {"activity":"Taking a brief smoking break", "start_time":"02-01-2024 10:22","duration":"5 minutes", "end_time":"02-01-2024 10:27"},
+                {"activity":"Presenting slides", "start_time":"02-01-2024 10:27","duration":"15 minutes", "end_time":"02-01-2024 10:42"},
+                {"activity":"Holding Q&A Session", "start_time":"02-01-2024 10:42","duration":"15 minutes", "end_time":"02-01-2024 10:57"},
+                {"activity":"Walking to officedesk", "start_time":"02-01-2024 10:57","duration":"3 minutes", "end_time":"02-01-2024 11:00"}
+            ]
+        },
+        {
+            "event":"{{\"start_time\" : \"02-03-2024 10:00\", \"end_time\" : \"02-03-2024 10:30\", \"event\" : \"Commute to office\"}}",
+            "cur_activity" : "Cleaning breakfast plate and cup",
+            "options" : "Given these options which could be expanded: Reading news or emails on the phone, Checking the route on a smartphone GPS, Eating a quick snack while walking, Sitting in a car or on public transport, Carrying a bag to the vehicle, Biking to the office, Walking to the car or transit stop", 
+            "decompose":[
+                {"activity":"Walking to door and wear shoes", "start_time":"02-03-2024 10:00","duration":"2 minutes", "end_time":"02-03-2024 10:02"},
+                {"activity":"Walking to the car or transit stop", "start_time":"02-03-2024 10:02","duration":"5 minutes", "end_time":"02-03-2024 10:07"},
+                {"activity":"Sitting in a car or on public transport", "start_time":"02-03-2024 10:07","duration":"15 minutes", "end_time":"02-03-2024 10:22"},
+                {"activity":"Walking to the office", "start_time":"02-03-2024 10:22","duration":"8 minutes", "end_time":"02-03-2024 10:30"}
+            ]
+        }
+    ],
+    "example_backup" : [
+        {
+            "event":"{{\"start_time\" : \"02-02-2024 09:00\", \"end_time\" : \"02-02-2024 09:15\", \"event\" : \"Morning routine\"}}",
+            "cur_activity" : "Sleeping",
+            "options" : "Given these options which could be expanded: Stretching in bed, Walking to the bathroom, Putting on makeup (brief routine), Feeding pets, Drinking a shot of espresso, Reviewing notifications, Brushing teeth",
+            "decompose":[
+                {"activity":"Stretching in bed", "start_time":"02-02-2024 09:00","duration":"1 minutes", "end_time":"02-02-2024 09:01"},
+                {"activity":"Walking to the bathroom", "start_time":"02-02-2024 09:01","duration":"2 minutes", "end_time":"02-02-2024 09:03"},
+                {"activity":"Shaving beard", "start_time":"02-02-2024 09:04","duration":"5 minutes", "end_time":"02-02-2024 09:09"},
+                {"activity":"Washing face", "start_time":"02-02-2024 09:09","duration":"3 minutes", "end_time":"02-02-2024 09:12"},
+                {"activity":"Brushing teeth", "start_time":"02-02-2024 09:12","duration":"2 minutes", "end_time":"02-02-2024 09:14"},
+                {"activity":"Dressing up", "start_time":"02-02-2024 09:14","duration":"2 minutes", "end_time":"02-02-2024 09:15"}
+            ]
+        }
+    ],
+    "suffix" : "Now, decompose the current event {cur_event}, start from {cur_time} and end at {end_time}. As for this event, you need to decompose it into several activities step by step following regular human activity routine. Decomposition needs to be based on current activities and have coherence with past activities (do not repeat already done activity in a short time period). {format_instructions}"
+}

@@ -1,0 +1,5 @@
+{
+    "generate_activities_list" : "Given this schedule event {event}, now you need to decompose this event step by step. Here are some vague catalogs for the potential activities. List 50 activities based on these catalogues that could help you decompose this event. The activity should be a detailed present continuous verb phrase.\nExamples: {example}\nActivity Catalogues: {catalogues}\n{format_instructions}",
+    "generate_activities_list_example" : "Some activity examples like: Reviewing notifications, Cleaning up the meeting space, Networking with participants, Brushing teeth, Sitting in a car or on public transport, Carrying a bag to the vehicle, Biking to the office, Stretching in bed, Walking to the bathroom, Putting on makeup (brief routine).",
+    "activity_summary" : "Based on the activity records, summarize the activities of this person during the time period of records. If there is no record, just return \"No records\"\n\nRecords:\n{records}\n\nOnly return the summary reflecting the activity records, without other inference or comments. Return single paragraph of the summary (do not over 200 words)."
+}

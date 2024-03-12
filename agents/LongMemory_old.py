@@ -20,9 +20,7 @@ from logger import logger
 
 class LongMemory:
 
-    def __init__(self, info, user_folder, agent_folder) -> None:
-        self.info = info
-
+    def __init__(self, user_folder, agent_folder) -> None:
         ## folder 
         self.user_folder = user_folder
         self.agent_folder = agent_folder
@@ -37,6 +35,13 @@ class LongMemory:
         self.user_last_day = self._search_user_last_day()
         self.agent_act_files = {}
         self._search_generated_activity()
+
+
+        ## chatgpt
+        self.gpt_client = OpenAI(
+            api_key=CONFIG["openai"]["api_key"],
+            organization=CONFIG["openai"]["organization"],
+        )
 
         # print(self.user_last_day, self.user_act_files)
         ## preference_tree
