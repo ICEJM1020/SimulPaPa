@@ -27,17 +27,16 @@ from agents.utils import *
 class Brain:
     def __init__(self, 
                  user_folder, 
-                 agent_folder, 
-                 info,
+                 agent_folder,
                  schedule_type:str = "free",
                  activities_by_labels:bool = True,
                  labels:list[str] = [],
                  retry_times = 5,
-                 verbose = False
+                 verbose = False,
+                 base_date:datetime=datetime.strptime("02-01-2024", '%m-%d-%Y')
             ) -> None:
         self.user_folder = user_folder
         self.agent_folder = agent_folder
-        self.info = info
 
         ########
         # Memory
@@ -50,8 +49,8 @@ class Brain:
                 self._decompose_prompts = json.load(fp=f)
             with open(os.path.join(prompts_folder, "prompt_utils.json"), "r") as f:
                 self._utils_prompts = json.load(fp=f)
-            with open(os.path.join(prompts_folder, "prompt_activity.json"), "r") as f:
-                self._activity_prompts = json.load(fp=f)
+            with open(os.path.join(prompts_folder, "prompt_mmdata.json"), "r") as f:
+                self._mmdata_prompts = json.load(fp=f)
         except:
             raise Exception("No prompts file")
 
@@ -72,6 +71,7 @@ class Brain:
         ########
         # Memory
         ########
+        self.base_date = base_date
         self.short_memory = None
         self.long_memory = None
         
@@ -82,14 +82,14 @@ class Brain:
         self._output_cache_length = 500
         self._out_activity_file = os.path.join(agent_folder, "activity.csv")
         with open(self._out_activity_file, "w") as f:
-            f.write("time,activity,planning_activity,event,sensor_summary\n")
+            f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
         self._retry_times = retry_times
         self._verbose = verbose
 
             
 
     def init_brain(self):
-        self.long_memory = LongMemory(info=self.info, user_folder=self.user_folder, agent_folder=self.agent_folder)
+        self.long_memory = LongMemory(user_folder=self.user_folder, agent_folder=self.agent_folder)
         self.short_memory = ShortMemory(agent_folder=self.agent_folder)
 
         # if not self.long_memory.memory_tree["user_chatbot_pref"]:
@@ -102,8 +102,7 @@ class Brain:
             self, 
             days:int=1, 
             start_time:str="00:00", 
-            end_time:str="23:59",
-            base_date:datetime=datetime.strptime("02-01-2024", '%m-%d-%Y')
+            end_time:str="23:59"
             ):
         try:
             start_time_dt = datetime.strptime(start_time, "%H:%M")
@@ -111,10 +110,10 @@ class Brain:
         except:
             print(f"start_time format error {start_time} (should be HH:MM). Set to 00:00")
 
-        self.short_memory.cur_date = base_date
+        self.short_memory.cur_date = self.base_date
         self.short_memory.cur_time = start_time
         ## create end_time to end the simulation in that time
-        self.end_time = base_date + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
+        self.end_time = self.base_date + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
         for _ in range(days + 1):
             
             _schedule = self._create_range_schedule(
@@ -189,6 +188,7 @@ class Brain:
         schedule_examples = []
         for idx, entry in enumerate(self._schedule_prompts['schedule_examples']):
             schedule_examples.append({
+                    "intervention": entry["intervention"],
                     "description": entry["description"], 
                     "start_time": entry["start_time"],
                     "schedule":[]
@@ -199,7 +199,7 @@ class Brain:
                         # json.dumps(event_entry).replace("{", "{{").replace("}", "}}")
                     )
         example_prompt = PromptTemplate(
-            input_variables=["description", "start_time", "schedule"],
+            input_variables=["intervention", "description", "start_time", "schedule"],
             template=self._schedule_prompts["schedule_example_prompt"]
         )
 
@@ -211,7 +211,7 @@ class Brain:
             example_prompt=example_prompt,
             prefix=self._schedule_prompts["prefix"],
             suffix=self._schedule_prompts["suffix"],
-            input_variables=['description', 'start_date', 'start_time'],
+            input_variables=['description', 'start_date', 'start_time', 'home_addr', 'work_addr'],
             partial_variables={"format_instructions": schedule_parser.get_format_instructions()},
         )
 
@@ -227,7 +227,10 @@ class Brain:
             )
         
         results = chain.invoke(input={
+            'intervention':self.long_memory.intervention,
             'description':self.long_memory.description,
+            'home_addr':self.long_memory.home_addr,
+            'work_addr':self.long_memory.work_addr,
             'start_date':start_date,
             'start_time':start_time,
             "event_examples":label_list_to_str(self._schedule_prompts["event_examples"])
@@ -244,6 +247,15 @@ class Brain:
         self.short_memory.cur_decompose = decompose
         if CONFIG["debug"]: print(decompose)
 
+        location = self._predict_location(decompose=decompose).dump_list()
+        print(location)
+        self.short_memory.cur_location_list = location
+        if CONFIG["debug"]: print(location)
+
+        # chatbot = self._predict_botusage(decompose=decompose)
+        # self.short_memory.cur_chatbot_list = chatbot
+        # if CONFIG["debug"]: print(chatbot)
+
     def _decompose_task(self, re_decompose=False) -> Decompose:
         for try_idx in range(self._retry_times):
             try:
@@ -257,7 +269,7 @@ class Brain:
             else:
                 return _decompose
 
-    def _decompose_task_chat(self, re_decompose, llm_temperature=1.0):
+    def _decompose_task_chat(self, re_decompose, llm_temperature=1.5):
         # Generate decompose examples
         decompose_examples = []
         for idx, entry in enumerate(self._decompose_prompts['example']):
@@ -320,7 +332,7 @@ class Brain:
         records = self.short_memory.fetch_records(num_items=30)
         records_str = ""
         for record in records:
-            records_str += f"[{record['time']}] Event[{record['schedule_event']}] Activity[{record['activity']}]\n"
+            records_str += f"[{record['time']}] Event[{record['schedule_event']}] Activity[{record['activity']} Location[{record['location']}]]\n"
         if not records_str:
             records_str += "No Records."
 
@@ -338,48 +350,97 @@ class Brain:
         return results.content
 
 
-    def _recognize_activity(self):
+    def _predict_location(self, decompose) -> Location:
         for try_idx in range(self._retry_times):
             try:
-                reg_res = self._recognize_activity_chat()
+                location = self._predict_location_chat(decompose)
             except:
                 if try_idx + 1 == self._retry_times:
-                    return True, None, "Null"
+                    return [self.long_memory.home_addr]
                 else:
                     continue
             else:
-                return reg_res
-    
-    def _recognize_activity_chat(self):
-        
-        human_prompt = HumanMessagePromptTemplate.from_template(self._activity_prompts["prompt"])
-        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
-        
-        request = chat_prompt.format_prompt(
-            description=self.long_memory.description,
-            cur_time=self.short_memory.cur_time,
-            past_activity_summary=self._summary_activity(),
-            observation=self.long_memory.summary_sensor_data(cur_time=self.short_memory.cur_time_dt, cur_date=self.short_memory.cur_date_dt),
-            cur_activity=self.short_memory.planning_activity,
-            options=label_list_to_str(self.short_memory.cur_activity_set)
-        ).to_messages()
+                return location
+            
+    def _predict_location_chat(self, decompose, llm_temperature=1.0) -> Location:
+        location_example = []
+        for entry in self._mmdata_prompts['location_example']:
+            # print(entry)
+            location_example.append({
+                    "activity": entry["activity"], 
+                    "location" : entry["location"],
+                    "longitude" : entry["longitude"],
+                    "latitude" : entry["latitude"]
+                })
+        example_prompt = PromptTemplate(
+            input_variables=["activity", "location", "longitude", "latitude"],
+            template=self._mmdata_prompts["location_example_prompt"]
+        )
 
-        model = ChatOpenAI(
-                api_key=CONFIG["openai"]["api_key"],
-                organization=CONFIG["openai"]["organization"],
-                model_name='gpt-3.5-turbo',
-                temperature=0.5,
-                verbose=self._verbose
+        location_parser = PydanticOutputParser(pydantic_object=Location)
+        
+        prompt = FewShotPromptTemplate(
+            examples=location_example,
+            example_prompt=example_prompt,
+            prefix=self._mmdata_prompts["location_prefix"],
+            suffix=self._mmdata_prompts["location_suffix"],
+            input_variables=['description', 'past_activity_summary','home_addr', 'work_addr', 'loc_hist', 'decompose', 'cur_time'],
+            partial_variables={"format_instructions": location_parser.get_format_instructions()},
+        )
+
+        chain = LLMChain(
+            llm=ChatOpenAI(
+                    api_key=CONFIG["openai"]["api_key"],
+                    organization=CONFIG["openai"]["organization"],
+                    model_name='gpt-3.5-turbo-16k',
+                    temperature=llm_temperature,
+                    verbose=self._verbose,
+                ),
+                prompt=prompt,
             )
-        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
-        if CONFIG["debug"]: print(results.content)
-        return parse_reg_activity(results.content)
+        
+        results = chain.invoke(input={
+            'description' : self.long_memory.description,
+            'home_addr' : self.long_memory.home_addr,
+            'work_addr' : self.long_memory.work_addr,
+            'loc_hist' : json.dumps(self.short_memory.fetch_location_records(num_items=30)),
+            'decompose' : json.dumps(decompose),
+            'cur_time' : self.short_memory.cur_time,
+        }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+
+        response = results['text'].replace("24:00", "23:59")
+        return location_parser.parse(response)
+
+
+    def _predict_heartrate(self):
+        pass
+
+
+    def _predict_botusage(self):
+        for try_idx in range(self._retry_times):
+            try:
+                usage = self._predict_botusage_chat()
+            except:
+                if try_idx + 1 == self._retry_times:
+                    return []
+                else:
+                    continue
+            else:
+                return usage
+    
+    def _predict_botusage_chat(self):
+        
+        pass
+
+
+
+    def set_intervention(self, plan):
+        self.long_memory.intervention = plan
 
 
     def save_info(self):
-        info = {}
+        info = self.long_memory.info
 
-        info["description"] = self.long_memory.description
         info["schedule"] = self.short_memory.schedule
 
         with open(os.path.join(self.agent_folder, "info.json"), "w") as f:
@@ -399,10 +460,7 @@ class Brain:
 if __name__ == "__main__":
     brain = Brain(
         user_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
-        agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/8",
-        # info={'name':'David Lee'}
-        # info={'name':'Emily Johnson'}
-        info={'name':'Emily Johnson'}
+        agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/9",
     )
     brain.init_brain()
     brain.plan()

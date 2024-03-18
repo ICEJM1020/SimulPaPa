@@ -6,6 +6,8 @@ Date: 2023-12-28
 
 import os
 from shutil import rmtree
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 
 from openai import OpenAI
 
@@ -17,10 +19,16 @@ from agents.Brain import *
 class AgentsPool:
 
 
-    def __init__(self, info: dict, user_folder: str, size:int=10) -> None:
+    def __init__(self, 
+                    info: dict, 
+                    user_folder: str, 
+                    size:int=10,
+                    start_date=datetime.strptime("02-01-2024", '%m-%d-%Y')
+                 ) -> None:
         self._uuid = user_folder.split('/')[-1]
         self.info = info
         self.size = size
+        self.start_date = start_date
         self.pool = {}
 
         self.user_folder = user_folder
@@ -73,7 +81,7 @@ class AgentsPool:
                 logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
                 error += f"{i}, "
             else:
-                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info)
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
                 self.pool[i].save()
         
         if if_err:
@@ -122,15 +130,30 @@ class AgentsPool:
 
     def start_simulation(self, day=1):
         logger.info(f"start simulation for {self.info['name']}({self._uuid})")
-        thread = threading.Thread(target=self._start_simulation, name=f"{self._uuid}-simulation", kwargs={"day":day})
+        simul_process = multiprocessing.Process(target=self._start_simulation, name=f"{self._uuid}-simulation", kwargs={"day":day})
         self.simul_status = "working"
-        thread.start()
+        simul_process.start()
         return self.status
-
-
+    
     def _start_simulation(self, days=1):
-        for agent in self.pool:
-            agent.start_planing(days=days)
+        with ThreadPoolExecutor(max_workers=self.size) as executor:
+            for agent in self.pool:
+                executor.submit(agent.start_planing, days)
+        self.status="finish"
+
+    
+    def continue_simulation(self, day=1):
+        logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
+        simul_process = multiprocessing.Process(target=self._continue_simulation, name=f"{self._uuid}-simulation", kwargs={"day":day})
+        self.simul_status = "working"
+        simul_process.start()
+        return self.status
+    
+    def _continue_simulation(self, days=1):
+        with ThreadPoolExecutor(max_workers=self.size) as executor:
+            for agent in self.pool:
+                executor.submit(agent.continue_planing, days)
+        self.status="finish"
 
 
     def fetch_tree_status(self):
@@ -147,7 +170,12 @@ class AgentsPool:
 
 class Agent:
 
-    def __init__(self, index, user_folder, info:dict=None) -> None:
+    def __init__(self,
+                    index, 
+                    user_folder,
+                    info:dict=None,
+                    start_date=datetime.strptime("02-01-2024", '%m-%d-%Y'),
+                ) -> None:
         self._uuid = user_folder.split('/')[-1]
         self.index = index
         self.user_folder = user_folder
@@ -175,7 +203,12 @@ class Agent:
             self.generate_description()
 
         # brain
-        self.brain = Brain(user_folder=user_folder, agent_folder=self.folder, info=self.info)
+        self.brain = Brain(
+                user_folder=user_folder,
+                agent_folder=self.folder,
+                info=self.info,
+                base_date=start_date
+            )
 
 
     def _load_info(self):

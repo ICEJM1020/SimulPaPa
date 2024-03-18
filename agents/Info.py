@@ -40,14 +40,27 @@ def description_prompt(**kwargs):
     prompt += "The physical status of {Pronoun} is {diesease}. "
     prompt += "{Pronoun} is a {occupation} with annual income {income}, working at {company}, {company_address}. "
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
-    prompt += "{Pronoun}'s date of birth is {birthday}. >"
+    prompt += "{Pronoun}'s date of birth is {birthday}.> "
     prompt += "\n And summarize the key information in your generation, and return your answer in JSON format: "
-    prompt += json.dumps(infos)
+    prompt += "{\"description\":\"profile_description\"}"
 
     return prompt
 
 
-def gpt_description(name, birthday, **kwargs):
+def gpt_description(name, birthday, retry=5,  **kwargs):
+    for try_idx in range(retry):
+        try:
+            description = _gpt_description(name, birthday, **kwargs)
+            assert "description" in description.keys()
+        except:
+            if try_idx + 1 == retry:
+                raise {"error":"Error generating description."}
+            else:
+                continue
+        else:
+            return description
+ 
+def _gpt_description(name, birthday, **kwargs) -> dict:
     open_ai_client = OpenAI( 
         api_key=CONFIG["openai"]["api_key"],
         organization=CONFIG["openai"]["organization"],
@@ -61,6 +74,55 @@ def gpt_description(name, birthday, **kwargs):
         
         messages=[{
             # "role": "system", "content": "You are a census taker who knows everyone, and you write detailed descriptions.",
+            "role": "user", "content": prompt
+            }]
+    )
+    return json.loads(completion.choices[0].message.content)
+
+
+def random_generate(short_description, retry=5):
+    for try_idx in range(retry):
+        try:
+            infos = _random_generate(short_description)
+        except:
+            if try_idx + 1 == retry:
+                raise {"error":"Error generating information."}
+            else:
+                continue
+        else:
+            return infos
+
+
+def _random_generate(short_description) -> dict:
+    infos = {key:"" for key in CONFIG["info"]}
+    infos["description"] = "profile_description"
+
+    prompt = "Generate a realistic profile corresponding to the following short description:\n"
+    prompt += short_description
+    prompt += "\n\n"
+    # prompt += "Example 1:\nJohn Smith is a 75-year-old Caucasian male living in an apartment at 123 Main Street, Downtown, Anytown, California, 90210. The physical status of him is early-stage Parkinson's disease. He is a retired Engineer with an annual income of $50,000, previously working at ABC Engineering located at 456 Industrial Road, Anytown, California, 90210. John speaks English and holds a Bachelor's degree in Engineering. His date of birth is May 12, 1948."
+    # prompt += "\n\n"
+    prompt += "This year is 2023. "
+    prompt += "The income should be in dollars. "
+    prompt += "The birthday should be in the MM-DD-YYYY format. "
+    prompt += "Every information should be specific and realistic. "
+    prompt += "Here is the template of the profile description:\n"
+    prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
+    prompt += "The physical status of {Pronoun} is {diesease}. "
+    prompt += "{Pronoun} is a {occupation} with annual income {income}, working at {company}, {company_address}. "
+    prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
+    prompt += "{Pronoun}'s date of birth is {birthday}.> "
+    prompt += "\nSummarize the information and return your answer in JSON format:\n"
+    prompt += json.dumps(infos)
+
+    open_ai_client = OpenAI( 
+        api_key=CONFIG["openai"]["api_key"],
+        organization=CONFIG["openai"]["organization"],
+    )
+
+    completion = open_ai_client.chat.completions.create(
+        model = CONFIG["openai"]["model"],
+        messages=[{
             "role": "user", "content": prompt
             }]
     )

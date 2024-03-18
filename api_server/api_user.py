@@ -9,7 +9,7 @@ import json
 import os
 
 from config import CONFIG
-from agents import create_user_filetree, delete_user_filetree, USER_POOL
+from agents import create_user_filetree, delete_user_filetree, random_user, USER_POOL
 from logger import logger
 
 from .utils import *
@@ -28,7 +28,7 @@ ubp = Blueprint(route_group, __name__)
 def create_user():
     req_form = request.form
 
-    for key in ["name" ,"gender","birthday","city"]:
+    for key in ["birthday"]:
         if not (key in req_form):
             return_body = {
                 "status" : False,
@@ -71,6 +71,40 @@ def create_user():
                 }
         with open(CONFIG["base_dir"] + "/.Users/users.json", "w") as f:
             json.dump(users, f)
+
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@ubp.route(f"/{route_group}/random", methods=["GET", "POST"])
+def radnom_user():
+    req_form = request.form
+    return_body = {"status" : False}
+    if not ("short_description" in req_form):
+        return_body = {
+            "status" : False,
+            "message" : "Missing key information"
+        }
+        response = make_response(json.dumps(return_body), 500)
+        response.headers["Content-Type"] = "application/json"
+        return response
+    else:
+        short_description = req_form["short_description"]
+    
+    return_body = {}
+    try:
+        infos = random_user(short_description)
+    except:
+        return_body = {
+            "status" : False,
+            "message" : "Random creation failed"
+        }
+    else:
+        return_body = {
+            "status" : True,
+            "infos" : infos
+        }
 
     response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
     response.headers["Content-Type"] = "application/json"
@@ -326,7 +360,60 @@ def modify_user_description(username):
     return response
 
 
+########
+#
+# simulation group
+#
+########
+@ubp.route(f"/{route_group}/simulation/start/<username>", methods=["GET", "POST"])
+def start_simulation(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            USER_POOL.start_simulation(_uuid)
+            return_body = {
+                "status" : True,
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
 
 
-
-
+@ubp.route(f"/{route_group}/simulation/start/<username>", methods=["GET", "POST"])
+def start_simulation(username):
+    if "days" not in request.form.keys(): 
+        days = request.form['days']
+    else:
+        days=1
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            USER_POOL.continue_simulation(_uuid, days)
+            return_body = {
+                "status" : True,
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response

@@ -1,5 +1,29 @@
 <div class="container-fluid">
+
     <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Input a concise description to start a random creation</h5>
+        </div>
+        <div class="card-body">
+            <div class="basic-form">
+                <form id="description_form">
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" class="form-control" name="description">
+                    </div>
+    
+                    <div class="row">
+                        <div class="col-2">
+                            <button type="submit" class="btn btn-primary mb-2">Create</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="information" class="card d-none">
         <div class="card-header">
             <h5 class="card-title">Input the Following Information to Create a User</h5>
             <span class="card-text">(*) indicates Required Information</span>
@@ -170,7 +194,7 @@
 
                 <div class="row">
                     <div class="col-2">
-                        <button type="submit" class="btn btn-primary mb-2">Submit</button>
+                        <button type="submit" class="btn btn-primary mb-2">Confirm</button>
                     </div>
                 </div>
                     

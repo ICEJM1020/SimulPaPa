@@ -3,3 +3,16 @@
     font-size: large;
     color: black;
 }
+
+.agent-list{
+    max-height: 750px;
+    margin-bottom: 10px;
+    overflow:scroll;
+    -webkit-overflow-scrolling: touch;
+}
+
+.equal {
+    display: flex;
+    display: -webkit-flex;
+    flex-wrap: wrap;
+  }

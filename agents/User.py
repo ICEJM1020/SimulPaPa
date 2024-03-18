@@ -9,11 +9,11 @@ import os
 import json
 import threading
 from shutil import rmtree
-from datetime import date
+from datetime import datetime, timedelta
 
 from config import CONFIG
 from logger import logger
-from agents.Info import gpt_description
+from agents.Info import gpt_description, random_generate
 from agents.Agents import AgentsPool
 from agents.utils import *
 
@@ -26,7 +26,7 @@ class UserPool:
 
 
     def __init__(self) -> None:
-        self.pool = {}
+        self.pool:dict[User] = {}
 
 
     def append(self, _uuid):
@@ -59,6 +59,14 @@ class UserPool:
         return self.pool[_uuid].get_description()
     
 
+    def start_simulation(self, _uuid):
+        self.pool[_uuid].start_simulation()
+
+
+    def continue_simulation(self, _uuid, days):
+        self.pool[_uuid].continue_simulation(days)
+    
+
     ############
     # agents
     ############
@@ -80,6 +88,7 @@ class UserPool:
 
     def load_agents_pool(self, _uuid):
         return self.pool[_uuid].agents_pool.load_pool()
+    
 
 
 
@@ -88,7 +97,7 @@ class User:
     def __init__(self, _uuid) -> None:
         # machine ID
         self._uuid = _uuid
-        self.user_folder = CONFIG["base_dir"] + f"/.Users/{_uuid}"
+        self.user_folder = os.path.join(CONFIG["base_dir"], f".Users/{_uuid}")
 
         ######################
         # user status
@@ -96,6 +105,9 @@ class User:
         # working : working on task
         # error:  error
         self.status = ""
+        self.agents_size = 5
+        self.simul_days = 1
+        self.start_date = datetime.strptime("02-01-2024", '%m-%d-%Y')
 
         # user info
         self.info = {key:None for key in CONFIG["info"]}
@@ -108,11 +120,13 @@ class User:
         # agents pool
         self.agents_pool = AgentsPool(
             info=self.info,
-            user_folder=self.user_folder
+            user_folder=self.user_folder,
+            size=self.agents_size,
+            start_date=self.start_date
         )
 
         # activity file
-        self.generate_activity_file()
+        # self.generate_activity_file()
 
 
     def _load_info(self):
@@ -128,24 +142,25 @@ class User:
             self.status = "ready"
     
 
-    def _fill_info(self, info):
+    def _fill_info(self, info:dict):
         missing = ""
         for key in self.info.keys():
             if key in info.keys():
                 self.info[key] = info[key]
             else:
                 missing += key + "/"
-        try:
-            self.description = info["description"]
-        except:
-            self.description = ""
+
+        if "description" in info.keys(): self.description = info["description"]
+        if "agents_size" in info.keys(): self.agents_size = info["agents_size"]
+        if "simul_days" in info.keys(): self.simul_days = info["simul_days"]
+        if "start_date" in info.keys(): self.start_date = datetime.strptime(info["agents_size"], '%m-%d-%Y')
         
         return missing
 
 
     def generate_description(self):
         try:
-            self.description = gpt_description(**self.info)["description"]
+            self.description = gpt_description(**self.info)
             self.status = "ready"
             logger.info(f"UUID {self._uuid} generate description successfully")
         except:
@@ -157,7 +172,10 @@ class User:
         with open(self.user_folder + "/info.json", "w") as f:
             dumps = {
                 "uuid":self._uuid,
-                "description":self.description
+                "description":self.description,
+                "agents_size" : self.agents_size,
+                "simul_days" : self.simul_days,
+                "start_date" : self.start_date,
             }
             for key in self.info.keys():
                 dumps[key] = self.info[key]
@@ -202,6 +220,15 @@ class User:
             logger.info(f"There is no activity file of {self.info['name']}({self.user_folder.split('/')[-1]})")
             self.status = "error"
 
+    
+    def start_simulation(self):
+        self.agents_pool.start_simulation(self.simul_days)
+
+
+    def continue_simulation(self, days):
+        self.agents_pool.continue_simulation(self.simul_days, days)
+
+
     def get_status(self):
         return self.status
 
@@ -241,5 +268,8 @@ def delete_user_filetree(_uuid):
     else:
         return True
     
+
+def random_user(short_description):
+    return random_generate(short_description)
 
 

@@ -64,6 +64,8 @@ class ShortMemory:
 
         self._cur_decompose = []
         self._cur_decompose_index = 0
+        self._cur_location_list = []
+        self._cur_location_list_index = 0
 
         self._cur_activity = "Sleeping"
 
@@ -145,6 +147,15 @@ class ShortMemory:
         self._cur_decompose_index = 0
 
     @property
+    def cur_location_list(self):
+        return self._cur_location_list
+    
+    @cur_location_list.setter
+    def cur_location_list(self, location):
+        self._cur_location_list = location
+        self._cur_location_list_index = 0
+
+    @property
     def cur_activity(self):
         return self._cur_activity
     
@@ -155,6 +166,9 @@ class ShortMemory:
             "time" : self.date_time,
             "schedule_event" : self._cur_event["event"],
             "activity" : activity,
+            "location" : self.cur_location['location'],
+            "longitude" : self.cur_location['longitude'],
+            "latitude" : self.cur_location['latitude']
         })
 
     @property
@@ -184,11 +198,33 @@ class ShortMemory:
                 self._cur_decompose_index += 1
             
             return self._cur_decompose[self._cur_decompose_index]['activity']
+        
+    @property
+    def cur_location(self):
+        _location_entry = self._cur_location_list[self._cur_location_list_index]
+        start_time = datetime.strptime(_location_entry["start_time"], "%m-%d-%Y %H:%M")
+        end_time = datetime.strptime(_location_entry["end_time"], "%m-%d-%Y %H:%M")
+
+        if start_time <= self.date_time_dt < end_time:
+            return {
+                    'location' : _location_entry['location'],
+                    'longitude' : _location_entry['longitude'],
+                    'latitude' : _location_entry['latitude'],
+                }
+        else:
+            if not self._cur_location_list_index == len(self._cur_location_list) - 1:
+                self._cur_location_list_index += 1
+            
+            return {
+                'location' : self._cur_location_list[self._cur_location_list_index]['location'],
+                'longitude' :self._cur_location_list[self._cur_location_list_index]['longitude'],
+                'latitude' : self._cur_location_list[self._cur_location_list_index]['latitude'],
+            }
 
 
     def csv_record(self):
         entry = self.memory_cache.get_current()
-        return f"{entry['time']},\"{entry['activity']}\",\"{entry['schedule_event']}\"\n"
+        return f"{entry['time']},\"{entry['activity']}\",\"{entry['schedule_event']}\",\"{entry['location']}\",\"{entry['longitude']}\",\"{entry['latitude']}\"\n"
 
 
     def check_new_event(self):
@@ -208,4 +244,18 @@ class ShortMemory:
 
     def fetch_records(self, num_items):
         return self.memory_cache.fetch(num_items)
+    
+
+    def fetch_location_records(self, num_items):
+        records = []
+        for entry in self.memory_cache.fetch(num_items):
+            records.append({
+                "time" : entry["time"],
+                "activity" : entry['activity'],
+                "location" : entry['location'],
+                "longitude" : entry['longitude'],
+                "latitude" : entry['latitude']
+            })
+
+
 

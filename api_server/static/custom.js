@@ -1,4 +1,5 @@
 let user_dict = {}
+let cur_user = ""
 
 window.onload = function(){
     loadContent("/dashboard");
@@ -10,6 +11,8 @@ function loadContent(content) {
         username = content.split("-")[1]
         $("#mainContent").load("/user", success=function(){
             load_user_page(username)
+            cur_user = username
+            draw()
         }); 
     }
     else{
@@ -19,6 +22,15 @@ function loadContent(content) {
     }
 }
 
+function loadAgent(id) {
+    $("#mainContent").load("/" + cur_user + "/" + id.toString(), success=function(){
+        console.log(cur_user + id.toString())
+        draw_agent()
+        init_calendar(window.jQuery)
+        // TODO！！！
+    }); 
+};
+
 function addListener() {
 
     document.getElementById('create_user_form').addEventListener('submit', (event) => {
@@ -26,10 +38,10 @@ function addListener() {
             event.preventDefault();
             create_user()
         });
-    document.getElementById('create_user_form').addEventListener('random', (event) => {
-            console.log("success find create_user_form")
+    document.getElementById('description_form').addEventListener('submit', (event) => {
+            console.log("success find description_form")
             event.preventDefault();
-            random_create()
+            random_create_user()
         });
 }
 
@@ -106,16 +118,34 @@ function create_user(){
 
 }
 
-function random_create(){
+function random_create_user(){
+    var formData = new FormData(document.getElementById('description_form'))
 
+    // $.ajax({
+    //     url: "/user/create",
+    //     type: 'POST',
+    //     async: false,
+    //     data: formData,
+    //     processData: false,
+    //     contentType: false,
+    //     // contentType: "application/form-data",
+    //     dataType: 'json',
+    //     success: function(res) {
+    //         alert("Success");
+    //     },
+    //     error: function(res){
+    //         console.log(res)
+    //         alert("Error\n" + res)
+    //     }
+    //   });
+
+    document.getElementById('information').classList.remove("d-none");
 }
-
 
 function load_user_page(username){
     let if_activated = activate_user(username)
     if (if_activated){
         console.log("here")
-        document.getElementById("user_description").innerText = fetch_user_info(username)
     }
     else {
         alert("Activate user failed")
@@ -155,3 +185,6 @@ function fetch_user_info(username){
       });
     return return_val
 }
+
+
+

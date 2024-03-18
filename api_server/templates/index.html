@@ -8,9 +8,10 @@
     <title>SimulPaPa </title>
     <!-- Favicon icon -->
     <!-- <link rel="icon" type="image/png" sizes="16x16" href="./images/favicon.png"> -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/owl-carousel/css/owl.carousel.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/owl-carousel/css/owl.theme.default.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/jqvmap/css/jqvmap.min.css') }}">
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='vendor/owl-carousel/css/owl.carousel.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/owl-carousel/css/owl.theme.default.min.css') }}"> -->
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='vendor/jqvmap/css/jqvmap.min.css') }}"> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fullcalendar/css/fullcalendar.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
 
@@ -96,7 +97,7 @@
                     </li>
                     <li class="nav-label">Users</li>
                     <li><a class="has-arrow" href="javascript:void()" aria-expanded="false"><i
-                                class="icon icon-single-04"></i><span class="nav-text">Users</span></a>
+                                class="icon icon-single-04"></i><span class="nav-text">Cases</span></a>
                         <ul id="user_list" aria-expanded="false">
                             
                         </ul>
@@ -130,7 +131,24 @@
         <!--**********************************
             Footer end
         ***********************************-->
+        
+        <div class="modal fade none-border" id="event-modal" style="display: none;" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title"><strong>Add New Event</strong></h4>
+                    </div>
+                    <div class="modal-body"><form><div class="row"><div class="col-md-6"><div class="form-group"><label class="control-label">Event Name</label><input class="form-control" placeholder="Insert Event Name" type="text" name="title"></div></div><div class="col-md-6"><div class="form-group"><label class="control-label">Category</label><select class="form-control" name="category"><option value="bg-danger">Danger</option><option value="bg-success">Success</option><option value="bg-dark">Dark</option><option value="bg-primary">Primary</option><option value="bg-pink">Pink</option><option value="bg-info">Info</option><option value="bg-warning">Warning</option></select></div></div></div></form></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default waves-effect" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-success save-event waves-effect waves-light">Create
+                            event</button>
 
+                        <button type="button" class="btn btn-danger delete-event waves-effect waves-light" data-dismiss="modal" style="display: none;">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
     <!--**********************************
@@ -168,10 +186,14 @@
     <script src="{{ url_for('static', filename='vendor/jqvmap/js/jquery.vmap.usa.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/jquery.counterup/jquery.counterup.min.js') }}"></script>
 
+    <script src="{{ url_for('static', filename='vendor/jqueryui/js/jquery-ui.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/moment/moment.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/fullcalendar/js/fullcalendar.min.js') }}"></script>
 
     <script src="{{ url_for('static', filename='js/dashboard/dashboard-1.js') }}"></script>
+    <script src="{{ url_for('static', filename='draw.js') }}"></script>
+    <script src="{{ url_for('static', filename='calendar.js') }}"></script>
     <script src="{{ url_for('static', filename='custom.js') }}"></script>
-
 
 
 </body>

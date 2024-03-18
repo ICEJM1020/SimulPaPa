@@ -20,9 +20,7 @@ from logger import logger
 
 class LongMemory:
 
-    def __init__(self, info, user_folder, agent_folder) -> None:
-        self.info = info
-
+    def __init__(self, user_folder, agent_folder) -> None:
         ## folder 
         self.user_folder = user_folder
         self.agent_folder = agent_folder
@@ -33,8 +31,8 @@ class LongMemory:
 
         ## files realated、
         self._load_info()
-        self.user_act_files = {}
-        self.user_last_day = self._search_user_last_day()
+        # self.user_act_files = {}
+        # self.user_last_day = self._search_user_last_day()
         self.agent_act_files = {}
         self._search_generated_activity()
 
@@ -45,21 +43,40 @@ class LongMemory:
         self.memory_tree = {}
         self.memory_tree["user_chatbot_pref"] = ""
         self.memory_tree["agent_chatbot_pref"] = ""
+        self.memory_tree["intervention"] = "No intervention plan."
         self.memory_tree["daily_purpose"] = {}
+
+    @property
+    def intervention(self):
+        return self.memory_tree["intervention"]
+    
+    @intervention.setter
+    def intervention(self, plan):
+        self.memory_tree["intervention"] = plan
+
+    @property
+    def description(self):
+        return self.info["description"]
+    
+    @property
+    def home_addr(self):
+        return f"{self.info['building']}, {self.info['street']}, {self.info['district']}, {self.info['city']}, {self.info['state']}, {self.info['zipcode']}"
+
+    @property
+    def work_addr(self):
+        return self.info["work_addr"]
 
 
     def _load_info(self):
         with open(self.agent_folder + "/info.json", "r") as f:
             info = json.load(f)
             self.info = info
-            self.description = info["description"]
-            del(self.info["description"])
+            self.info["description"]
 
         with open(self.user_folder + "/info.json", "r") as f:
             info = json.load(f)
             self.user_info = info
-            self.user_description = info["description"]
-            del(self.user_info["description"])
+            self.user_info["description"]
         
 
     def _search_user_last_day(self, ):
@@ -254,7 +271,6 @@ class LongMemory:
     
     def record_daily_purpose(self, date, purpose):
         self.memory_tree["daily_purpose"][date] = purpose
-
 
 
     def save_cache(self):
