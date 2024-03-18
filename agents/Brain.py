@@ -7,6 +7,7 @@ import sys
 import os
 import json
 from datetime import datetime, timedelta
+import multiprocessing as mp
 
 sys.path.append(os.path.abspath('./'))
 
@@ -33,10 +34,11 @@ class Brain:
                  labels:list[str] = [],
                  retry_times = 5,
                  verbose = False,
-                 base_date:datetime=datetime.strptime("02-01-2024", '%m-%d-%Y')
+                 base_date = "03-01-2024"
             ) -> None:
         self.user_folder = user_folder
         self.agent_folder = agent_folder
+        self.activity_folder = os.path.join(agent_folder, "activity_hist")
 
         ########
         # Memory
@@ -72,8 +74,8 @@ class Brain:
         # Memory
         ########
         self.base_date = base_date
-        self.short_memory = None
-        self.long_memory = None
+        self.long_memory = LongMemory(user_folder=self.user_folder, agent_folder=self.agent_folder)
+        self.short_memory = ShortMemory(agent_folder=self.agent_folder)
         
         ########
         # utils
@@ -89,18 +91,34 @@ class Brain:
             
 
     def init_brain(self):
-        self.long_memory = LongMemory(user_folder=self.user_folder, agent_folder=self.agent_folder)
-        self.short_memory = ShortMemory(agent_folder=self.agent_folder)
 
         # if not self.long_memory.memory_tree["user_chatbot_pref"]:
         #     self.long_memory.memory_tree["user_chatbot_pref"] = self._summary_user_chatbot_preference()
         # if not self.long_memory.memory_tree["agent_chatbot_pref"]:
         #     self.long_memory.memory_tree["agent_chatbot_pref"] = self._generate_agent_chatbot_preference()
+        pass
 
 
-    def plan(
+    def plan(self, days, simul_type="new"):
+        
+        if simul_type=="new":
+            start_date = self.base_date
+            cur_time = "00:00"
+        elif simul_type=="continue":
+            self.short_memory.load_cache()
+            self.long_memory.load_cache()
+            start_date = self.short_memory.cur_date
+            cur_time = self.short_memory.cur_time
+        else:
+            raise Exception("Simulation type error!")
+        simul_process = mp.Process(target=self._plan, args=(days,start_date,cur_time))
+        simul_process.start()
+
+
+    def _plan(
             self, 
             days:int=1, 
+            start_date:str="03-01-2024",
             start_time:str="00:00", 
             end_time:str="23:59"
             ):
@@ -110,10 +128,10 @@ class Brain:
         except:
             print(f"start_time format error {start_time} (should be HH:MM). Set to 00:00")
 
-        self.short_memory.cur_date = self.base_date
+        self.short_memory.cur_date = start_date
         self.short_memory.cur_time = start_time
         ## create end_time to end the simulation in that time
-        self.end_time = self.base_date + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
+        self.end_time = start_date + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
         for _ in range(days + 1):
             
             _schedule = self._create_range_schedule(
@@ -129,11 +147,13 @@ class Brain:
             if response:
                 return True
             
+
     def _run_schedule(self):
         self.save_info()
         
         ## decompose the first event
         self._decompose()
+        self.save_cache()
         while True:
             self.short_memory.cur_activity = self.short_memory.planning_activity
 
@@ -146,16 +166,19 @@ class Brain:
             ###############
             self.short_memory.cur_time = self.short_memory.cur_time_dt + timedelta(minutes=1)
             if self.short_memory.cur_time_dt == datetime.strptime("00:00", "%H:%M"):
+                self.save_hist()
                 self.short_memory.cur_date = self.short_memory.cur_date_dt + timedelta(days=1)
 
             if self.short_memory.check_new_event():
                 self._decompose()
+                self.save_cache()
 
             if self.short_memory.check_end_schedule():
                 return False
             
             if self.short_memory.date_time_dt >= self.end_time:
                 return True
+            
 
     ###############
     ## create the schedule
@@ -454,6 +477,24 @@ class Brain:
             with open(self._out_activity_file, "a+") as f:
                 f.write(self._output_cache)
             self._output_cache = ""
+
+    def save_hist(self):
+        with open(self._out_activity_file, "a+") as f:
+            f.write(self._output_cache)
+        self._output_cache = ""
+
+        os.replace(self._out_activity_file, os.path.join(self.activity_folder, self.short_memory.cur_date + ".csv"))
+
+        with open(self._out_activity_file, "w") as f:
+            f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
+
+    def save_cache(self):
+        self.short_memory.save_cache()
+        self.long_memory.update_memory()
+
+    def load_cache(self):
+        self.short_memory.load_cache()
+        self.long_memory.load_cache()
 
 
 

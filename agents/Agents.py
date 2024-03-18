@@ -128,18 +128,21 @@ class AgentsPool:
             pass
 
 
-    def start_simulation(self, day=1):
+    def start_simulation(self, days=1):
         logger.info(f"start simulation for {self.info['name']}({self._uuid})")
-        simul_process = multiprocessing.Process(target=self._start_simulation, name=f"{self._uuid}-simulation", kwargs={"day":day})
-        self.simul_status = "working"
-        simul_process.start()
-        return self.status
+        # simul_process = multiprocessing.Process(target=self._start_simulation, name=f"{self._uuid}-simulation", kwargs={"size":self.size,"pool":self.pool,"days":day})
+        # self.simul_status = "working"
+        # simul_process.start()
+        # simul_process.join()
+        # self.simul_status="finish"
+        # return self.status
+        for agent in self.pool.values():
+            agent.start_planing(days)
     
-    def _start_simulation(self, days=1):
-        with ThreadPoolExecutor(max_workers=self.size) as executor:
-            for agent in self.pool:
-                executor.submit(agent.start_planing, days)
-        self.status="finish"
+    # def _start_simulation(size, pool, days=1):
+    #     with ThreadPoolExecutor(max_workers=size) as executor:
+    #         for agent in pool:
+    #             executor.submit(agent.start_planing, days)
 
     
     def continue_simulation(self, day=1):
@@ -206,7 +209,6 @@ class Agent:
         self.brain = Brain(
                 user_folder=user_folder,
                 agent_folder=self.folder,
-                info=self.info,
                 base_date=start_date
             )
 
@@ -252,12 +254,12 @@ class Agent:
 
 
     def start_planing(self, days=1):
-        self.brain.init_brain()
-        self.brain.plan(days=days, type="new")
+        # self.brain.init_brain()
+        self.brain.plan(days=days, simul_type="new")
 
     def continue_planing(self, days=1):
-        self.brain.init_brain()
-        self.brain.plan(days=days, type="continue")
+        self.brain.load_cache()
+        self.brain.plan(days=days, simul_type="continue")
 
 
     def save(self):

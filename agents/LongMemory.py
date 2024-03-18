@@ -41,7 +41,7 @@ class LongMemory:
         self.cache_file = os.path.join(agent_folder, "long_memory_cache.json")
         
         self.memory_tree = {}
-        self.memory_tree["user_chatbot_pref"] = ""
+        # self.memory_tree["user_chatbot_pref"] = ""
         self.memory_tree["agent_chatbot_pref"] = ""
         self.memory_tree["intervention"] = "No intervention plan."
         self.memory_tree["daily_purpose"] = {}
@@ -79,22 +79,22 @@ class LongMemory:
             self.user_info["description"]
         
 
-    def _search_user_last_day(self, ):
-        newest_date = None
+    # def _search_user_last_day(self, ):
+    #     newest_date = None
 
-        for filename in os.listdir(self.user_act_folder):
-            if filename.endswith('.csv'):
-                # Extract date from filename
-                date_str = filename.split('.')[0]  # Remove the '.csv' part
-                self.user_act_files[date_str] = os.path.join(self.user_act_folder, filename)
-                try:
-                    file_date = datetime.strptime(date_str, "%m-%d-%Y").date()
-                    if newest_date is None or file_date > newest_date:
-                        newest_date = file_date
-                except ValueError:
-                    continue
+    #     for filename in os.listdir(self.user_act_folder):
+    #         if filename.endswith('.csv'):
+    #             # Extract date from filename
+    #             date_str = filename.split('.')[0]  # Remove the '.csv' part
+    #             self.user_act_files[date_str] = os.path.join(self.user_act_folder, filename)
+    #             try:
+    #                 file_date = datetime.strptime(date_str, "%m-%d-%Y").date()
+    #                 if newest_date is None or file_date > newest_date:
+    #                     newest_date = file_date
+    #             except ValueError:
+    #                 continue
 
-        return newest_date.strftime('%m-%d-%Y')
+    #     return newest_date.strftime('%m-%d-%Y')
     
 
     def update_memory(self):
@@ -129,44 +129,44 @@ class LongMemory:
         return json.dumps(res)
 
 
-    def _summary_daily_purpose(self, activity_file):
-        date = os.path.basename(activity_file).split(".")[0]
-        examples = {
-            "12-05-2023":f"Today is Tuesday, {self.info['name']}'s plan of today is to work on the current project, including several meetings and chat with company CEO. ",
-            "12-04-2023":f"Today is Monday, {self.info['name']}'s plan of today is to work on the currentproject, including talking to product manager about the detail of the product and schedule a meeting with client. ",
-            "12-03-2023":f"Today is Sunday, {self.info['name']}'s plan of today is to travel to National park. ",
-            "12-02-2023":f"Today is Saturday, {self.info['name']}'s plan of today is to stay at home for relex, including clean the room, watch a movie, do some cleaning, etc. ",
-            "12-01-2023":f"Today is Friday, {self.info['name']}'s plan of today is start a new project that will create a new product, including several meetings and talk to team members. ",
-            "11-30-2023":f"Today is Thursday, {self.info['name']}'s plan of today is to finish last project, including prepare a presentation script, go to company auditorium, and hold product launching ceremony. ",
-            "11-29-2023":f"Today is Wednesday, {self.info['name']}'s plan of today is to work on the current project, the product need to be launched tomorrow. {self.info['name']} needs to final check the product, meet with team members. ",
-            "11-28-2023":f"Today is Tuesday, {self.info['name']}'s plan of today is to work on the current project, including meet several clients and talk to team members. ",
-            "11-27-2023":f"Today is Monday, {self.info['name']}'s plan of today is to go to hospital since neck sick. After that, {self.info['name']} wants to work at home. ",
-            "11-26-2023":f"Today is Sunday, {self.info['name']}'s plan of today is to work on a recent project at home, including check the quality of the product, hold meeting with manufacture company, and hold meeting with CEO talked about product progress. ",
-            "11-25-2023":f"Today is Saturday, {self.info['name']}'s plan of today is to stay at home for relex. In the afternoon, {self.info['name']} needs to have dinner with clients at InterContinental Boston. ",
-            "11-24-2023":f"Today is Friday, {self.info['name']}'s plan of today is to work on a recent project, including several meetings and talk to team members. ",
-        }
+    # def _summary_daily_purpose(self, activity_file):
+    #     date = os.path.basename(activity_file).split(".")[0]
+    #     examples = {
+    #         "12-05-2023":f"Today is Tuesday, {self.info['name']}'s plan of today is to work on the current project, including several meetings and chat with company CEO. ",
+    #         "12-04-2023":f"Today is Monday, {self.info['name']}'s plan of today is to work on the currentproject, including talking to product manager about the detail of the product and schedule a meeting with client. ",
+    #         "12-03-2023":f"Today is Sunday, {self.info['name']}'s plan of today is to travel to National park. ",
+    #         "12-02-2023":f"Today is Saturday, {self.info['name']}'s plan of today is to stay at home for relex, including clean the room, watch a movie, do some cleaning, etc. ",
+    #         "12-01-2023":f"Today is Friday, {self.info['name']}'s plan of today is start a new project that will create a new product, including several meetings and talk to team members. ",
+    #         "11-30-2023":f"Today is Thursday, {self.info['name']}'s plan of today is to finish last project, including prepare a presentation script, go to company auditorium, and hold product launching ceremony. ",
+    #         "11-29-2023":f"Today is Wednesday, {self.info['name']}'s plan of today is to work on the current project, the product need to be launched tomorrow. {self.info['name']} needs to final check the product, meet with team members. ",
+    #         "11-28-2023":f"Today is Tuesday, {self.info['name']}'s plan of today is to work on the current project, including meet several clients and talk to team members. ",
+    #         "11-27-2023":f"Today is Monday, {self.info['name']}'s plan of today is to go to hospital since neck sick. After that, {self.info['name']} wants to work at home. ",
+    #         "11-26-2023":f"Today is Sunday, {self.info['name']}'s plan of today is to work on a recent project at home, including check the quality of the product, hold meeting with manufacture company, and hold meeting with CEO talked about product progress. ",
+    #         "11-25-2023":f"Today is Saturday, {self.info['name']}'s plan of today is to stay at home for relex. In the afternoon, {self.info['name']} needs to have dinner with clients at InterContinental Boston. ",
+    #         "11-24-2023":f"Today is Friday, {self.info['name']}'s plan of today is to work on a recent project, including several meetings and talk to team members. ",
+    #     }
 
-        return examples[date]
+    #     return examples[date]
     
 
     def past_daily_schedule(self, cur_date, past_days:int=5):
         pass
 
 
-    def fetch_user_chat_hist(self, limit=10):
-        chat_history = {}
-        # for date, file in self.user_act_files.values():
-        _sum = 0
-        for date in self.user_act_files.keys():
-            _hist = pd.read_csv(self.user_act_files[date])[['conv_history', 'hour', 'minute']]
-            _hist = _hist.dropna(axis=0)
-            if not _hist.empty:
-                for _, value in _hist.iterrows():
-                    chat_history[f"{date}-{value['hour']}:{value['minute']}"] = value['conv_history']
-                    _sum += 1
-                    if _sum > limit:
-                        return chat_history
-        return chat_history
+    # def fetch_user_chat_hist(self, limit=10):
+    #     chat_history = {}
+    #     # for date, file in self.user_act_files.values():
+    #     _sum = 0
+    #     for date in self.user_act_files.keys():
+    #         _hist = pd.read_csv(self.user_act_files[date])[['conv_history', 'hour', 'minute']]
+    #         _hist = _hist.dropna(axis=0)
+    #         if not _hist.empty:
+    #             for _, value in _hist.iterrows():
+    #                 chat_history[f"{date}-{value['hour']}:{value['minute']}"] = value['conv_history']
+    #                 _sum += 1
+    #                 if _sum > limit:
+    #                     return chat_history
+    #     return chat_history
     
 
     def _fetch_heart_rate(self, activity_df:pd.DataFrame, hour:int=None, minute:int | list=None):

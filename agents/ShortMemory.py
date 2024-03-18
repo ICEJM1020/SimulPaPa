@@ -46,6 +46,9 @@ class RecordsQueue:
     def fetch(self, size):
         return self.queue[-size:]
 
+    def fetch_all(self):
+        return self.queue
+
 
 class ShortMemory:
 
@@ -257,5 +260,49 @@ class ShortMemory:
                 "latitude" : entry['latitude']
             })
 
+    def save_cache(self):
+
+        save_dict = {
+            "cur_date" : self._cur_date,
+            "cur_time" : self._cur_time,
+            "schedule" : self._schedule,
+
+            "cur_event" : self._cur_event,
+            "cur_event_index" : self._cur_event_index,
+
+            "cur_decompose" : self._cur_decompose,
+            "cur_decompose_index" : self._cur_decompose_index,
+            "cur_location_list" : self._cur_location_list,
+            "cur_location_list_index" : self._cur_location_list_index,
+
+            "cur_activity" : self._cur_activity,
+
+            "cache" : self.memory_cache.fetch_all(),
+        }
+
+        with open(self.cache_file, "w") as f:
+            json.dump(save_dict, f)
+
+    
+    def load_cache(self):
+        if os.path.exists(self.cache_file):
+            with open(self.cache_file, "r") as f:
+                local_cache = json.load(f)
+            self._cur_date = local_cache["cur_date"]
+            self._cur_time = local_cache["cur_time"]
+            self._schedule = local_cache["schedule"]
+
+            self._cur_event = local_cache["cur_event"]
+            self._cur_event_index = local_cache["cur_event_index"]
+
+            self._cur_decompose = local_cache["cur_decompose"]
+            self._cur_decompose_index = local_cache["cur_decompose_index"]
+            self._cur_location_list = local_cache["cur_location_list"]
+            self._cur_location_list_index = local_cache["cur_location_list_index"]
+
+            self._cur_activity = local_cache["cur_activity"]
+
+            for entry in local_cache["cache"]:
+                self.memory_cache.push(entry)
 
 

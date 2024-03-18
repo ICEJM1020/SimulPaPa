@@ -365,7 +365,7 @@ def modify_user_description(username):
 # simulation group
 #
 ########
-@ubp.route(f"/{route_group}/simulation/start/<username>", methods=["GET", "POST"])
+@ubp.route(f"/simulation/start/<username>", methods=["GET", "POST"])
 def start_simulation(username):
     status, user_list = check_user(username=username)
     if status:
@@ -390,8 +390,8 @@ def start_simulation(username):
     return response
 
 
-@ubp.route(f"/{route_group}/simulation/start/<username>", methods=["GET", "POST"])
-def start_simulation(username):
+@ubp.route(f"/simulation/continue/<username>", methods=["GET", "POST"])
+def continue_simulation(username):
     if "days" not in request.form.keys(): 
         days = request.form['days']
     else:
