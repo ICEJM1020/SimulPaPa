@@ -1,21 +1,60 @@
 
 <!-- row -->
 <div class="container-fluid">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title">Intervention Plan</h5>
-        </div>
-        <div class="card-body">
-            
-            <div class="post-input">
-                <textarea name="textarea" id="intervention_area" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
-                <a href="javascript:void()" class="btn btn-primary">Regenerate Today</a>
-                <a href="javascript:void()" class="btn btn-primary">Generate New Day</a>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Intervention Plan</h5>
+            </div>
+            <div class="card-body">
+                
+                <div class="post-input">
+                    <textarea name="textarea" id="intervention_area" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
+                </div>
+                <div class="row col-md-12">
+                    <a href="javascript:void()" class="btn btn-primary col-md-2 m-2">Regenerate</a>
+                    <a href="javascript:void()" class="btn btn-primary col-md-2 m-2">Generate a New Day</a>
+                    <input type="number" class="form-control col-md-2 m-2" name="new_days">
+                    <a href="javascript:void()" class="btn btn-primary col-md-2 m-2">Generate Multiple Days</a>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <!-- <div class="alert alert-success solid alert-right-icon alert-dismissible fade show">
+                    <span><i id="status_icon" class="mdi mdi-check"></i></span>
+                    <b id="status_text">Ready</b> 
+                </div>
+                <div class="row">
+                    <div class="col-md-8"></div>
+                    <div class="col-md-2">
+                        <button onclick="GenerateAgentsPool()" class="btn btn-outline-dark">Regenerate Agents</button>
+                    </div>
+                    <div class="col-md-2">
+                        <button onclick="GenerateInfoTree()"  class="btn btn-outline-dark">Regenerate InfoTree</button>
+                    </div>
+                </div> -->
+                <div class="row">
+                    <div id="status_area" class="alert alert-success solid alert-right-icon col-md-8 mb-0">
+                        <span><i id="status_icon" class="mdi mdi-check"></i></span>
+                        <b id="status_text">Ready</b> 
+                    </div>
+                    <div class="col-md-2 mt-2">
+                        <button id="generate_agent_btn" onclick="GenerateAgentsPool()" class="btn btn-lg btn-outline-dark ml-5">Generate Agents</button>
+                    </div>
+                    <div class="col-md-2 mt-2">
+                        <button id="generate_pool_btn" onclick="GenerateInfoTree()" class="btn btn-lg btn-outline-dark ml-2">Generate InfoTree</button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row col-md-12">
         <div class="card col-lg-2">
             <div class="card-header">
                 <h4 class="card-title">Agents</h4>
@@ -28,8 +67,8 @@
                 </div>
             </div>
             <div class="card-body">
-                <ul class="list-group agent-list">
-                    <li class="list-group-item">
+                <ul id="agent_list" class="list-group agent-list">
+                    <!-- <li class="list-group-item">
                         <div class="row">
                             <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
                             <div class="col-md-8"><a onclick="loadAgent(1)">Agent 1</a></div>
@@ -136,7 +175,7 @@
                             <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
                             <div class="col-md-8">Agent 18</div>
                         </div>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
         </div>

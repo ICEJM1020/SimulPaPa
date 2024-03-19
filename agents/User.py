@@ -74,6 +74,10 @@ class UserPool:
         return self.pool[_uuid].agents_pool.fetch_tree_status()
     
 
+    def generate_tree(self, _uuid):
+        return self.pool[_uuid].agents_pool.generate_info_tree()
+    
+
     def create_agents_pool(self, _uuid):
         return self.pool[_uuid].agents_pool.create_pool()
     
@@ -88,6 +92,9 @@ class UserPool:
 
     def load_agents_pool(self, _uuid):
         return self.pool[_uuid].agents_pool.load_pool()
+    
+    def fetch_all_agents(self, _uuid):
+        return self.pool[_uuid].agents_pool.fetch_all_agents()
     
 
 
@@ -151,16 +158,16 @@ class User:
                 missing += key + "/"
 
         if "description" in info.keys(): self.description = info["description"]
-        if "agents_size" in info.keys(): self.agents_size = info["agents_size"]
-        if "simul_days" in info.keys(): self.simul_days = info["simul_days"]
-        if "start_date" in info.keys(): self.start_date = datetime.strptime(info["agents_size"], '%m-%d-%Y')
+        if "agents_size" in info.keys(): self.agents_size = int(info["agents_size"])
+        if "simul_days" in info.keys(): self.simul_days = int(info["simul_days"])
+        if "start_date" in info.keys(): self.start_date = datetime.strptime(info["start_date"], '%m-%d-%Y')
         
         return missing
 
 
     def generate_description(self):
         try:
-            self.description = gpt_description(**self.info)
+            self.description = gpt_description(**self.info)["description"]
             self.status = "ready"
             logger.info(f"UUID {self._uuid} generate description successfully")
         except:
@@ -172,10 +179,10 @@ class User:
         with open(self.user_folder + "/info.json", "w") as f:
             dumps = {
                 "uuid":self._uuid,
-                "description":self.description,
+                "description" : self.description,
                 "agents_size" : self.agents_size,
                 "simul_days" : self.simul_days,
-                "start_date" : self.start_date,
+                "start_date" : self.start_date.strftime("%m-%d-%Y"),
             }
             for key in self.info.keys():
                 dumps[key] = self.info[key]

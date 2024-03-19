@@ -142,14 +142,13 @@ class Brain:
             if CONFIG["debug"]: print(self.short_memory.schedule)
 
             response = self._run_schedule()
-            self.save_info()
+            self.save_cache()
 
             if response:
                 return True
             
 
     def _run_schedule(self):
-        self.save_info()
         
         ## decompose the first event
         self._decompose()

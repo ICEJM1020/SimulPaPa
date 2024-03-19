@@ -29,6 +29,7 @@ class AgentsPool:
         self.info = info
         self.size = size
         self.start_date = start_date
+        self.healthy_rate = 0.5
         self.pool = {}
 
         self.user_folder = user_folder
@@ -51,6 +52,13 @@ class AgentsPool:
         # error {id}:  error in create {id} agent
         self.simul_status = "init"
 
+
+    def generate_info_tree(self):
+        if self.info_tree.status == "building":
+            return False
+        else:
+            self.info_tree.start_building()
+            return True
 
     def create_pool(self, ):
         logger.info(f"start create agents pool for {self.info['name']}({self._uuid})")
@@ -75,9 +83,10 @@ class AgentsPool:
                 os.mkdir(agent_folder)
             
             try:
-                agent_info = self.info_tree.generate_info_dict()
+                agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
             except:
                 if_err = True
+                rmtree(agent_folder)
                 logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
                 error += f"{i}, "
             else:
@@ -127,36 +136,25 @@ class AgentsPool:
         else:
             pass
 
+    def fetch_all_agents(self, ):
+        dir_list = os.listdir(self.folder)
+        res = []
+        for dir in dir_list:
+            if not "." in dir:
+                res.append(f"Agent-{dir}")
+        return res, len(res)==self.size
+
 
     def start_simulation(self, days=1):
         logger.info(f"start simulation for {self.info['name']}({self._uuid})")
-        # simul_process = multiprocessing.Process(target=self._start_simulation, name=f"{self._uuid}-simulation", kwargs={"size":self.size,"pool":self.pool,"days":day})
-        # self.simul_status = "working"
-        # simul_process.start()
-        # simul_process.join()
-        # self.simul_status="finish"
-        # return self.status
         for agent in self.pool.values():
             agent.start_planing(days)
-    
-    # def _start_simulation(size, pool, days=1):
-    #     with ThreadPoolExecutor(max_workers=size) as executor:
-    #         for agent in pool:
-    #             executor.submit(agent.start_planing, days)
 
     
-    def continue_simulation(self, day=1):
+    def continue_simulation(self, days=1):
         logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
-        simul_process = multiprocessing.Process(target=self._continue_simulation, name=f"{self._uuid}-simulation", kwargs={"day":day})
-        self.simul_status = "working"
-        simul_process.start()
-        return self.status
-    
-    def _continue_simulation(self, days=1):
-        with ThreadPoolExecutor(max_workers=self.size) as executor:
-            for agent in self.pool:
-                executor.submit(agent.continue_planing, days)
-        self.status="finish"
+        for agent in self.pool.values():
+            agent.continue_planing(days)
 
 
     def fetch_tree_status(self):
@@ -270,6 +268,7 @@ class Agent:
             for key in self.info.keys():
                 dumps[key] = self.info[key]
             json.dump(dumps, fp=f)
+        self.brain.save_cache()
 
 
     def check_ready(self):

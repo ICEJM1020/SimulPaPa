@@ -124,7 +124,7 @@ def delete_user(username):
             logger.info(f"User {username} deleted")
         else:
             return_body = {
-                "create_status" : False,
+                "status" : False,
                 "message" : "Delete error"
             }
     else:
@@ -145,7 +145,7 @@ def upload_user_file():
     if "username" not in request.form.keys():
         return_body = {
                 "status" : False,
-                "user_status" : "Need username"
+                "message" : "Need username"
             }
     else:
         username = request.form["username"]
@@ -197,7 +197,7 @@ def activate_user(username):
         if USER_POOL.exist(_uuid):
             return_body = {
                 "status" : True,
-                "user_status" : "User has activated"
+                "message" : "User has activated"
             }
         else:
             USER_POOL.append(_uuid)
@@ -227,12 +227,12 @@ def deactivate_user(username):
             except:
                 return_body = {
                     "status" : False,
-                    "user_status" : "User failed to deactivate"
+                    "message" : "User failed to deactivate"
                 }
             else:
                 return_body = {
                     "status" : True,
-                    "user_status" : "User has deactivated"
+                    "message" : "User has deactivated"
                 }
                 logger.info(f"User {username} deactivated")
         else:
@@ -250,7 +250,7 @@ def deactivate_user(username):
     return response
 
 
-@ubp.route(f"/{route_group}/status/<username>", methods=["POST", "POST"])
+@ubp.route(f"/{route_group}/status/<username>", methods=["POST", "GET"])
 def fetch_user_status(username):
     status, user_list = check_user(username=username)
     if status:
@@ -258,7 +258,7 @@ def fetch_user_status(username):
         if USER_POOL.exist(_uuid):
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.fetch_user_status(_uuid)
+                "message" : USER_POOL.fetch_user_status(_uuid)
             }
         else:
             return_body = {

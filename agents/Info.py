@@ -8,6 +8,7 @@ import json
 import os
 import threading
 import random
+import re
 
 from openai import OpenAI
 
@@ -96,6 +97,8 @@ def random_generate(short_description, retry=5):
 def _random_generate(short_description) -> dict:
     infos = {key:"" for key in CONFIG["info"]}
     infos["description"] = "profile_description"
+    infos["gender"] = "male_or_female"
+    infos["retirement"] = "yes_or_no"
 
     prompt = "Generate a realistic profile corresponding to the following short description:\n"
     prompt += short_description
@@ -154,41 +157,68 @@ class InfoTree():
                 self.tree = json.load(f)
             self.status = "ready"
         else:
-            self._start_building()
+            self.start_building()
 
 
-    def _start_building(self):
+    def start_building(self):
         thread = threading.Thread(target=self._build_tree)
         self.status = "building"
         thread.start()
+        return True
     
 
     def _build_tree(self):
         
-        try:
-            self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
-        except:
-            self.status = "error"
-        else:
-            for idx in self.tree["option"].keys():
-                try:
-                    res = self._search_district(
-                        u_city=self.user_info["city"],
-                        u_state=self.user_info["state"],
-                        city=self.tree["option"][idx]["city"],
-                        state=self.tree["option"][idx]["state"],
-                        district=self.user_info["district"]
-                    )
-                except:
+        self._search_city_state(city=self.user_info["city"], state=self.user_info["state"])
+
+        for idx in self.tree["option"].keys():
+            res = self._search_district(
+                u_city=self.user_info["city"],
+                u_state=self.user_info["state"],
+                city=self.tree["option"][idx]["city"],
+                state=self.tree["option"][idx]["state"],
+                district=self.user_info["district"]
+            )
+            self.tree["option"][idx]["district"] = res
+        
+        self._search_disease(self.user_info["disease"])
+
+        self.status = "ready"
+
+        with open(self.tree_file, "w") as f:
+            json.dump(self.tree, f)
+
+
+    def _search_city_state(self, city, state, size=5, retry=5):
+        for try_idx in range(retry):
+            try:
+                cities = self._search_city_state_chat(city, state, size)
+                assert len(cities) > 0
+                _p = 0.0
+                self.tree["option"] = {}
+                self.tree["prob"] = []
+                for idx, city in enumerate(cities):
+                    self.tree["option"][str(idx)] = {
+                            "city" : city["city"],
+                            "state" : city["state"],
+                            "education" : {"option":[k for k in city["education"]], "prob":[float(city["education"][k]) for k in city["education"]]},
+                            "race" : {"option":[k for k in city["race"]], "prob":[float(city["race"][k]) for k in city["race"]]},
+                            "income" : {"option":[k for k in city["income"]], "prob":[float(city["income"][k]) for k in city["income"]]},
+                            "industry" : {"option":[k for k in city["industry"]], "prob":[float(city["industry"][k]) for k in city["industry"]]},
+                            "gender" : {"option":["male", "female"], "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
+                            "district" : {},
+                        }
+                    self.tree["prob"].append(float(city["similarity"]))
+                    _p += float(city["similarity"])
+                self.tree["prob"] = [x / _p for x in self.tree["prob"]]
+            except:
+                if try_idx + 1 == retry:
                     self.status = "error"
+                    raise Exception(f"Search cities failed {retry} times")
                 else:
-                    self.tree["option"][idx]["district"] = res
-                    self.status = "ready"
-            with open(self.tree_file, "w") as f:
-                json.dump(self.tree, f)
+                    continue
 
-
-    def _search_city_state(self, city, state, size=3):
+    def _search_city_state_chat(self, city, state, size=5):
         industries = {key : "population_percentage_in_decimal" for key in CONFIG["industry"]}
         educations = {key : "population_percentage_in_decimal" for key in CONFIG["education"]}
         races = {key : "population_percentage_in_decimal" for key in CONFIG["race"]}
@@ -220,27 +250,24 @@ class InfoTree():
         cities = json.loads(completion.choices[0].message.content)["response"]
         if CONFIG["debug"]: print(cities)
 
-        _p = 0.0
-        self.tree["option"] = {}
-        self.tree["prob"] = []
-        for idx, city in enumerate(cities):
-            self.tree["option"][str(idx)] = {
-                    "city" : city["city"],
-                    "state" : city["state"],
-                    "education" : {"option":[k for k in city["education"]], "prob":[float(city["education"][k]) for k in city["education"]]},
-                    "race" : {"option":[k for k in city["race"]], "prob":[float(city["race"][k]) for k in city["race"]]},
-                    "income" : {"option":[k for k in city["income"]], "prob":[float(city["income"][k]) for k in city["income"]]},
-                    "industry" : {"option":[k for k in city["industry"]], "prob":[float(city["industry"][k]) for k in city["industry"]]},
-                    "gender" : {"option":["male", "female"], "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
-                    "district" : {},
-                }
-            self.tree["prob"].append(float(city["similarity"]))
-            _p += float(city["similarity"])
-        self.tree["prob"] = [x / _p for x in self.tree["prob"]]
-        # print(self.tree)
+        return cities
     
 
-    def _search_district(self, u_city, u_state, city, state, district, size=3):
+    def _search_district(self, u_city, u_state, city, state, district, size=3, retry=5):
+        for try_idx in range(retry):
+            try:
+                res = self._search_district_chat(u_city, u_state, city, state, district, size)
+                assert len(res) > 0
+            except:
+                if try_idx + 1 == retry:
+                    self.status = "error"
+                    raise Exception(f"Search districts failed {retry} times")
+                else:
+                    continue
+            else:
+                return res
+
+    def _search_district_chat(self, u_city, u_state, city, state, district, size=3):
         prompt = f"{district} is a zone in {u_city}, {u_state}. "
         prompt += "Based on your knowledge, to evaluate the convenience of this district, including the population, the infrastructure, and the medical and educational resources. "
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
@@ -251,8 +278,7 @@ class InfoTree():
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
             model = CONFIG["openai"]["model"], 
-            
-            messages=[{
+                        messages=[{
                 "role": "user", "content": prompt
                 }]
         )
@@ -273,6 +299,54 @@ class InfoTree():
         return res
     
 
+    def _search_disease(self, disease, size=10, retry=5):
+        for try_idx in range(retry):
+            try:
+                res = self._search_disease_chat(disease, size)
+                assert len(res) > 0
+            except:
+                if try_idx + 1 == retry:
+                    self.status = "error"
+                    raise Exception(f"Search disease failed {retry} times")
+                else:
+                    continue
+            else:
+                self.tree["disease"] = res
+
+    def _search_disease_chat(self, disease, size=10):
+        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+        prompt = f"There is a {age} {self.user_info['gender']} who has {disease}. "
+        prompt += f"Now you need to provide {size} other diseases, with a detailed analysis, that share similar symptoms, impacts on health, methods of transmission (if applicable), and treatment approaches. "
+        prompt += "For each related disease you identify, explain why it is relevant to the disease in question, focusing on the similarities in their clinical presentations, epidemiology, and management strategies. "
+        prompt += "T0 figure out this question, let's think step by step. Do it in the following format, and keep the JSON format of the final Answer:\n"
+        prompt += "Thought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n"
+        ans = {f"disease_{i}":{"name":"disease_name","stage":"disease_progression","similarity":"similarity_to_the_given_disease_in_float"} for i in range(1, size+1)}
+        prompt += json.dumps(ans)
+
+        if CONFIG["debug"]: print(prompt)
+        completion = self.gpt_client.chat.completions.create(
+            model = CONFIG["openai"]["model"], 
+            messages=[{
+                "role": "user", "content": prompt
+            }]
+        )
+        if CONFIG["debug"]: print(completion.choices[0].message.content)
+
+        json_strs = re.findall(r"\{(?:[^{}])*\}", completion.choices[0].message.content.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL)
+        if json_strs: 
+            res = {"option":[], "prob":[]}
+            _p = 0.0
+            for _, json_str in enumerate(json_strs):
+                disease = json.loads(json_str)
+                res["option"].append(f"{disease['name']} ({disease['stage']})")
+                res["prob"].append(float(disease["similarity"]))
+                _p += float(disease["similarity"])
+            res["prob"] = [x / _p for x in res["prob"]]
+            return res
+        else:
+            raise Exception("GPT response error.")
+        
+
     def _infer_addtional(self, gender, race, location, education, income_range, age_range=5):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
@@ -289,7 +363,6 @@ class InfoTree():
 
         completion = self.gpt_client.chat.completions.create(
             model = CONFIG["openai"]["model"], 
-            
             messages=[{
                 "role": "user", "content": prompt
                 }]
@@ -324,7 +397,7 @@ class InfoTree():
         return json.loads(completion.choices[0].message.content)["response"]
 
 
-    def generate_info_dict(self):
+    def generate_info_dict(self, healthy_rate=0.7):
         res = {key:None for key in self.user_info}
         city_choice = random.choices([str(i) for i in range(len(self.tree["prob"]))], weights=self.tree["prob"])[0]
         city = self.tree["option"][city_choice]
@@ -372,6 +445,11 @@ class InfoTree():
         res["work_addr"] = job_info["work_addr"]
         res["work_longitude"] = job_info["work_longitude"]
         res["work_latitude"] = job_info["work_latitude"]
+
+        if random.random() > healthy_rate:
+            res["disease"] = "Healthy"
+        else:
+            res["disease"] = random.choices(self.tree["disease"]["option"], weights=self.tree["disease"]["prob"])[0]
         
         return res
 

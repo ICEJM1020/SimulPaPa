@@ -8,8 +8,8 @@
             <div class="basic-form">
                 <form id="description_form">
                     <div class="form-group">
-                        <label for="description">Description</label>
-                        <input type="text" class="form-control" name="description">
+                        <label for="short_description">Description</label>
+                        <input type="text" class="form-control" name="short_description">
                     </div>
     
                     <div class="row">
@@ -22,6 +22,14 @@
         </div>
     </div>
 
+    <!-- <div>
+
+    </div> -->
+    <div id="waiting" class="card d-none">
+        <div class="card-header">
+            <h5 class="card-title">Waiting...</h5>
+        </div>
+    </div>
 
     <div id="information" class="card d-none">
         <div class="card-header">
@@ -33,18 +41,19 @@
                 <form id="create_user_form">
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="username">Username (Used to index the user)(*)</label>
+                            <label for="username">Casename (Used to index the user)(*)</label>
                             <input type="text" class="form-control" name="username">
                         </div>
                         <div class="form-group col-md-6"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label for="name">Name(*)</label>
+                            <label for="name">Name</label>
                             <input type="text" class="form-control" name="name">
                         </div>
                         <div class="form-group col-md-4">
-                            <label for="gender">Gender(*)</label>
+                            <label for="gender">Gender</label>
+                            <!-- <input type="text" class="form-control" name="gender"> -->
                             <select class="form-control" name="gender">
                                 <option>None</option>
                                 <option>Male</option>
@@ -54,7 +63,8 @@
                         </div>
                         <div class="form-group  col-md-4">
                             <label for="race">Race</label>
-                            <select class="form-control" name="race">
+                            <input type="text" class="form-control" name="race">
+                            <!-- <select class="form-control" name="race">
                                 <option>None</option>
                                 <option>White</option>
                                 <option>Black</option>
@@ -62,14 +72,14 @@
                                 <option>Asian</option>
                                 <option>Pacific Islander</option>
                                 <option>Other</option>
-                            </select>
+                            </select> -->
                             
                         </div>
                     </div>
     
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label for="birthday">Birthday(*)</label>
+                            <label for="birthday">Birthday</label>
                             <input type="date" class="form-control" name="birthday">
                         </div>
                         <div class="form-group col-md-8">
@@ -95,7 +105,7 @@
     
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label for="city">City(*)</label>
+                            <label for="city">City</label>
                             <input type="text" class="form-control" name="city">
                         </div>
                         <div class="form-group col-md-4">
@@ -111,7 +121,8 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="education">Education</label>
-                            <select class="form-control" name="education">
+                            <input type="text" class="form-control" name="education">
+                            <!-- <select class="form-control" name="education">
                                 <option>None</option>
                                 <option>Primary School</option>
                                 <option>Middle School</option>
@@ -120,7 +131,7 @@
                                 <option>Bachelor</option>
                                 <option>Master</option>
                                 <option>Doctor</option>
-                            </select>
+                            </select> -->
                         </div>
                         <div class="form-group col-md-6">
                             <label for="language">Speaking Language</label>
@@ -131,7 +142,8 @@
                     <div class="form-row">
                         <div class="form-group col-md-8">
                             <label for="industry">Industry</label>
-                            <select class="form-control" name="industry">
+                            <input type="text" class="form-control" name="industry">
+                            <!-- <select class="form-control" name="industry">
                                 <option>None</option>
                                 <option>Management, business, and financial</option>
                                 <option>Computer, engineering, and science</option>
@@ -149,8 +161,8 @@
                                 <option>Installation, maintenance, and repair</option>
                                 <option>Production</option>
                                 <option>Transportation</option>
-                                <option>Material moving"
-                            </select>
+                                <option>Material moving</option>
+                            </select> -->
                         </div>
                         <div class="form-group col-md-4">
                             <label for="occupation">Occupation</label>
@@ -161,14 +173,15 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="income">Income</label>
-                            <select class="form-control" name="income">
+                            <input type="text" class="form-control" name="income">
+                            <!-- <select class="form-control" name="income">
                                 <option>None</option>
                                 <option>$0-$49,999</option>
                                 <option>$50,000-$74,999</option>
                                 <option>$75,000-$99,999</option>
                                 <option>$100,000-$149,999</option>
                                 <option>$150,000 or more</option>
-                            </select>
+                            </select> -->
                         </div>
                         
                         <div class="form-group col-md-6">
@@ -192,11 +205,23 @@
                     </div>
 
 
-                <div class="row">
-                    <div class="col-2">
-                        <button type="submit" class="btn btn-primary mb-2">Confirm</button>
+                    <div class="row">
+                        <div class="col-md-3 form-group">
+                            <label for="company">Start Date</label>
+                            <input type="date" class="form-control" name="start_date" value="2024-03-01">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label for="company">Simulation Day(s)</label>
+                            <input type="number" class="form-control" name="simul_days" value="1">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label for="company">Agents Size</label>
+                            <input type="number" class="form-control" name="agents_size" value="5">
+                        </div>
+                        <div class="col-md-3 pt-4">
+                            <button type="submit" class="btn btn-primary mt-2">Confirm</button>
+                        </div>
                     </div>
-                </div>
                     
                 </form>
             </div>
