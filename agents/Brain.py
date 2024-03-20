@@ -87,8 +87,15 @@ class Brain:
             f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
         self._retry_times = retry_times
         self._verbose = verbose
+        ## status
+        # ready : ready to start simulation
+        # working: working on simulation
+        # error:  error
+        self._status = "ready"
 
-            
+    @property
+    def status(self):
+        return self._status
 
     def init_brain(self):
 
@@ -103,14 +110,16 @@ class Brain:
         
         if simul_type=="new":
             start_date = self.base_date
-            cur_time = "00:00"
+            cur_time = "07:00"
         elif simul_type=="continue":
             self.short_memory.load_cache()
             self.long_memory.load_cache()
             start_date = self.short_memory.cur_date
             cur_time = self.short_memory.cur_time
         else:
+            self._status = "error"
             raise Exception("Simulation type error!")
+        self._status = "working"
         simul_process = mp.Process(target=self._plan, args=(days,start_date,cur_time))
         simul_process.start()
 
@@ -126,25 +135,35 @@ class Brain:
             start_time_dt = datetime.strptime(start_time, "%H:%M")
             del(start_time_dt)
         except:
+            self._status = "error"
             print(f"start_time format error {start_time} (should be HH:MM). Set to 00:00")
 
         self.short_memory.cur_date = start_date
         self.short_memory.cur_time = start_time
         ## create end_time to end the simulation in that time
-        self.end_time = start_date + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
+        self.end_time = self.short_memory.date_time_dt + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
+
+        if not self.long_memory.chatbot_preference:
+            self.long_memory.chatbot_preference = self._generate_chatbot_preference()
+
         for _ in range(days + 1):
-            
-            _schedule = self._create_range_schedule(
-                start_date=self.short_memory.cur_date,
-                start_time=self.short_memory.cur_time
-            )
-            self.short_memory.schedule =_schedule.dump_dict()
-            if CONFIG["debug"]: print(self.short_memory.schedule)
+            if not self.long_memory.daily_purpose:
+                _purpose = self._define_daily_purpose()
+                self.long_memory.daily_purpose = _purpose
+
+            if not self.short_memory.schedule:
+                _schedule = self._create_range_schedule(
+                    start_date=self.short_memory.cur_date,
+                    start_time=self.short_memory.cur_time
+                )
+                self.short_memory.schedule =_schedule.dump_dict()
+                if CONFIG["debug"]: print(self.short_memory.schedule)
 
             response = self._run_schedule()
             self.save_cache()
 
             if response:
+                self._status = "ready"
                 return True
             
 
@@ -158,7 +177,7 @@ class Brain:
 
             ## save to local file
             self.save_activity()
-            print(f"[{self.short_memory.cur_time}] {self.short_memory.cur_event['event']}-{self.short_memory.cur_activity} ")
+            # print(f"[{self.short_memory.cur_time}] {self.short_memory.cur_event['event']}-{self.short_memory.cur_activity} ")
 
             ###############
             ## Update time and check end
@@ -177,7 +196,52 @@ class Brain:
             
             if self.short_memory.date_time_dt >= self.end_time:
                 return True
-            
+    
+
+    ###############
+    ## define daily purpose
+    ###############
+    def _define_daily_purpose(self) -> str:
+        for try_idx in range(self._retry_times):
+            try:
+                purpose = self._define_daily_purpose_chat()
+            except:
+                if try_idx + 1 == self._retry_times:
+                    self._status = "error"
+                    raise Exception(f"Define daily purpose failed {self._retry_times} times")
+                else:
+                    continue
+            else:
+                return purpose
+
+    def _define_daily_purpose_chat(self):
+        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["define_purpose"])
+        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
+
+        records = self.long_memory.past_daily_purpose(past_days=5)
+        records_str = ""
+        for idx, record in enumerate(records):
+            temp_date = self.short_memory.cur_date_dt - timedelta(days=(len(records)+idx))
+            records_str += f"[{temp_date.strftime('%m-%d-%Y')}] {record}\n"
+        if not records_str:
+            records_str += "No Records."
+
+        request = chat_prompt.format_prompt(
+                description = self.long_memory.description,
+                records = records_str
+            ).to_messages()
+
+        model = ChatOpenAI(
+                api_key=CONFIG["openai"]["api_key"],
+                organization=CONFIG["openai"]["organization"],
+                model_name='gpt-3.5-turbo',
+                temperature=1.5,
+                verbose=self._verbose
+            )
+        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        if CONFIG["debug"]: print(results.content)
+        return results.content
+
 
     ###############
     ## create the schedule
@@ -192,6 +256,7 @@ class Brain:
                 assert len(_schedule.schedule) > 0
             except:
                 if try_idx + 1 == self._retry_times:
+                    self._status = "error"
                     raise Exception(f"Event schedule generation failed {self._retry_times} times")
                 else:
                     continue
@@ -233,7 +298,7 @@ class Brain:
             example_prompt=example_prompt,
             prefix=self._schedule_prompts["prefix"],
             suffix=self._schedule_prompts["suffix"],
-            input_variables=['description', 'start_date', 'start_time', 'home_addr', 'work_addr'],
+            input_variables=['intervention', 'description', 'start_date', 'start_time', 'home_addr', 'work_addr', 'daily_purpose'],
             partial_variables={"format_instructions": schedule_parser.get_format_instructions()},
         )
 
@@ -253,6 +318,7 @@ class Brain:
             'description':self.long_memory.description,
             'home_addr':self.long_memory.home_addr,
             'work_addr':self.long_memory.work_addr,
+            'daily_purpose':self.long_memory.daily_purpose,
             'start_date':start_date,
             'start_time':start_time,
             "event_examples":label_list_to_str(self._schedule_prompts["event_examples"])
@@ -266,17 +332,22 @@ class Brain:
     ###############
     def _decompose(self):
         decompose = self._decompose_task().dump_list()
+        if isinstance(decompose, Decompose):
+            decompose = decompose.dump_list()
         self.short_memory.cur_decompose = decompose
         if CONFIG["debug"]: print(decompose)
 
-        location = self._predict_location(decompose=decompose).dump_list()
-        print(location)
+        location = self._predict_location(decompose=decompose)
+        if isinstance(location, Location):
+            location = location.dump_list()
         self.short_memory.cur_location_list = location
         if CONFIG["debug"]: print(location)
 
-        # chatbot = self._predict_botusage(decompose=decompose)
-        # self.short_memory.cur_chatbot_list = chatbot
-        # if CONFIG["debug"]: print(chatbot)
+        chatbot = self._predict_botusage(decompose=decompose)
+        if isinstance(chatbot, Chatbot):
+            chatbot = chatbot.dump_dict()
+        self.short_memory.cur_chatbot_dict = chatbot
+        if CONFIG["debug"]: print(chatbot)
 
     def _decompose_task(self, re_decompose=False) -> Decompose:
         for try_idx in range(self._retry_times):
@@ -285,6 +356,7 @@ class Brain:
                 assert len(_decompose.decompose) > 0
             except:
                 if try_idx + 1 == self._retry_times:
+                    self._status = "error"
                     raise Exception(f"Event decompose failed {self.short_memory.cur_event_str} {self._retry_times} times")
                 else:
                     continue
@@ -378,7 +450,8 @@ class Brain:
                 location = self._predict_location_chat(decompose)
             except:
                 if try_idx + 1 == self._retry_times:
-                    return [self.long_memory.home_addr]
+                    self._status = "error"
+                    return []
                 else:
                     continue
             else:
@@ -425,7 +498,7 @@ class Brain:
             'description' : self.long_memory.description,
             'home_addr' : self.long_memory.home_addr,
             'work_addr' : self.long_memory.work_addr,
-            'loc_hist' : json.dumps(self.short_memory.fetch_location_records(num_items=30)),
+            'loc_hist' : self._summarize_mmdata(self.short_memory.fetch_location_records(num_items=30)),
             'decompose' : json.dumps(decompose),
             'cur_time' : self.short_memory.cur_time,
         }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
@@ -438,22 +511,97 @@ class Brain:
         pass
 
 
-    def _predict_botusage(self):
+    def _predict_botusage(self, decompose) -> Chatbot:
         for try_idx in range(self._retry_times):
             try:
-                usage = self._predict_botusage_chat()
+                usage = self._predict_botusage_chat(decompose)
             except:
                 if try_idx + 1 == self._retry_times:
-                    return []
+                    return {}
                 else:
                     continue
             else:
                 return usage
     
-    def _predict_botusage_chat(self):
-        
-        pass
+    def _predict_botusage_chat(self, decompose, llm_temperature=1.0) -> Chatbot:
+        chat_example = []
+        for entry in self._mmdata_prompts['chat_example']:
+            # print(entry)
+            chat_example.append({
+                    "chat": entry["chat"],
+                })
+        example_prompt = PromptTemplate(
+            input_variables=["chat",],
+            template=self._mmdata_prompts["chat_example_prompt"]
+        )
 
+        usage_parser = PydanticOutputParser(pydantic_object=Chatbot)
+        
+        prompt = FewShotPromptTemplate(
+            examples=chat_example,
+            example_prompt=example_prompt,
+            prefix=self._mmdata_prompts["chatbot_prefix"],
+            suffix=self._mmdata_prompts["chatbot_suffix"],
+            input_variables=['description', 'chat_hist', 'decompose', 'cur_time'],
+            partial_variables={"format_instructions": usage_parser.get_format_instructions()},
+        )
+
+        chain = LLMChain(
+            llm=ChatOpenAI(
+                    api_key=CONFIG["openai"]["api_key"],
+                    organization=CONFIG["openai"]["organization"],
+                    model_name='gpt-3.5-turbo-16k',
+                    temperature=llm_temperature,
+                    verbose=self._verbose,
+                ),
+                prompt=prompt,
+            )
+        
+        results = chain.invoke(input={
+            'description' : self.long_memory.description,
+            'preference' : self.long_memory.chatbot_preference,
+            'chat_hist' : self._summarize_mmdata(self.short_memory.fetch_chatbot_records(num_items=60)),
+            'decompose' : json.dumps(decompose),
+            'cur_time' : self.short_memory.cur_time,
+        }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+
+        response = results['text'].replace("24:00", "23:59")
+        return usage_parser.parse(response)
+
+
+    def _summarize_mmdata(self, records):
+        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["mmdata_summary"])
+        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
+
+        request = chat_prompt.format_prompt(records = json.dumps(records)).to_messages()
+
+        model = ChatOpenAI(
+                api_key=CONFIG["openai"]["api_key"],
+                organization=CONFIG["openai"]["organization"],
+                model_name='gpt-3.5-turbo',
+                temperature=0.5,
+                verbose=self._verbose
+            )
+        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        if CONFIG["debug"]: print(results.content)
+        return results.content
+    
+    def _generate_chatbot_preference(self):
+        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["chatbot_prefenrece"])
+        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
+
+        request = chat_prompt.format_prompt(description = self.long_memory.description).to_messages()
+
+        model = ChatOpenAI(
+                api_key=CONFIG["openai"]["api_key"],
+                organization=CONFIG["openai"]["organization"],
+                model_name='gpt-3.5-turbo',
+                temperature=1.5,
+                verbose=self._verbose
+            )
+        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        if CONFIG["debug"]: print(results.content)
+        return results.content
 
 
     def set_intervention(self, plan):

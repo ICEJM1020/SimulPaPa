@@ -7,15 +7,15 @@
                 <h5 class="card-title">Intervention Plan</h5>
             </div>
             <div class="card-body">
-                
                 <div class="post-input">
                     <textarea name="textarea" id="intervention_area" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
                 </div>
                 <div class="row col-md-12">
-                    <a href="javascript:void()" class="btn btn-primary col-md-2 m-2">Regenerate</a>
-                    <a href="javascript:void()" class="btn btn-primary col-md-2 m-2">Generate a New Day</a>
-                    <input type="number" class="form-control col-md-2 m-2" name="new_days">
-                    <a href="javascript:void()" class="btn btn-primary col-md-2 m-2">Generate Multiple Days</a>
+                    <div class="col-md-3"></div>
+                    <a href="javascript:void()" onclick="start_simulation()" class="btn btn-primary col-md-2 m-2">Regenerate</a>
+                    <a href="javascript:void()" onclick="continue_simulation('1')" class="btn btn-primary col-md-2 m-2">Generate a New Day</a>
+                    <input type="number" class="form-control col-md-1 m-2" name="new_days" value="1">
+                    <a href="javascript:void()" onclick="continue_simulation()" class="btn btn-primary col-md-3 m-2">Generate Multiple Days</a>
                 </div>
             </div>
         </div>
@@ -48,14 +48,13 @@
                     <div class="col-md-2 mt-2">
                         <button id="generate_pool_btn" onclick="GenerateInfoTree()" class="btn btn-lg btn-outline-dark ml-2">Generate InfoTree</button>
                     </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row col-md-12">
-        <div class="card col-lg-2">
+        <div class="card col-md-2">
             <div class="card-header">
                 <h4 class="card-title">Agents</h4>
                 <div class="btn-group mt-2">

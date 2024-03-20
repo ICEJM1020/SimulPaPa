@@ -98,6 +98,27 @@ class Location(BaseModel):
         return [i.dump_dict() for i in self.location]
 
 
+class ChatBotEntry(BaseModel):
+    time : str = Field(description='time when use Chatbot in the format of MM-DD-YYYY HH:MM')
+    conv : str = Field(description='Chatbot conversation with human')
+
+    def dump_dict(self):
+        res = {
+            'time' : self.location,
+            'conv' : self.longitude
+        }
+        return res
+
+class Chatbot(BaseModel):
+    chatbot: list[ChatBotEntry]
+
+    def dump_dict(self):
+        res = {}
+        for item in self.chatbot:
+            res[item["time"]] = item["conv"]
+        return res
+
+
 class ActivitySet(BaseModel):
     activity: list[str] = Field(description='A list of activities (a present continuous verb phrase)')
 

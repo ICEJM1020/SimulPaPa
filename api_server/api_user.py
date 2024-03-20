@@ -175,9 +175,9 @@ def fetch_all_user():
         with open(CONFIG["base_dir"] + "/.Users/users.json", "r") as f:
             users = json.load(f)
     except:
-        return_body['msg'] = "Fail to open users database"
+        return_body['message'] = "Fail to open users database"
     else:
-        return_body['msg'] = "success"
+        return_body['message'] = "success"
         return_body['users'] = users
 
     response = make_response(json.dumps(return_body), 200 if return_body else 500)
@@ -393,7 +393,7 @@ def start_simulation(username):
 @ubp.route(f"/simulation/continue/<username>", methods=["GET", "POST"])
 def continue_simulation(username):
     if "days" not in request.form.keys(): 
-        days = request.form['days']
+        days = int(request.form['days'])
     else:
         days=1
     status, user_list = check_user(username=username)
@@ -403,6 +403,31 @@ def continue_simulation(username):
             USER_POOL.continue_simulation(_uuid, days)
             return_body = {
                 "status" : True,
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@ubp.route(f"/simulation/status/<username>", methods=["GET", "POST"])
+def simulation_status(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "message" : USER_POOL.fetch_simulation_status(_uuid)
             }
         else:
             return_body = {

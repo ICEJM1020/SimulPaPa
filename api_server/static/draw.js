@@ -759,27 +759,33 @@ let draw = Chart.controllers.line.__super__.draw; //draw shadow
 };
 
 
-function draw_agent() {
+function draw_agent_heartrate_charjs(data) {
     const areaChart_4 = document.getElementById("agent-heartrate").getContext('2d');
     
     areaChart_4.height = 100;
+
+    labels = []
+    heartrate = []
+    for (var idx in data){
+        labels.push(data[idx]["time"].split(" ")[1])
+        heartrate.push(data[idx]["heartrate"])
+    }
 
     new Chart(areaChart_4, {
         type: 'line',
         data: {
             defaultFontFamily: 'Poppins',
-            labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
+            labels: labels,
             datasets: [
-
                 {
-                    label: "Mean",
+                    label: "Heartrate",
                     type: "line",
                     backgroundColor: "rgb(75, 192, 192, 0.5)",
                     borderColor: "rgb(75, 192, 192)",
                     hoverBorderColor: "rgb(175, 192, 192)",
                     fill: false,
                     tension: 0,
-                    data: [64, 68, 62, 77, 64, 68, 78, 63, 78, 61, 71, 78, 63, 80, 68, 72, 68, 70, 77, 79, 76, 71, 64, 78],
+                    data: heartrate,
                   },
             ]
         },

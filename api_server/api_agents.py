@@ -4,7 +4,7 @@ Author: Xucheng(Timber) Zhang
 Date: 2023-12-28
 """ 
 
-from flask import Blueprint, request, make_response
+from flask import Blueprint, request, make_response, send_file
 import json
 
 from config import CONFIG
@@ -84,10 +84,10 @@ def create_agents_pool(username):
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            msg = USER_POOL.create_agents_pool(_uuid)
+            USER_POOL.create_agents_pool(_uuid)
             return_body = {
                 "status" : True,
-                "message" : USER_POOL.fetch_agents_status(_uuid) + " " + msg
+                "message" : USER_POOL.fetch_agents_status(_uuid)
             }
             logger.info(f"User {username}'s agents pool has created")
         else:
@@ -191,7 +191,7 @@ def load_agents_pool(username):
         if USER_POOL.exist(_uuid):
             return_body = {
                 "status" : True,
-                "user_status" : USER_POOL.load_agents_pool(_uuid)
+                "message" : USER_POOL.load_agents_pool(_uuid)
             }
             logger.info(f"User {username}'s agents pool has loaded from local machine")
         else:
@@ -209,3 +209,142 @@ def load_agents_pool(username):
     return response
 
 
+########
+#
+# single agent group
+#
+########
+@abp.route(f"/agent/<username>/<agent_id>/info", methods=["POST", "GET"])
+def load_agent_info(username, agent_id):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "info" : USER_POOL.load_agent_info(_uuid, int(agent_id)),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@abp.route(f"/agent/<username>/<agent_id>/portrait", methods=["POST", "GET"])
+def load_agent_portrait(username, agent_id):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "file" : USER_POOL.load_agent_portrait(_uuid, int(agent_id)),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    if return_body["status"]:
+        return send_file(return_body["file"])
+    else:
+        response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+        response.headers["Content-Type"] = "application/json"
+        return response
+    
+
+@abp.route(f"/agent/<username>/<agent_id>/donedate", methods=["POST", "GET"])
+def fetch_done_dates(username, agent_id):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "data" : USER_POOL.fetch_agent_done_dates(_uuid, int(agent_id)),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@abp.route(f"/agent/<username>/<agent_id>/chathis/<date>", methods=["POST", "GET"])
+def fetch_chat_history(username, agent_id, date):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "data" : USER_POOL.fetch_agent_chatbot(_uuid, int(agent_id), date),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+@abp.route(f"/agent/<username>/<agent_id>/heartrate/<date>", methods=["POST", "GET"])
+def fetch_heartrate(username, agent_id, date):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "data" : USER_POOL.fetch_agent_heartrate(_uuid, int(agent_id), date),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response

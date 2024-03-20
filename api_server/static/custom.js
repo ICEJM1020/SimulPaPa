@@ -6,6 +6,10 @@ let check_tree_interval = {}
 let tree_status = "building"
 let check_pool_interval = {}
 let pool_status = "building"
+let user_simulation = {}
+let check_simul_interval = {}
+
+let check_interval = 100
 
 window.onload = function(){
     loadContent("/dashboard");
@@ -30,10 +34,9 @@ function loadContent(content) {
 
 function loadAgent(id) {
     $("#mainContent").load("/" + cur_user + "/" + id.toString(), success=function(){
-        console.log(cur_user + id.toString())
-        draw_agent()
-        init_calendar(window.jQuery)
-        // TODO！！！
+        cur_agent_id = id.toString()
+        console.log(cur_user + "," + id.toString())
+        load_agent_page()
     }); 
 };
 
@@ -74,11 +77,10 @@ function fetch_users(){
         contentType: "application/json",
         dataType: 'json',
         success: function( res ) {
-            console.log(res['msg'])
             return_val = res['users'];
         },
         error: function(){
-            return_val =  "error"
+            return_val =  []
         }
       });
     return return_val
@@ -111,7 +113,7 @@ function create_user(){
         success: function(res) {
             activate_user(formData.get("username"));
             alert("Success");
-            // check_tree_interval[formData.get("username")] = setInterval(check_info_tree, 1000, formData.get("username"));
+            user_simulation[formData.get("username")] = setInterval(GenerateAgentsPool, check_interval, formData.get("username"));
         },
         error: function(res){
             console.log(res)
@@ -211,6 +213,18 @@ function random_create_user(){
 
 }
 
+function load_agent_pool(username){
+    $.ajax({
+        url: "/agents/" + username + "/loadlocal",
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function( res ) {
+            console.log("Load agents pool");
+        }
+      });
+}
+
 function fetch_agents_list(username){
     $.ajax({
         url: "/agents/" + username + "/fetchall",
@@ -220,7 +234,10 @@ function fetch_agents_list(username){
         success: function( res ) {
             agent_list = res['data'];
             if (res['message']==="done"){
-                check_agents_pool(username)
+                load_agent_pool(username)
+            }
+            else{
+                update_status_area({"message":"error in last agents pool creation. Regenerate or use exitsed agents."}, "Agents Pool")
             }
         }
       });
@@ -238,12 +255,12 @@ function update_agents_list(username){
     //     </div>
     // </li>
 
-    for(var agent in agent_list) {
+    for(var idx in agent_list) {
         _html += "<li class=\"list-group-item\"><div class=\"row\"><div class=\"custom-control custom-checkbox col-md-4\"><input type=\"checkbox\"></div>"
-        _html += "<div class=\"col-md-8\"><a onclick=\"loadAgent("
-        _html += agent.split("-")[1]
+        _html += "<div class=\"col-md-8\"><a class=\"btn btn-xs btn-outline-dark\" onclick=\"loadAgent("
+        _html += agent_list[idx].split("-")[1]
         _html += ")\">"
-        _html += agent
+        _html += agent_list[idx]
         _html += "</a></div></div></li>"
     }
     document.getElementById("agent_list").innerHTML = _html
@@ -261,7 +278,7 @@ function check_agents_pool(username){
                 console.log("Agent pool status: " + res["message"])
                 if (res["message"].includes("ready")){
                     pool_status = "ready"
-                    document.getElementById("generate_agent_btn").innerText("Regenerate Agents")
+                    document.getElementById("generate_agent_btn").innerText = "Regenerate Agents"
                     clearInterval(check_pool_interval[username]);
                     delete check_pool_interval[username]
                     update_agents_list(username)
@@ -270,6 +287,10 @@ function check_agents_pool(username){
                     pool_status = "error"
                     clearInterval(check_pool_interval[username]);
                     delete check_pool_interval[username]
+                }
+                else if (res["message"].includes("init")){
+                    pool_status = "init"
+                    update_agents_list(username)
                 }
                 else {
                     pool_status = res["message"]
@@ -287,7 +308,6 @@ function activate_user(username){
         type: 'GET',
         async: false,
         success: function(res) {
-            console.log(res)
             fetch_user_status(username)
             status = true
         },
@@ -311,7 +331,7 @@ function fetch_user_status(username){
 }
 
 function update_status_area(res, type){
-    if (res["message"].includes("building")){
+    if (res["message"].includes("ing")){
         document.getElementById("status_icon").classList = ""
         document.getElementById("status_icon").classList.add("mdi", "mdi-cogs")
         document.getElementById("status_area").classList = ""
@@ -335,6 +355,80 @@ function update_status_area(res, type){
     }
 }
 
+function check_simulation(username){
+    if (tree_status=="ready" && pool_status=="ready"){
+        $.ajax({
+            url: "/simulation/status/" + username ,
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(res) {
+                console.log("Simulation status: " + res["message"])
+                update_status_area(res, "Simulation status")
+                if (res["message"].includes("ready") || res["message"].includes("failed")){
+                    clearInterval(check_simul_interval[username]);
+                    delete check_simul_interval[username];
+                }
+            }
+        });
+    }
+}
+
+function start_simulation(username){
+    if (username){
+        console.log("Start simulate for " + username)
+        $.ajax({
+            url: "/simulation/start/" + username,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                console.log(res)
+            }
+          });
+    }
+    else{
+        $.ajax({
+            url: "/simulation/start/" + cur_user,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                if (cur_user in check_simul_interval){
+                    clearInterval(check_simul_interval[cur_user]);
+                    delete check_simul_interval[cur_user];
+                }
+                check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+            }
+          });
+    }
+}
+
+function continue_simulation(days){
+    var formData = new FormData()
+    if (days){
+        formData.set("days", days)
+    }
+    else{
+        formData.set("days", document.getElementsByName("new_days").value)
+    }
+
+    $.ajax({
+        url: "/simulation/continue/" + cur_user,
+        type: 'POST',
+        async: true,
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(res) {
+            if (cur_user in check_simul_interval){
+                clearInterval(check_simul_interval[cur_user]);
+                delete check_simul_interval[cur_user];
+            }
+            check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+        }
+        });
+}
+
 function GenerateInfoTree(){
     if (tree_status==="ready"){
         $.ajax({
@@ -343,32 +437,69 @@ function GenerateInfoTree(){
             async: true,
             dataType: 'json',
             success: function(res) {
-                check_tree_interval[cur_user] = setInterval(check_info_tree, 1000, cur_user);
+                check_tree_interval[cur_user] = setInterval(check_info_tree, check_interval, cur_user);
             }
           });
     }
 }
 
-function GenerateAgentsPool(){
-    if (pool_status === "init" || pool_status === "ready"){
-        document.getElementById("agent_list").innerHTML = ""
+function new_user_simulation(username){
+    if (tree_status==="ready" && pool_status==="ready"){
+        clearInterval(user_simulation[username]);
+        delete user_simulation[username];
+        load_agent_pool(username);
+        start_simulation(username);
+    }
+}
+
+function GenerateAgentsPool(username){
+    if (username){
+        console.log("New user attempt to create")
         $.ajax({
-            url: "/agents/" + cur_user + "/create",
+            url: "/agents/" + username + "/create",
             type: 'GET',
             async: true,
             dataType: 'json',
             success: function(res) {
-                check_pool_interval[cur_user] = setInterval(check_agents_pool, 1000, cur_user);
+                if (res["message"].includes("error") || res["message"].includes("ing")){
+                    clearInterval(user_simulation[username]);
+                    delete user_simulation[username];
+                    if (res["message"].includes("error")){
+                        alert("Error creation for " + username)
+                    }
+                    else{
+                        user_simulation[username] = setInterval(new_user_simulation, check_interval, username)
+                    }
+
+                }
             }
-          });
+            });
+    }
+    else{
+        if (!pool_status.includes("ing")){
+            document.getElementById("agent_list").innerHTML = ""
+            $.ajax({
+                url: "/agents/" + cur_user + "/create",
+                type: 'GET',
+                async: true,
+                dataType: 'json',
+                success: function(res) {
+                    if (!(cur_user in check_pool_interval)){
+                        check_pool_interval[cur_user] = setInterval(check_agents_pool, check_interval, cur_user);
+                    }
+                }
+                });
+        }
+
     }
 }
 
 function load_user_page(username){
     if_activated = activate_user(username)
     if (if_activated) {
-        check_tree_interval[username] = setInterval(check_info_tree, 1000, username);
-        check_pool_interval[username] = setInterval(check_agents_pool, 1000, username);
+        if (!(username in check_tree_interval)) check_tree_interval[username] = setInterval(check_info_tree, check_interval, username);
+        if (!(username in check_pool_interval)) check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
+        if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval*1, username);
         // 1. load agents
         // 2. load statistic
     }
@@ -395,4 +526,173 @@ function fetch_user_info(username){
 }
 
 
+// single agent
+let cur_agent_id = ""
+let agent_info = {}
+let donedates =  []
+let chat_his = {}
 
+function load_agent_page(){
+
+    document.getElementById("back_btn").onclick = function() { loadContent("user-"+cur_user)}
+    document.getElementById("user-name").innerText = cur_user
+    document.getElementById("agent-name").innerText = "Agent "+cur_agent_id
+    document.getElementById("agent-name-link").innerText = "Agent "+cur_agent_id
+    document.getElementById("portrait").src = "/agent/"+cur_user+"/"+cur_agent_id+"/portrait"
+
+    load_info();
+    fetch_done_date();
+
+    draw_agent_heartrate(donedates[0]);
+    draw_cloud(donedates[0]);
+    init_calendar(window.jQuery);
+}
+
+function load_info(){
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/info",
+        type: 'GET',
+        async: true,
+        dataType: 'json',
+        success: function(res) {
+            console.log(res)
+            agent_info = res["info"]
+            document.getElementById("description").innerText = agent_info["description"]
+            document.getElementById("name-show").innerHTML = "<strong>Name:"+ agent_info["name"] +"</strong>"
+            document.getElementById("birthday-show").innerHTML = "<strong>Birthday:"+ agent_info["birthday"] +"</strong>"
+            document.getElementById("disease-show").innerHTML = "<strong>Disease(s):"+ agent_info["disease"] +"</strong>"
+        }
+        });
+}
+
+function fetch_done_date() {
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/donedate",
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function(res) {
+            console.log(res)
+            donedates = res["data"]
+        }
+        });
+}
+
+function wordFreq(string) {
+    var words = string.replace(/[.]/g, '').split(/\s/);
+    var freqMap = {};
+    words.forEach(function(w) {
+        if (!freqMap[w]) {
+            freqMap[w] = 0;
+        }
+        freqMap[w] += 1;
+    });
+
+    return freqMap;
+}
+
+function d3_draw_cloud(myWords){
+    // List of words
+    // var myWords = ["Hello", "Everybody", "How", "Are", "You", "Today", "It", "Is", "A", "Lovely", "Day", "I", "Love", "Coding", "In", "My", "Van", "Mate"]
+    words = []
+    large = parseInt(Object.values(myWords)[0])
+    console.log(large)
+    for (var key in myWords) {
+        console.log(myWords[key])
+        words.push(
+            {text: key, size: 10 + (myWords[key]/large) * 90, test: "haha"}
+        )
+    }
+    console.log(words)
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 10, bottom: 10, left: 10},
+        width = 450 - margin.left - margin.right,
+        height = 450 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#chatbot_wordcloud").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+    // Constructs a new cloud layout instance. It run an algorithm to find the position of words that suits your requirements
+    var layout = d3.layout.cloud()
+    .size([width, height])
+    // .words(myWords.map(function(d) {
+    //   return {text: d, size: 10 + Math.random() * 90, test: "haha"};
+    // }))
+    .words(words)
+    .padding(5)
+    .rotate(function() { return ~~(Math.random() * 2) * 90; })
+    .font("Impact")
+    .fontSize(function(d) { return d.size; })
+    .on("end", draw);
+    layout.start();
+
+    // This function takes the output of 'layout' above and draw the words
+    // Better not to touch it. To change parameters, play with the 'layout' variable above
+    function draw(words) {
+        svg.append("g")
+        .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+        .selectAll("text")
+            .data(words)
+        .enter().append("text")
+            .style("font-size", function(d) { return d.size + "px"; })
+            .attr("text-anchor", "middle")
+            .attr("transform", function(d) {
+            return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+            })
+            .text(function(d) { return d.text; });
+    }
+}
+
+function fetch_chat_his(date){
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/chathis/" + date,
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function(res) {
+            if (Object.keys(res["data"]).length !== 0){
+                chat_his = res["data"]
+            }
+            else{
+                chat_his = {0:{"time":"null", "chatbot":"null null null"}}
+            }
+        }
+        });
+}
+
+function count_words_freq(){
+    _str = ""
+    for (var idx in chat_his){
+        console.log(chat_his[idx]["chatbot"])
+        _str = _str + chat_his[idx]["chatbot"]
+    }
+    console.log(_str)
+    return wordFreq(_str)
+}
+
+function draw_cloud(date){
+    fetch_chat_his(date);
+    words_freq = count_words_freq();
+    console.log(words_freq)
+    d3_draw_cloud(words_freq)
+}
+
+function draw_agent_heartrate(date){
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/heartrate/" + date,
+        type: 'GET',
+        async: true,
+        dataType: 'json',
+        success: function(res) {
+            console.log(res)
+            draw_agent_heartrate_charjs(res["data"])
+        }
+        });
+
+}

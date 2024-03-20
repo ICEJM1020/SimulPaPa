@@ -59,13 +59,20 @@ class UserPool:
         return self.pool[_uuid].get_description()
     
 
+    ############
+    # agents
+    ############
     def start_simulation(self, _uuid):
         self.pool[_uuid].start_simulation()
 
 
     def continue_simulation(self, _uuid, days):
         self.pool[_uuid].continue_simulation(days)
-    
+        
+
+    def fetch_simulation_status(self, _uuid):
+        return self.pool[_uuid].agents_pool.fetch_simul_status()
+
 
     ############
     # agents
@@ -96,7 +103,23 @@ class UserPool:
     def fetch_all_agents(self, _uuid):
         return self.pool[_uuid].agents_pool.fetch_all_agents()
     
-
+    ############
+    # single agent
+    ############
+    def load_agent_info(self, _uuid, agent_id):
+        return self.pool[_uuid].agents_pool.fetch_agent_info(agent_id)
+    
+    def load_agent_portrait(self, _uuid, agent_id):
+        return self.pool[_uuid].agents_pool.fetch_agent_portrait(agent_id)
+    
+    def fetch_agent_done_dates(self, _uuid, agent_id):
+        return self.pool[_uuid].agents_pool.fetch_agent_done_dates(agent_id)
+    
+    def fetch_agent_chatbot(self, _uuid, agent_id, date):
+        return self.pool[_uuid].agents_pool.fetch_agent_chatbot(agent_id, date)
+    
+    def fetch_agent_heartrate(self, _uuid, agent_id, date):
+        return self.pool[_uuid].agents_pool.fetch_agent_heartrate(agent_id, date)
 
 
 class User:
@@ -233,7 +256,7 @@ class User:
 
 
     def continue_simulation(self, days):
-        self.agents_pool.continue_simulation(self.simul_days, days)
+        self.agents_pool.continue_simulation(days)
 
 
     def get_status(self):

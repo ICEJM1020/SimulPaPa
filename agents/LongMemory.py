@@ -44,7 +44,8 @@ class LongMemory:
         # self.memory_tree["user_chatbot_pref"] = ""
         self.memory_tree["agent_chatbot_pref"] = ""
         self.memory_tree["intervention"] = "No intervention plan."
-        self.memory_tree["daily_purpose"] = {}
+        self.memory_tree["daily_purpose"] = ""
+        self.memory_tree["past_daily_purpose"] = []
 
     @property
     def intervention(self):
@@ -65,18 +66,35 @@ class LongMemory:
     @property
     def work_addr(self):
         return self.info["work_addr"]
+    
+    @property
+    def daily_purpose(self):
+        return self.memory_tree["daily_purpose"]
+    
+    @daily_purpose.setter
+    def daily_purpose(self, purpose):
+        self.memory_tree["daily_purpose"] = purpose
+        if len(self.memory_tree["past_daily_purpose"]) == 10:
+            self.memory_tree["past_daily_purpose"].pop(0)
+        self.memory_tree["past_daily_purpose"].append(purpose)
+
+    @property
+    def chatbot_preference(self):
+        return self.memory_tree["agent_chatbot_pref"]
+    
+    @chatbot_preference.setter
+    def chatbot_preference(self, pref):
+        self.memory_tree["agent_chatbot_pref"] = pref
 
 
     def _load_info(self):
         with open(self.agent_folder + "/info.json", "r") as f:
             info = json.load(f)
             self.info = info
-            self.info["description"]
 
         with open(self.user_folder + "/info.json", "r") as f:
             info = json.load(f)
             self.user_info = info
-            self.user_info["description"]
         
 
     # def _search_user_last_day(self, ):
@@ -102,31 +120,20 @@ class LongMemory:
         self.save_cache()
         
     def _search_generated_activity(self, ):
-        for filename in os.listdir(self.agent_act_folder):
-            if filename.endswith('.csv'):
-                # Extract date from filename
-                date_str = filename.split('.')[0]  # Remove the '.csv' part
-                self.agent_act_files[date_str] = os.path.join(self.agent_act_folder, filename)
+        if os.path.exists(self.agent_act_folder):
+            for filename in os.listdir(self.agent_act_folder):
+                if filename.endswith('.csv'):
+                    # Extract date from filename
+                    date_str = filename.split('.')[0]  # Remove the '.csv' part
+                    self.agent_act_files[date_str] = os.path.join(self.agent_act_folder, filename)
     
 
-    def fetch_user_lastday(self):
-        return self.user_last_day
+    # def fetch_user_lastday(self):
+    #     return self.user_last_day
     
 
-    def past_daily_purpose(self, cur_date, past_days:int=5):
-        res = {}
-        for i in range(1, past_days+1):
-            past_date = datetime.strptime(cur_date, '%m-%d-%Y') - timedelta(days=i)
-            daily_file = past_date.strftime('%m-%d-%Y') + ".csv"
-
-            if os.path.exists(os.path.join(self.agent_act_folder, daily_file)):
-                res[past_date.strftime('%m-%d-%Y')] = self.memory_tree["daily_purpose"][past_date.strftime('%m-%d-%Y')]
-                # res[past_date.strftime('%m-%d-%Y')] = self._summary_daily_purpose(os.path.join(self.agent_act_folder, daily_file))
-            else:
-                _purpose = self._summary_daily_purpose(os.path.join(self.user_act_folder, daily_file))
-                res[past_date.strftime('%m-%d-%Y')] = _purpose
-                self.memory_tree["daily_purpose"][past_date.strftime('%m-%d-%Y')] = _purpose
-        return json.dumps(res)
+    def past_daily_purpose(self, past_days:int=5):
+        return self.memory_tree["past_daily_purpose"][-past_days:]
 
 
     # def _summary_daily_purpose(self, activity_file):

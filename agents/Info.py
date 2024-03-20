@@ -11,6 +11,7 @@ import random
 import re
 
 from openai import OpenAI
+import requests
 
 from config import CONFIG
 
@@ -60,7 +61,8 @@ def gpt_description(name, birthday, retry=5,  **kwargs):
                 continue
         else:
             return description
- 
+
+
 def _gpt_description(name, birthday, **kwargs) -> dict:
     open_ai_client = OpenAI( 
         api_key=CONFIG["openai"]["api_key"],
@@ -132,6 +134,28 @@ def _random_generate(short_description) -> dict:
     return json.loads(completion.choices[0].message.content)
 
 
+def dalle_portrait(description):
+    prompts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
+    with open(os.path.join(prompts_folder, "prompt_utils.json"), "r") as f:
+        prompt = json.load(fp=f)["portrait"]
+
+    client = OpenAI(
+        api_key=CONFIG["openai"]["api_key"],
+        organization=CONFIG["openai"]["organization"]
+        )
+
+    response = client.images.generate(
+        model = "dall-e-2",
+        prompt = prompt + description,
+        size = "512x512",
+        quality = "standard",
+        n=1,
+    )
+    image_url = response.data[0].url
+    response = requests.get(image_url)
+    return response.content
+
+
 class InfoTree():
 
     def __init__(self, info, folder) -> None:
@@ -193,7 +217,6 @@ class InfoTree():
         for try_idx in range(retry):
             try:
                 cities = self._search_city_state_chat(city, state, size)
-                assert len(cities) > 0
                 _p = 0.0
                 self.tree["option"] = {}
                 self.tree["prob"] = []
@@ -217,6 +240,8 @@ class InfoTree():
                     raise Exception(f"Search cities failed {retry} times")
                 else:
                     continue
+            else:
+                return True
 
     def _search_city_state_chat(self, city, state, size=5):
         industries = {key : "population_percentage_in_decimal" for key in CONFIG["industry"]}
@@ -257,7 +282,6 @@ class InfoTree():
         for try_idx in range(retry):
             try:
                 res = self._search_district_chat(u_city, u_state, city, state, district, size)
-                assert len(res) > 0
             except:
                 if try_idx + 1 == retry:
                     self.status = "error"
@@ -300,10 +324,12 @@ class InfoTree():
     
 
     def _search_disease(self, disease, size=10, retry=5):
+        # res = self._search_disease_chat(disease, size)
+        # self.tree["disease"] = res
+
         for try_idx in range(retry):
             try:
                 res = self._search_disease_chat(disease, size)
-                assert len(res) > 0
             except:
                 if try_idx + 1 == retry:
                     self.status = "error"
@@ -312,6 +338,7 @@ class InfoTree():
                     continue
             else:
                 self.tree["disease"] = res
+                return True
 
     def _search_disease_chat(self, disease, size=10):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])

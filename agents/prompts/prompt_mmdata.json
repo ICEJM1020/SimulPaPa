@@ -1,7 +1,15 @@
 {
-    "location_prefix" : "Profile:\n{description}\nLiving address: {home_addr}\nWorking address:{work_addr}\n\nHistory:\n{loc_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to assign the location for each activity.",
-    "location_example_prompt" : "If {activity}, the location could be {location}(longitude: {longitude}, latitude: {latitude})",
+    "location_prefix" : "Profile:\n{description}\nLiving address: {home_addr}\nWorking address:{work_addr}\n\nHistory:\n{loc_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict the location during this activity plan.",
+    "location_example_prompt" : "For example: doing {activity}, the location could be {location}(longitude: {longitude}, latitude: {latitude})",
     "location_example" : [
+            {"activity":"Eating Lunch", "location":"Starbucks, 4th Avenue", "latitude":47.607283, "longitude":-122.334550},
+            {"activity":"Shopping", "location":"Whole Foods, Westlake Avenue", "latitude":47.618328, "longitude":-122.338246},
+            {"activity":"Exercising", "location":"Golds Gym, Howell Street", "latitude":47.617575, "longitude":-122.330503},
+            {"activity":"Checking social media", "location":"The Hamilton Apartments, Baltimore Avenue", "longitude":39.951936, "latitude":-75.194718},
+            {"activity":"Coffee break", "location" : "Gramercy Green, 3rd Avenue", "longitude":40.739414, "latitude":-73.983696},
+            {"activity":"Friends dinner", "location" : "4 Union Square, East 14th Street", "longitude":40.734808, "latitude":-73.992022}
+        ],
+    "location_example_back" : [
             {"activity":"Eating Lunch", "location":"Starbucks, 4th Avenue", "latitude":47.607283, "longitude":-122.334550},
             {"activity":"Eating Lunch", "location":"Pink Door, Post Alley", "latitude":47.610407, "longitude":-122.342615},
             {"activity":"Shopping", "location":"Whole Foods, Westlake Avenue", "latitude":47.618328, "longitude":-122.338246},
@@ -14,11 +22,13 @@
     "location_suffix" : "Now it is {cur_time}, based on the history of location records and current Activity Plan, predict the future location during the Activity Plan. The location should match what this person is doing following normal human activity banner. The future location trajectory need to continue the past location trajectory. The location should contain the room (optional), the building. the street.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
     "CoT" : "To answer this question, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:",
     
-    "chatbot_prompt" : "",
-    "chat_conv" : [
-        "Chatbot:Hello! I'm Coco, your friendly chatbot. How's your day going so far?\n\nUser:Going good but it's pretty tired.\nChatbot:I see, what made your day tiring?\n\nUser:are just too many soft to do today so I went to school to have a course in the morning and then I have a meeting in the afternoon afterwards my boyfriend went to the airport so I was him and then I come back home there are even more readings. ",
-        "Chatbot:How did the meeting in the afternoon go?\nUser:Other question: meeting was OK so we are trying to revise our paper it was it was OK\nChatbot:Sounds productive.",
-        "Chatbot:Can you tell me more about your visit to the airport?\nUser:Yes(positive response) so my boyfriend visited me in Boston and then it's time for him to come back to Elena so he drove actually V drove to the airport so my boyfriend come came back to Elena,",
-        "Chatbot:How did you feel about your day overall?\nUser:I/My have pretty complex feeling of the day cause you know my boyfriend went to the airport and laughed to atlander but it was also a really productive day\nChatbot:I understand. It sounds like a bittersweet day. Thanks for sharing your day with me."
-    ]
+    "chatbot_prefix" : "Profile:\n{description}\nChatbot{preference}\n\nHistory:\n{chat_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict when the smart Chatbot will be used during this activity plan.",
+    "chatbot_example_prompt" : "Here is an example of a Chatbot usage:\n{chat}",
+    "chatbot_example" : [
+        {"chat" :"Chatbot:Hello! I'm Coco, your friendly chatbot. How's your day going so far?\n\nUser:Going good but it's pretty tired.\nChatbot:I see, what made your day tiring?\n\nUser:are just too many soft to do today so I went to school to have a course in the morning and then I have a meeting in the afternoon afterwards my boyfriend went to the airport so I was him and then I come back home there are even more readings. "},
+        {"chat" :"Chatbot:How did the meeting in the afternoon go?\nUser:Other question: meeting was OK so we are trying to revise our paper it was it was OK\nChatbot:Sounds productive."},
+        {"chat" :"Chatbot:Can you tell me more about your visit to the airport?\nUser:Yes(positive response) so my boyfriend visited me in Boston and then it's time for him to come back to Elena so he drove actually V drove to the airport so my boyfriend come came back to Elena,"},
+        {"chat" :"Chatbot:How did you feel about your day overall?\nUser:I/My have pretty complex feeling of the day cause you know my boyfriend went to the airport and laughed to atlander but it was also a really productive day\nChatbot:I understand. It sounds like a bittersweet day. Thanks for sharing your day with me."}
+    ],
+    "chatbot_suffix" : "Now it is {cur_time}, based on the history of Chatbot records and current Activity Plan, predict the future Chatbot usage during the Activity Plan. You could be creative to imagine you are the Chatbot. The useage frequency should match the user's usage preference. The usage of the ChatBot (or the chat topic) must accord with the someone's current status For example, during a meeting, someone cannot use ChatBot; during the morning routine, someone may ask the weather of today; during the commute to work, someone may ask about the trafic. \n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}"
 }       

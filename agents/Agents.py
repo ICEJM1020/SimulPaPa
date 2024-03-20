@@ -10,6 +10,7 @@ import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 
 from openai import OpenAI
+import pandas as pd
 
 from logger import logger
 from agents.Info import *
@@ -41,15 +42,10 @@ class AgentsPool:
 
         ######################
         # ready :  finish creating and ready to simulate
-        # creating : building is undergoing
-        # loading: loading the agents from local machine
+        # working : working on
+        # failed : all agents are error
         # error {id}:  error in create {id} agent
-        self.status = "init"
-
-        ######################
-        # finish :  finish simulating
-        # working : building is undergoing
-        # error {id}:  error in create {id} agent
+        self._status = "init"
         self.simul_status = "init"
 
 
@@ -64,11 +60,11 @@ class AgentsPool:
         logger.info(f"start create agents pool for {self.info['name']}({self._uuid})")
         if self.info_tree.get_status() == "ready":
             thread = threading.Thread(target=self._create_pool)
-            self.status = "building"
+            self._status = "working"
             thread.start()
         else:
             logger.info(f"info tree for agents pool of {self.info['name']}({self._uuid}) has not finished")
-        return self.status
+        return self._status
     
 
     def _create_pool(self, ):
@@ -94,17 +90,17 @@ class AgentsPool:
                 self.pool[i].save()
         
         if if_err:
-            self.status = "error create" + error
+            self._status = "error create" + error
         else:
-            self.status = "ready"
+            self._status = "ready"
 
 
     def load_pool(self, ):
         logger.info(f"start load agents pool for {self.info['name']}({self._uuid})")
         thread = threading.Thread(target=self._load_pool)
-        self.status = "loading"
+        self._status = "working"
         thread.start()
-        return self.status
+        return self._status
 
 
     def _load_pool(self):
@@ -122,16 +118,16 @@ class AgentsPool:
                     logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
 
         if if_err:
-            self.status = "error load " + error
+            self._status = "error load " + error
         else:
-            self.status = "ready"
+            self._status = "ready"
 
 
     def save_pool(self, ):
-        if self.status=="ready":
+        if self._status=="ready":
             for idx in self.pool:
                 self.pool[idx].save()
-        elif self.status=="building":
+        elif self._status=="working":
             raise Exception("Agents pool is under creation")
         else:
             pass
@@ -141,31 +137,66 @@ class AgentsPool:
         res = []
         for dir in dir_list:
             if not "." in dir:
-                res.append(f"Agent-{dir}")
+                if os.path.exists(os.path.join(self.folder, dir+"/info.json")):
+                    res.append(f"Agent-{dir}")
         return res, len(res)==self.size
 
 
     def start_simulation(self, days=1):
         logger.info(f"start simulation for {self.info['name']}({self._uuid})")
+        self.simul_status = "working"
         for agent in self.pool.values():
             agent.start_planing(days)
 
     
     def continue_simulation(self, days=1):
         logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
+        self.simul_status = "working"
         for agent in self.pool.values():
             agent.continue_planing(days)
 
 
+    def _monitor_agent_status(self):
+        _status = ""
+        _ready = 0
+        _error = 0
+        for key, agent in self.pool.items():
+            if agent.status == "error":
+                _status += f"Error-Agent-{key}; "
+                _error += 1
+            if agent.status == "ready":
+                _ready += 1
+        if _status:
+            self.simul_status = _status
+        if _ready == self.size:
+            self.simul_status = "ready"
+        if _error == self.size:
+            self.simul_status = "failed"
+
+    def fetch_agent_info(self, id):
+        return self.pool[id].fetch_info()
+    
+    def fetch_agent_portrait(self, id):
+        return os.path.join(self.pool[id].folder, "portrait.png")
+
+    def fetch_agent_done_dates(self, id):
+        return self.pool[id].fetch_done_dates()
+    
+    def fetch_agent_chatbot(self, id, date):
+        return self.pool[id].fetch_chatbot(date)
+    
+    def fetch_agent_heartrate(self, id, date):
+        return self.pool[id].fetch_heartrate(date)
+
+
     def fetch_tree_status(self):
         return self.info_tree.get_status()
-    
 
     def fetch_status(self):
-        return self.status
+        return self._status
     
-
     def fetch_simul_status(self):
+        self._monitor_agent_status()
         return self.simul_status
 
 
@@ -187,11 +218,10 @@ class Agent:
 
         # Agent status
         ######################
-        # ready :  finish creating and ready to simulate
-        # creating : building is undergoing
-        # loading: loading the agents from local machine
-        # error {id}:  error in create {id} agent
-        self.status = "init"
+        # ready : ready to start simulation
+        # working: working on simulation
+        # error:  error
+        self._status = "init"
 
         # infomation
         self.info = {key:None for key in CONFIG["info"]}
@@ -202,6 +232,9 @@ class Agent:
             self._fill_info(info=info)
         if self.description=="":
             self.generate_description()
+        if not os.path.exists(os.path.join(self.folder, "portrait.png")):
+            self.draw_portrait()
+        self.save()
 
         # brain
         self.brain = Brain(
@@ -217,11 +250,11 @@ class Agent:
                 info = json.load(f)
         except:
             logger.error(f"{self._uuid} agent({self.index}) load information file unsuccessfully")
-            self.status = "error"
+            self._status = "error"
         else:
             missing = self._fill_info(info=info)
             logger.info(f"{self._uuid} agent({self.index}) load information file successfully, missing: {missing}")
-            self.status = "ready"
+            self._status = "ready"
 
 
     def _fill_info(self, info):
@@ -244,21 +277,34 @@ class Agent:
             info = gpt_description(**self.info)
             self._fill_info(info)
         except:
-            self.status = "error"            
+            self._status = "error"            
             logger.info(f"{self._uuid} agent({self.index}) generate description unsuccessfully")
         else:
-            self.status = "ready"
+            self._status = "ready"
             logger.info(f"{self._uuid} agent({self.index}) generate description successfully")
+
+
+    def draw_portrait(self):
+        content = dalle_portrait(self.description)   
+        with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
+            file.write(content)
+        # try:
+        #     content = dalle_portrait(self.description)   
+        #     with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
+        #         file.write(content)
+        # except:
+        #     self._status = "error"
 
 
     def start_planing(self, days=1):
         # self.brain.init_brain()
+        self._status = "working"
         self.brain.plan(days=days, simul_type="new")
 
     def continue_planing(self, days=1):
+        self._status = "working"
         self.brain.load_cache()
-        self.brain.plan(days=days, simul_type="continue")
-
+        self.brain.plan(days=days, simul_type="continue")   
 
     def save(self):
         with open(self.folder + "/info.json", "w") as f:
@@ -268,10 +314,42 @@ class Agent:
             for key in self.info.keys():
                 dumps[key] = self.info[key]
             json.dump(dumps, fp=f)
-        self.brain.save_cache()
 
+        try:
+            self.brain.save_cache()
+        except:
+            logger.info(f"{self._uuid}-{self.index}: No init brain")
+
+    def _monitor_brain_status(self):
+        self._status = self.brain.status
+
+    @property
+    def status(self):
+        self._monitor_brain_status()
+        return self._status
+    
+    @status.setter
+    def status(self, status):
+        self._status = status
 
     def check_ready(self):
-        return self.status=="ready"
+        return self._status=="ready"
+    
+    def fetch_info(self):
+        with open(self.folder + "/info.json", "r") as f:
+            info = json.load(f)
+            return info
 
 
+    def fetch_chatbot(self, date):
+        _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        _hist = _hist[_hist["chatbot"].notna()].loc[:, ['time', 'chatbot']]
+        return _hist.T.to_dict()
+
+    def fetch_heartrate(self, date):
+        _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'heartrate']]
+        return _hist.T.to_dict()
+
+    def fetch_done_dates(self):
+        return [file.split(".")[0] for file in os.listdir(self.activity_folder)]

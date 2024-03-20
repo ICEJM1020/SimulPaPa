@@ -69,6 +69,7 @@ class ShortMemory:
         self._cur_decompose_index = 0
         self._cur_location_list = []
         self._cur_location_list_index = 0
+        self._cur_chatbot_dict = {}
 
         self._cur_activity = "Sleeping"
 
@@ -155,8 +156,25 @@ class ShortMemory:
     
     @cur_location_list.setter
     def cur_location_list(self, location):
-        self._cur_location_list = location
+        if location:
+            self._cur_location_list = location
+        else:
+            self._cur_location_list = {
+                "start_time" : "01-01-1900 00:00",
+                "end_time" : "12-31-2100 23:59",
+                "location" : "unknown",
+                "longitude" : "unknown",
+                "latitude" : "unknown",
+            }
         self._cur_location_list_index = 0
+
+    @property
+    def cur_chatbot_dict(self):
+        return self._cur_chatbot_dict
+    
+    @cur_chatbot_dict.setter
+    def cur_chatbot_dict(self, uasge):
+        self._cur_chatbot_dict = uasge
 
     @property
     def cur_activity(self):
@@ -171,7 +189,9 @@ class ShortMemory:
             "activity" : activity,
             "location" : self.cur_location['location'],
             "longitude" : self.cur_location['longitude'],
-            "latitude" : self.cur_location['latitude']
+            "latitude" : self.cur_location['latitude'],
+            "chatbot":  self.cur_chatbot,
+            "heartrate" : 60,
         })
 
     @property
@@ -190,44 +210,63 @@ class ShortMemory:
         
     @property
     def planning_activity(self):
-        _decompose_entry = self._cur_decompose[self._cur_decompose_index]
-        start_time = datetime.strptime(_decompose_entry["start_time"], "%m-%d-%Y %H:%M")
-        end_time = datetime.strptime(_decompose_entry["end_time"], "%m-%d-%Y %H:%M")
-
-        if start_time <= self.date_time_dt < end_time:
-            return _decompose_entry['activity']
+        try:
+            _decompose_entry = self._cur_decompose[self._cur_decompose_index]
+            start_time = datetime.strptime(_decompose_entry["start_time"], "%m-%d-%Y %H:%M")
+            end_time = datetime.strptime(_decompose_entry["end_time"], "%m-%d-%Y %H:%M")
+        except:
+            _temp = self.fetch_records(1)[0]
+            return _temp['activity']
         else:
-            if not self._cur_decompose_index == len(self._cur_decompose) - 1:
-                self._cur_decompose_index += 1
-            
-            return self._cur_decompose[self._cur_decompose_index]['activity']
-        
+            if start_time <= self.date_time_dt < end_time:
+                return _decompose_entry['activity']
+            else:
+                if self._cur_decompose_index < len(self._cur_decompose) - 1:
+                    self._cur_decompose_index += 1
+                
+                return self._cur_decompose[self._cur_decompose_index]['activity']
+
     @property
     def cur_location(self):
-        _location_entry = self._cur_location_list[self._cur_location_list_index]
-        start_time = datetime.strptime(_location_entry["start_time"], "%m-%d-%Y %H:%M")
-        end_time = datetime.strptime(_location_entry["end_time"], "%m-%d-%Y %H:%M")
-
-        if start_time <= self.date_time_dt < end_time:
+        try:
+            _location_entry = self._cur_location_list[self._cur_location_list_index]
+            start_time = datetime.strptime(_location_entry["start_time"], "%m-%d-%Y %H:%M")
+            end_time = datetime.strptime(_location_entry["end_time"], "%m-%d-%Y %H:%M")
+        except:
+            _temp = self.fetch_records(1)[0]
             return {
-                    'location' : _location_entry['location'],
-                    'longitude' : _location_entry['longitude'],
-                    'latitude' : _location_entry['latitude'],
-                }
+                        'location' : _temp['location'],
+                        'longitude' : _temp['longitude'],
+                        'latitude' : _temp['latitude'],
+                    }
         else:
-            if not self._cur_location_list_index == len(self._cur_location_list) - 1:
-                self._cur_location_list_index += 1
+            if start_time <= self.date_time_dt < end_time:
+                return {
+                        'location' : _location_entry['location'],
+                        'longitude' : _location_entry['longitude'],
+                        'latitude' : _location_entry['latitude'],
+                    }
+            else:
+                if self._cur_location_list_index < len(self._cur_location_list) - 1:
+                    self._cur_location_list_index += 1
+                
+                return {
+                    'location' : self._cur_location_list[self._cur_location_list_index]['location'],
+                    'longitude': self._cur_location_list[self._cur_location_list_index]['longitude'],
+                    'latitude' : self._cur_location_list[self._cur_location_list_index]['latitude'],
+                }
             
-            return {
-                'location' : self._cur_location_list[self._cur_location_list_index]['location'],
-                'longitude' :self._cur_location_list[self._cur_location_list_index]['longitude'],
-                'latitude' : self._cur_location_list[self._cur_location_list_index]['latitude'],
-            }
+    @property
+    def cur_chatbot(self):
+        if self.date_time in self._cur_chatbot_dict.keys():
+            return self._cur_chatbot_dict[self.date_time]
+        else:
+            return "null"
 
 
     def csv_record(self):
         entry = self.memory_cache.get_current()
-        return f"{entry['time']},\"{entry['activity']}\",\"{entry['schedule_event']}\",\"{entry['location']}\",\"{entry['longitude']}\",\"{entry['latitude']}\"\n"
+        return f"{entry['time']},\"{entry['activity']}\",\"{entry['schedule_event']}\",\"{entry['location']}\",\"{entry['longitude']}\",\"{entry['latitude']}\",\"{entry['heartrate']}\",\"{entry['chatbot']}\"\n"
 
 
     def check_new_event(self):
@@ -259,6 +298,16 @@ class ShortMemory:
                 "longitude" : entry['longitude'],
                 "latitude" : entry['latitude']
             })
+        return records
+
+    def fetch_chatbot_records(self, num_items):
+        records = []
+        for entry in self.memory_cache.fetch(num_items):
+            records.append({
+                "time" : entry["time"],
+                "chatbot" : entry['chatbot']
+            })
+        return records
 
     def save_cache(self):
 
