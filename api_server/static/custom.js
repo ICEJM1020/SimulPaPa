@@ -245,6 +245,7 @@ function fetch_agents_list(username){
 
 function update_agents_list(username){
     fetch_agents_list(username);
+    len_agent = Object.keys(agent_list).length
 
     _html = ""
 
@@ -254,16 +255,28 @@ function update_agents_list(username){
     //         <div class="col-md-8"><a onclick="loadAgent(1)">Agent 1</a></div>
     //     </div>
     // </li>
-
+    // <a class="list-group-item list-group-item-action" onclick="loadAgent(1)">Agent 1</a>
     for(var idx in agent_list) {
-        _html += "<li class=\"list-group-item\"><div class=\"row\"><div class=\"custom-control custom-checkbox col-md-4\"><input type=\"checkbox\"></div>"
-        _html += "<div class=\"col-md-8\"><a class=\"btn btn-xs btn-outline-dark\" onclick=\"loadAgent("
+        _html += "<a href=\"javascript:void()\" class=\"list-group-item agent-list-group-item-action\" onclick=\"loadAgent("
         _html += agent_list[idx].split("-")[1]
         _html += ")\">"
         _html += agent_list[idx]
-        _html += "</a></div></div></li>"
+        _html += "</a>"
+    }
+    if (len_agent>10){
+        document.getElementById("agent_list").classList.add("agent-list")
     }
     document.getElementById("agent_list").innerHTML = _html
+
+    _html = ""
+    // <button class="btn btn-primary" type="button">Button</button>
+    for(var idx in agent_list) {
+        _html += "<button class=\"btn btn-outline-primary\" type=\"button\">" + agent_list[idx] + "</button>"
+    }
+    if (len_agent>3){
+        document.getElementById("agent-btn-group").classList.add("agent-btn-list")
+    }
+    document.getElementById("agent-btn-group").innerHTML = _html
 }
 
 function check_agents_pool(username){
@@ -335,21 +348,21 @@ function update_status_area(res, type){
         document.getElementById("status_icon").classList = ""
         document.getElementById("status_icon").classList.add("mdi", "mdi-cogs")
         document.getElementById("status_area").classList = ""
-        document.getElementById("status_area").classList.add("alert", "alert-warning", "solid", "alert-right-icon", "col-md-8", "mb-0")
+        document.getElementById("status_area").classList.add("alert", "alert-warning", "solid", "alert-right-icon", "col-md-12", "mb-0")
         document.getElementById("status_text").innerText = type + "-" + res["message"]
     }
     else if (res["message"].includes("ready")){
         document.getElementById("status_icon").classList = ""
         document.getElementById("status_icon").classList.add("mdi", "mdi-check")
         document.getElementById("status_area").classList = ""
-        document.getElementById("status_area").classList.add("alert", "alert-success", "solid", "alert-right-icon", "col-md-8", "mb-0")
+        document.getElementById("status_area").classList.add("alert", "alert-success", "solid", "alert-right-icon", "col-md-12", "mb-0")
         document.getElementById("status_text").innerText = type + "-" + res["message"]
     }
     else {
         document.getElementById("status_icon").classList = ""
         document.getElementById("status_icon").classList.add("mdi", "mdi-alert")
         document.getElementById("status_area").classList = ""
-        document.getElementById("status_area").classList.add("alert", "alert-danger", "solid", "alert-right-icon", "col-md-8", "mb-0")
+        document.getElementById("status_area").classList.add("alert", "alert-danger", "solid", "alert-right-icon", "col-md-12", "mb-0")
         document.getElementById("status_text").innerText = type + "-" + res["message"]
 
     }
@@ -402,14 +415,9 @@ function start_simulation(username){
     }
 }
 
-function continue_simulation(days){
+function continue_simulation(){
     var formData = new FormData()
-    if (days){
-        formData.set("days", days)
-    }
-    else{
-        formData.set("days", document.getElementsByName("new_days").value)
-    }
+    formData.set("days", document.getElementsByName("new_days").value)
 
     $.ajax({
         url: "/simulation/continue/" + cur_user,
@@ -437,7 +445,7 @@ function GenerateInfoTree(){
             async: true,
             dataType: 'json',
             success: function(res) {
-                check_tree_interval[cur_user] = setInterval(check_info_tree, check_interval, cur_user);
+                check_tree_interval[cur_user] = setInterval(check_info_tree, check_interval*50, cur_user);
             }
           });
     }
@@ -468,7 +476,7 @@ function GenerateAgentsPool(username){
                         alert("Error creation for " + username)
                     }
                     else{
-                        user_simulation[username] = setInterval(new_user_simulation, check_interval, username)
+                        user_simulation[username] = setInterval(new_user_simulation, check_interval*50, username)
                     }
 
                 }
@@ -555,7 +563,6 @@ function load_info(){
         async: true,
         dataType: 'json',
         success: function(res) {
-            console.log(res)
             agent_info = res["info"]
             document.getElementById("description").innerText = agent_info["description"]
             document.getElementById("name-show").innerHTML = "<strong>Name:"+ agent_info["name"] +"</strong>"
@@ -572,14 +579,14 @@ function fetch_done_date() {
         async: false,
         dataType: 'json',
         success: function(res) {
-            console.log(res)
             donedates = res["data"]
         }
         });
 }
 
-function wordFreq(string) {
-    var words = string.replace(/[.]/g, '').split(/\s/);
+function wordFreq(words) {
+    // var words = string.replace(/[.]/g, '').split(/\s/);
+    // words
     var freqMap = {};
     words.forEach(function(w) {
         if (!freqMap[w]) {
@@ -595,20 +602,20 @@ function d3_draw_cloud(myWords){
     // List of words
     // var myWords = ["Hello", "Everybody", "How", "Are", "You", "Today", "It", "Is", "A", "Lovely", "Day", "I", "Love", "Coding", "In", "My", "Van", "Mate"]
     words = []
-    large = parseInt(Object.values(myWords)[0])
-    console.log(large)
+    large = -1
     for (var key in myWords) {
-        console.log(myWords[key])
+        large = Math.max(large, myWords[key])
+    }
+    for (var key in myWords) {
         words.push(
             {text: key, size: 10 + (myWords[key]/large) * 90, test: "haha"}
         )
     }
-    console.log(words)
-
     // set the dimensions and margins of the graph
+    loc = document.getElementById("chatbot_wordcloud").getBoundingClientRect()
     var margin = {top: 10, right: 10, bottom: 10, left: 10},
-        width = 450 - margin.left - margin.right,
-        height = 450 - margin.top - margin.bottom;
+        width = loc.width - margin.left - margin.right,
+        height = loc.width - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     var svg = d3.select("#chatbot_wordcloud").append("svg")
@@ -669,18 +676,28 @@ function fetch_chat_his(date){
 function count_words_freq(){
     _str = ""
     for (var idx in chat_his){
-        console.log(chat_his[idx]["chatbot"])
         _str = _str + chat_his[idx]["chatbot"]
     }
-    console.log(_str)
+    _str = _str.split(' ')
+    _str = sw.removeStopwords(_str)
     return wordFreq(_str)
 }
 
 function draw_cloud(date){
-    fetch_chat_his(date);
-    words_freq = count_words_freq();
-    console.log(words_freq)
-    d3_draw_cloud(words_freq)
+    // document.getElementById("chatbot_wordcloud_backup").classList.add("d-none")
+    // fetch_chat_his(date);
+    // words_freq = count_words_freq();
+    // d3_draw_cloud(words_freq)
+    try{
+        document.getElementById("chatbot_wordcloud_backup").classList.add("d-none")
+        fetch_chat_his(date);
+        words_freq = count_words_freq();
+        d3_draw_cloud(words_freq)
+    }
+    catch{
+        document.getElementById("chatbot_wordcloud").classList.add("d-none")
+        document.getElementById("chatbot_wordcloud_backup").classList.remove("d-none")
+    }
 }
 
 function draw_agent_heartrate(date){
@@ -690,7 +707,6 @@ function draw_agent_heartrate(date){
         async: true,
         dataType: 'json',
         success: function(res) {
-            console.log(res)
             draw_agent_heartrate_charjs(res["data"])
         }
         });

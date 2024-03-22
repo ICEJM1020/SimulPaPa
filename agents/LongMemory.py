@@ -45,7 +45,7 @@ class LongMemory:
         self.memory_tree["agent_chatbot_pref"] = ""
         self.memory_tree["intervention"] = "No intervention plan."
         self.memory_tree["daily_purpose"] = ""
-        self.memory_tree["past_daily_purpose"] = []
+        self.memory_tree["past_daily_purpose"] = {}
 
     @property
     def intervention(self):
@@ -115,7 +115,8 @@ class LongMemory:
     #     return newest_date.strftime('%m-%d-%Y')
     
 
-    def update_memory(self):
+    def update_memory(self, date):
+        self.record_daily_purpose()
         self._search_generated_activity()
         self.save_cache()
         
@@ -276,8 +277,8 @@ class LongMemory:
         return res
             
     
-    def record_daily_purpose(self, date, purpose):
-        self.memory_tree["daily_purpose"][date] = purpose
+    def record_daily_purpose(self, date):
+        self.memory_tree["past_daily_purpose"][date] = self.daily_purpose
 
 
     def save_cache(self):

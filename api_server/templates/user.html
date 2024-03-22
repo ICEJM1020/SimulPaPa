@@ -1,52 +1,57 @@
 
 <!-- row -->
 <div class="container-fluid">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Intervention Plan</h5>
-            </div>
-            <div class="card-body">
-                <div class="post-input">
-                    <textarea name="textarea" id="intervention_area" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
-                </div>
-                <div class="row col-md-12">
-                    <div class="col-md-3"></div>
-                    <a href="javascript:void()" onclick="start_simulation()" class="btn btn-primary col-md-2 m-2">Regenerate</a>
-                    <a href="javascript:void()" onclick="continue_simulation('1')" class="btn btn-primary col-md-2 m-2">Generate a New Day</a>
-                    <input type="number" class="form-control col-md-1 m-2" name="new_days" value="1">
-                    <a href="javascript:void()" onclick="continue_simulation()" class="btn btn-primary col-md-3 m-2">Generate Multiple Days</a>
+    <div class="col-md-12 row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title mb-1">Intervention Plan</h3>
+                    <h5 class="card-subtitle text-body-secondary mb-1">Enter your intervention plan, apply it to regenerate finished simulation or continue multiple-day simulation.</h5>
+                    <div class="col-md-12 row">
+                        <div class="post-input col-md-7">
+                            <textarea name="textarea" id="intervention_area" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="col-md-12 mx-0 my-1 p-0">Select the agent to execute the plan</div>
+                            <div class="col-md-12 m-0 p-0 btn-group">
+                                <button class="btn btn-success" type="button" id="agent-all-btn">All</button>
+                                <button class="btn btn-success" type="button" id="agent-random-btn">Random Half</button>
+                                <button class="btn btn-success" type="button" id="agent-clear-btn">Clear</button>
+                            </div>
+                            <div class="btn-group-vertical col-md-10 mx-3 mt-2 pt-4 px-0" id="agent-btn-group">
+                                <!-- <button class="btn btn-primary" type="button">Button</button> -->
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="javascript:void()" onclick="start_simulation()" class="btn btn-primary col-md-12 m-2">Regenerate All</a>
+                            <a href="javascript:void()" onclick="continue_simulation()" class="btn btn-primary col-md-12 m-2">Continue</a>
+                            <div class="row col-12 p-0 m-2">
+                                <span class="col-6 px-0 py-2">Days:</span>
+                                <input type="number" class="form-control col-6 px-0" name="new_days" value="1">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+        
 
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <!-- <div class="alert alert-success solid alert-right-icon alert-dismissible fade show">
-                    <span><i id="status_icon" class="mdi mdi-check"></i></span>
-                    <b id="status_text">Ready</b> 
-                </div>
-                <div class="row">
-                    <div class="col-md-8"></div>
-                    <div class="col-md-2">
-                        <button onclick="GenerateAgentsPool()" class="btn btn-outline-dark">Regenerate Agents</button>
-                    </div>
-                    <div class="col-md-2">
-                        <button onclick="GenerateInfoTree()"  class="btn btn-outline-dark">Regenerate InfoTree</button>
-                    </div>
-                </div> -->
-                <div class="row">
-                    <div id="status_area" class="alert alert-success solid alert-right-icon col-md-8 mb-0">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+
+                    <div id="status_area" class="alert alert-success solid alert-right-icon col-md-12 mb-1">
                         <span><i id="status_icon" class="mdi mdi-check"></i></span>
                         <b id="status_text">Ready</b> 
                     </div>
-                    <div class="col-md-2 mt-2">
-                        <button id="generate_agent_btn" onclick="GenerateAgentsPool()" class="btn btn-lg btn-outline-dark ml-5">Generate Agents</button>
-                    </div>
-                    <div class="col-md-2 mt-2">
-                        <button id="generate_pool_btn" onclick="GenerateInfoTree()" class="btn btn-lg btn-outline-dark ml-2">Generate InfoTree</button>
+
+                    <div class="row col-md-12">
+                        <div class="col-md-6 mt-2 d-flex justify-content-center">
+                            <button id="generate_agent_btn" onclick="GenerateAgentsPool()" class="btn btn-lg btn-outline-dark">Generate Agents</button>
+                        </div>
+                        <div class="col-md-6 mt-2 d-flex justify-content-center">
+                            <button id="generate_pool_btn" onclick="GenerateInfoTree()" class="btn btn-lg btn-outline-dark">Generate InfoTree</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -57,125 +62,20 @@
         <div class="card col-md-2">
             <div class="card-header">
                 <h4 class="card-title">Agents</h4>
-                <div class="btn-group mt-2">
+                <!-- <div class="btn-group mt-2">
                     <span class="btn btn-dark ml-3">
                         <input type="checkbox" id="agents-list-all">
                     </span>
                     <button class="btn btn-dark" type="button" id="agents-list-clear"><i class="ti-reload"></i>
                     </button>
-                </div>
+                </div> -->
             </div>
             <div class="card-body">
-                <ul id="agent_list" class="list-group agent-list">
-                    <!-- <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8"><a onclick="loadAgent(1)">Agent 1</a></div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 2</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 3</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 4</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 5</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 6</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 7</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 8</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 9</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 10</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 11</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 12</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 13</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 14</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 15</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 16</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 17</div>
-                        </div>
-                    </li>
-                    <li class="list-group-item">
-                        <div class="row">
-                            <div class="custom-control custom-checkbox col-md-4"><input type="checkbox"></div>
-                            <div class="col-md-8">Agent 18</div>
-                        </div>
-                    </li> -->
-                </ul>
+                <div class="basic-list-group col-md-12 p-0">
+                    <div class="list-group col-md-10 mx-3 p-0" id="agent_list">
+                        <!-- <a class="list-group-item list-group-item-action" onclick="loadAgent(1)">Agent 1</a> -->
+                    </div>
+                </div>
             </div>
         </div>
 

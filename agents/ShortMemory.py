@@ -234,11 +234,14 @@ class ShortMemory:
             end_time = datetime.strptime(_location_entry["end_time"], "%m-%d-%Y %H:%M")
         except:
             _temp = self.fetch_records(1)[0]
-            return {
-                        'location' : _temp['location'],
-                        'longitude' : _temp['longitude'],
-                        'latitude' : _temp['latitude'],
-                    }
+            if _temp:
+                return {
+                            'location' : _temp['location'],
+                            'longitude' : _temp['longitude'],
+                            'latitude' : _temp['latitude'],
+                        }
+            else:
+                return {'location' : "null",'longitude' : "",'latitude' : "",}
         else:
             if start_time <= self.date_time_dt < end_time:
                 return {
@@ -259,7 +262,7 @@ class ShortMemory:
     @property
     def cur_chatbot(self):
         if self.date_time in self._cur_chatbot_dict.keys():
-            return self._cur_chatbot_dict[self.date_time]
+            return self._cur_chatbot_dict[self.date_time].replace("\n", ";")
         else:
             return "null"
 

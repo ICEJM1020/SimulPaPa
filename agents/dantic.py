@@ -104,8 +104,8 @@ class ChatBotEntry(BaseModel):
 
     def dump_dict(self):
         res = {
-            'time' : self.location,
-            'conv' : self.longitude
+            'time' : self.time,
+            'conv' : self.conv
         }
         return res
 
@@ -115,7 +115,8 @@ class Chatbot(BaseModel):
     def dump_dict(self):
         res = {}
         for item in self.chatbot:
-            res[item["time"]] = item["conv"]
+            _item = item.dump_dict()
+            res[_item["time"]] = _item["conv"]
         return res
 
 

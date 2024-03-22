@@ -5,9 +5,15 @@
 }
 
 .agent-list{
-    max-height: 750px;
+    max-height: 450px;
     margin-bottom: 10px;
-    overflow:scroll;
+    overflow-y:scroll;
+    -webkit-overflow-scrolling: touch;
+}
+
+.agent-btn-list{
+    max-height: 150px;
+    overflow-y:scroll;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -16,3 +22,15 @@
     display: -webkit-flex;
     flex-wrap: wrap;
   }
+
+.agent-list-group-item-action {
+    width: 100%;
+    color: #495057;
+    text-align: inherit; }
+.agent-list-group-item-action:hover, .agent-list-group-item-action:focus {
+    width: 110%;
+    padding-left: 30px;
+    z-index: 5;
+    color: #fafafa;
+    text-decoration: none;
+    background-color: #593bdb; }

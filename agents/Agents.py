@@ -352,4 +352,8 @@ class Agent:
         return _hist.T.to_dict()
 
     def fetch_done_dates(self):
-        return [file.split(".")[0] for file in os.listdir(self.activity_folder)]
+        date_strings = [file.split(".")[0] for file in os.listdir(self.activity_folder)]
+        dates = [datetime.strptime(date_str, '%m-%d-%Y') for date_str in date_strings]
+        sorted_dates = sorted(dates)
+        sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y') for date_obj in sorted_dates]
+        return sorted_date_strings
