@@ -134,10 +134,10 @@ class User:
         # ready : ready to do something
         # working : working on task
         # error:  error
-        self.status = ""
+        self.status = "ready"
         self.agents_size = 5
         self.simul_days = 1
-        self.start_date = datetime.strptime("02-01-2024", '%m-%d-%Y')
+        self.start_date = datetime.strptime("03-01-2024", '%m-%d-%Y')
 
         # user info
         self.info = {key:None for key in CONFIG["info"]}
@@ -152,7 +152,8 @@ class User:
             info=self.info,
             user_folder=self.user_folder,
             size=self.agents_size,
-            start_date=self.start_date
+            start_date=self.start_date,
+            simul_days=self.simul_days
         )
 
         # activity file

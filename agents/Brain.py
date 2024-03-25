@@ -92,10 +92,27 @@ class Brain:
         # working: working on simulation
         # error:  error
         self._status = "ready"
+        ## 0: ready
+        ## 1: working
+        ## 2: error
+        self.running_status = mp.Value('d', 0)
 
     @property
     def status(self):
+        self._update_running_status()
         return self._status
+    
+    @status.setter
+    def status(self, status):
+        self._status = status
+
+    def _update_running_status(self):
+        if self.running_status.value == 0:
+            self.status = "ready"
+        elif self.running_status.value == 1:
+            self.status = "working"
+        else:
+            self.status = "error"
 
     def init_brain(self):
 
@@ -117,25 +134,28 @@ class Brain:
             start_date = self.short_memory.cur_date
             cur_time = self.short_memory.cur_time
         else:
-            self._status = "error"
+            self.status = "error"
             raise Exception("Simulation type error!")
-        self._status = "working"
-        simul_process = mp.Process(target=self._plan, args=(days,start_date,cur_time))
+        self.status = "working"
+        simul_process = mp.Process(target=self._plan, args=(self.running_status, days, start_date, cur_time))
         simul_process.start()
 
 
     def _plan(
-            self, 
-            days:int=1, 
+            self,
+            _status,
+            days:int=1,
             start_date:str="03-01-2024",
             start_time:str="00:00", 
             end_time:str="23:59"
             ):
+        _status.value = 1
         try:
             start_time_dt = datetime.strptime(start_time, "%H:%M")
             del(start_time_dt)
         except:
-            self._status = "error"
+            # self.status = "error"
+            _status.value = 2
             print(f"start_time format error {start_time} (should be HH:MM). Set to 00:00")
 
         self.short_memory.cur_date = start_date
@@ -164,10 +184,12 @@ class Brain:
                 self.save_cache()
 
                 if response:
-                    self._status = "ready"
+                    # self.status = "ready"
+                    _status.value = 0
                     return True
         except:
-            self._status = "error"
+            _status.value = 2
+            # self.status = "error"
             self.save_cache()
             return False
 
@@ -181,7 +203,7 @@ class Brain:
 
             ## save to local file
             self.save_activity()
-            # print(f"[{self.short_memory.cur_time}] {self.short_memory.cur_event['event']}-{self.short_memory.cur_activity} ")
+            # print(f"[{self.short_memory.cur_date}-{self.short_memory.cur_time}] {self.short_memory.cur_event['event']}-{self.short_memory.cur_activity} ")
 
             ###############
             ## Update time and check end
@@ -196,7 +218,8 @@ class Brain:
                 self.save_cache()
 
             if self.short_memory.check_end_schedule():
-                self.long_memory.update_memory((self.short_memory.cur_date_dt + timedelta(days=1)).strftime("%m-%d-%Y"))
+                # (self.short_memory.cur_date_dt - timedelta(days=1)).strftime("%m-%d-%Y")
+                self.long_memory.update_memory()
                 return False
             
             if self.short_memory.date_time_dt >= self.end_time:
@@ -212,7 +235,7 @@ class Brain:
                 purpose = self._define_daily_purpose_chat()
             except:
                 if try_idx + 1 == self._retry_times:
-                    # self._status = "error"
+                    # self.status = "error"
                     raise Exception(f"Define daily purpose failed {self._retry_times} times")
                 else:
                     continue
@@ -261,7 +284,7 @@ class Brain:
                 assert len(_schedule.schedule) > 0
             except:
                 if try_idx + 1 == self._retry_times:
-                    # self._status = "error"
+                    # self.status = "error"
                     raise Exception(f"Event schedule generation failed {self._retry_times} times")
                 else:
                     continue
@@ -362,7 +385,7 @@ class Brain:
                 assert len(_decompose.decompose) > 0
             except:
                 if try_idx + 1 == self._retry_times:
-                    # self._status = "error"
+                    # self.status = "error"
                     return [{
                         "start_time" : self.short_memory.cur_event["start_time"],
                         "end_time" : self.short_memory.cur_event["end_time"],
@@ -461,7 +484,7 @@ class Brain:
                 location = self._predict_location_chat(decompose)
             except:
                 if try_idx + 1 == self._retry_times:
-                    # self._status = "error"
+                    # self.status = "error"
                     return []
                 else:
                     continue

@@ -17,10 +17,30 @@ window.onload = function(){
 
 function loadContent(content) {
     if (content.startsWith("user")){
-        username = content.split("-")[1]
+
+        username = ""
+        segs = content.split("-")
+        for (var seg in segs){
+            if (seg==0){
+                continue;
+            }
+            else{
+                username += segs[seg];
+                username += "-";
+            }
+        }
+        username = username.slice(0, -1);
+        console.log(username)
         $("#mainContent").load("/user", success=function(){
             load_user_page(username)
             cur_user = username
+            draw()
+            document.getElementsByClassName('nav-control')[0].click();
+        }); 
+    }
+    else if (content.startsWith("back")){
+        $("#mainContent").load("/user", success=function(){
+            load_user_page(cur_user)
             draw()
         }); 
     }
@@ -33,7 +53,12 @@ function loadContent(content) {
 }
 
 function loadAgent(id) {
-    $("#mainContent").load("/" + cur_user + "/" + id.toString(), success=function(){
+    // $("#mainContent").load("/" + cur_user + "/" + id.toString(), success=function(){
+    //     cur_agent_id = id.toString()
+    //     console.log(cur_user + "," + id.toString())
+    //     load_agent_page()
+    // }); 
+    $("#display-area").load("/" + cur_user + "/" + id.toString(), success=function(){
         cur_agent_id = id.toString()
         console.log(cur_user + "," + id.toString())
         load_agent_page()
@@ -221,6 +246,7 @@ function load_agent_pool(username){
         dataType: 'json',
         success: function( res ) {
             console.log("Load agents pool");
+            update_status_area({"message":"ready-Loaded from local machine"}, "Agents Pool");
         }
       });
 }
@@ -304,6 +330,9 @@ function check_agents_pool(username){
                 else if (res["message"].includes("init")){
                     pool_status = "init"
                     update_agents_list(username)
+                    // fetch_agents_list(username)
+                    // clearInterval(check_pool_interval[username]);
+                    // delete check_pool_interval[username]
                 }
                 else {
                     pool_status = res["message"]
@@ -508,6 +537,8 @@ function load_user_page(username){
         if (!(username in check_tree_interval)) check_tree_interval[username] = setInterval(check_info_tree, check_interval, username);
         if (!(username in check_pool_interval)) check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
         if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval*1, username);
+
+        document.getElementById("top-user-name").innerText = username
         // 1. load agents
         // 2. load statistic
     }
@@ -542,10 +573,10 @@ let chat_his = {}
 
 function load_agent_page(){
 
-    document.getElementById("back_btn").onclick = function() { loadContent("user-"+cur_user)}
-    document.getElementById("user-name").innerText = cur_user
-    document.getElementById("agent-name").innerText = "Agent "+cur_agent_id
-    document.getElementById("agent-name-link").innerText = "Agent "+cur_agent_id
+    // document.getElementById("back_btn").onclick = function() { loadContent("user-"+cur_user)}
+    // document.getElementById("user-name").innerText = cur_user
+    // document.getElementById("agent-name").innerText = "Agent "+cur_agent_id
+    // document.getElementById("agent-name-link").innerText = "Agent "+cur_agent_id
     document.getElementById("portrait").src = "/agent/"+cur_user+"/"+cur_agent_id+"/portrait"
 
     load_info();
@@ -554,6 +585,8 @@ function load_agent_page(){
     draw_agent_heartrate(donedates[0]);
     draw_cloud(donedates[0]);
     init_calendar(window.jQuery);
+
+    init_map()
 }
 
 function load_info(){
@@ -615,7 +648,8 @@ function d3_draw_cloud(myWords){
     loc = document.getElementById("chatbot_wordcloud").getBoundingClientRect()
     var margin = {top: 10, right: 10, bottom: 10, left: 10},
         width = loc.width - margin.left - margin.right,
-        height = loc.width - margin.top - margin.bottom;
+        // height = ((loc.width * 9) / 16) - margin.top - margin.bottom;
+        height = 600 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     var svg = d3.select("#chatbot_wordcloud").append("svg")
@@ -711,4 +745,24 @@ function draw_agent_heartrate(date){
         }
         });
 
+}
+
+// import Map from 'ol/Map.js';
+// import OSM from 'ol/source/OSM.js';
+// import TileLayer from 'ol/layer/Tile.js';
+// import View from 'ol/View.js';
+function init_map(){
+
+    const map = new Map({
+        target: 'map',
+        layers: [
+          new TileLayer({
+            source: new OSM(),
+          }),
+        ],
+        view: new View({
+          center: [0, 0],
+          zoom: 2,
+        }),
+      });
 }

@@ -1,6 +1,35 @@
 
 <!-- row -->
 <div class="container-fluid">
+    <div class="row page-titles mx-0">
+        <div class="col-sm-6 p-md-0">
+            <div class="welcome-text">
+                <h4>SimulPaPa</h4>
+                <p class="mb-0">Case Simulation Results</p>
+            </div>
+        </div>
+
+        <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" ><a href="javascript:void(0)">Case</a></li>
+                <li class="breadcrumb-item active" ><a href="javascript:void(0)" id="top-user-name">Casename</a></li>
+            </ol>
+        </div>
+    </div>
+    <!-- <div class="row page-titles mx-0">
+        <div class="col-sm-5 p-md-0">
+            <div class="welcome-text pt-2">
+                <h4 id="agent-name">Agent 1</h4>
+            </div>
+        </div>
+        <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" ><a href="javascript:void(0)" id="user-name">timberzhang</a></li>
+                <li class="breadcrumb-item active" ><a href="javascript:void(0)" id="agent-name-link">Agent 1</a></li>
+            </ol>
+        </div>
+    </div> -->
+
     <div class="col-md-12 row">
         <div class="col-md-8">
             <div class="card">
@@ -12,14 +41,16 @@
                             <textarea name="textarea" id="intervention_area" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
                         </div>
                         <div class="col-md-3">
-                            <div class="col-md-12 mx-0 my-1 p-0">Select the agent to execute the plan</div>
-                            <div class="col-md-12 m-0 p-0 btn-group">
-                                <button class="btn btn-success" type="button" id="agent-all-btn">All</button>
-                                <button class="btn btn-success" type="button" id="agent-random-btn">Random Half</button>
-                                <button class="btn btn-success" type="button" id="agent-clear-btn">Clear</button>
+                            <div class="col-md-12 mx-0 my-1 p-0">Select the agent who will execute the plan</div>
+                            <div class="col-md-12 my-1 p-0 btn-group">
+                                <button class="btn btn-secondary" type="button" id="agent-all-btn">All</button>
+                                <button class="btn btn-secondary" type="button" id="agent-random-btn">Random Half</button>
+                                <button class="btn btn-secondary" type="button" id="agent-clear-btn">Clear</button>
                             </div>
-                            <div class="btn-group-vertical col-md-10 mx-3 mt-2 pt-4 px-0" id="agent-btn-group">
-                                <!-- <button class="btn btn-primary" type="button">Button</button> -->
+                            <div class="basic-list-group col-md-10 mx-3 mt-2 px-0">
+                                <div class="btn-group-vertical col-md-12" id="agent-btn-group">
+                                    <!-- <button class="btn btn-primary" type="button">Button</button> -->
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -61,16 +92,10 @@
     <div class="row col-md-12">
         <div class="card col-md-2">
             <div class="card-header">
-                <h4 class="card-title">Agents</h4>
-                <!-- <div class="btn-group mt-2">
-                    <span class="btn btn-dark ml-3">
-                        <input type="checkbox" id="agents-list-all">
-                    </span>
-                    <button class="btn btn-dark" type="button" id="agents-list-clear"><i class="ti-reload"></i>
-                    </button>
-                </div> -->
+                <a href="javascript:void()" onclick="loadContent('back')" class="btn btn-primary col-md-8 mx-5">Overall</a>
             </div>
             <div class="card-body">
+                <h4 class="card-title">Agents</h4>
                 <div class="basic-list-group col-md-12 p-0">
                     <div class="list-group col-md-10 mx-3 p-0" id="agent_list">
                         <!-- <a class="list-group-item list-group-item-action" onclick="loadAgent(1)">Agent 1</a> -->
@@ -79,7 +104,7 @@
             </div>
         </div>
 
-        <div class="col-lg-10">
+        <div class="col-lg-10" id="display-area">
             <div class="row">
 
                 <div class="col-lg-9 col-sm-9">

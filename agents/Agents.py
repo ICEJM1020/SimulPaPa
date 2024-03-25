@@ -24,12 +24,14 @@ class AgentsPool:
                     info: dict, 
                     user_folder: str, 
                     size:int=10,
-                    start_date=datetime.strptime("02-01-2024", '%m-%d-%Y')
+                    start_date=datetime.strptime("03-01-2024", '%m-%d-%Y'),
+                    simul_days:int=1
                  ) -> None:
         self._uuid = user_folder.split('/')[-1]
         self.info = info
         self.size = size
         self.start_date = start_date
+        self.simul_days = simul_days
         self.healthy_rate = 0.5
         self.pool = {}
 
@@ -142,11 +144,11 @@ class AgentsPool:
         return res, len(res)==self.size
 
 
-    def start_simulation(self, days=1):
+    def start_simulation(self):
         logger.info(f"start simulation for {self.info['name']}({self._uuid})")
         self.simul_status = "working"
         for agent in self.pool.values():
-            agent.start_planing(days)
+            agent.start_planing(self.simul_days)
 
     
     def continue_simulation(self, days=1):
@@ -206,13 +208,14 @@ class Agent:
                     index, 
                     user_folder,
                     info:dict=None,
-                    start_date=datetime.strptime("02-01-2024", '%m-%d-%Y'),
+                    start_date="03-01-2024",
                 ) -> None:
         self._uuid = user_folder.split('/')[-1]
         self.index = index
         self.user_folder = user_folder
         self.folder = user_folder + f"/agents/{index}"
         self.activity_folder = self.folder + "/activity_hist"
+        self.start_date = start_date
         if not os.path.exists(self.activity_folder):
             os.mkdir(self.activity_folder)
 
@@ -240,7 +243,7 @@ class Agent:
         self.brain = Brain(
                 user_folder=user_folder,
                 agent_folder=self.folder,
-                base_date=start_date
+                base_date=self.start_date
             )
 
 
@@ -268,7 +271,11 @@ class Agent:
             self.description = info["description"]
         except:
             self.description = ""
-        
+        try:
+            self.start_date = info["start_date"]
+        except:
+            self.start_date = "03-01-2024"
+
         return missing
 
 
@@ -285,16 +292,16 @@ class Agent:
 
 
     def draw_portrait(self):
-        content = dalle_portrait(self.description)   
-        with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
-            file.write(content)
-        # try:
-        #     content = dalle_portrait(self.description)   
-        #     with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
-        #         file.write(content)
-        # except:
-        #     self._status = "error"
-
+        thread = threading.Thread(target=self._draw_portrait)
+        thread.start()
+    
+    def _draw_portrait(self):
+        try:
+            content = dalle_portrait(self.description)   
+            with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
+                file.write(content)
+        except:
+            self._status = "error"
 
     def start_planing(self, days=1):
         # self.brain.init_brain()
@@ -309,7 +316,8 @@ class Agent:
     def save(self):
         with open(self.folder + "/info.json", "w") as f:
             dumps = {
-                "description":self.description
+                "description":self.description,
+                "start_date":self.start_date
             }
             for key in self.info.keys():
                 dumps[key] = self.info[key]
