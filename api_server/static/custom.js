@@ -570,6 +570,7 @@ let cur_agent_id = ""
 let agent_info = {}
 let donedates =  []
 let chat_his = {}
+let loc_hist = {}
 
 function load_agent_page(){
 
@@ -584,9 +585,8 @@ function load_agent_page(){
 
     draw_agent_heartrate(donedates[0]);
     draw_cloud(donedates[0]);
+    init_map(donedates[0]);
     init_calendar(window.jQuery);
-
-    init_map()
 }
 
 function load_info(){
@@ -691,20 +691,17 @@ function d3_draw_cloud(myWords){
 }
 
 function fetch_chat_his(date){
+    chathis = {0:{"time":"null", "chatbot":"null null null"}}
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/chathis/" + date,
         type: 'GET',
         async: false,
         dataType: 'json',
         success: function(res) {
-            if (Object.keys(res["data"]).length !== 0){
-                chat_his = res["data"]
-            }
-            else{
-                chat_his = {0:{"time":"null", "chatbot":"null null null"}}
-            }
+            if (Object.keys(res["data"]).length !== 0){chathis = res["data"]}
         }
         });
+    return chathis;
 }
 
 function count_words_freq(){
@@ -724,7 +721,7 @@ function draw_cloud(date){
     // d3_draw_cloud(words_freq)
     try{
         document.getElementById("chatbot_wordcloud_backup").classList.add("d-none")
-        fetch_chat_his(date);
+        chat_his = fetch_chat_his(date);
         words_freq = count_words_freq();
         d3_draw_cloud(words_freq)
     }
@@ -751,18 +748,68 @@ function draw_agent_heartrate(date){
 // import OSM from 'ol/source/OSM.js';
 // import TileLayer from 'ol/layer/Tile.js';
 // import View from 'ol/View.js';
-function init_map(){
 
-    const map = new Map({
+function draw_map(){
+
+    icons = []
+    for (var idx in loc_hist) {
+        // const iconFeature = new ol.Feature({
+        //     geometry: new ol.geom.Point(ol.proj.fromLonLat([, 53])),
+        //     name: 'Somewhere near Nottingham',
+        //   });
+        let _temp = new ol.Feature({
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']])),
+            name: loc_hist[idx]['location'][0],
+            });
+        icons.push(_temp)
+    }
+
+    const map = new ol.Map({
         target: 'map',
         layers: [
-          new TileLayer({
-            source: new OSM(),
+          new ol.layer.Tile({
+            source: new ol.source.OSM(),
           }),
+          new ol.layer.Vector({
+            source: new ol.source.Vector({
+              features: icons,
+            }),
+            style: new ol.style.Style({
+              image: new ol.style.Icon({
+                anchor: [0.5, 0],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                src: "/static/marker.png"
+              })
+            })
+          })
         ],
-        view: new View({
-          center: [0, 0],
-          zoom: 2,
+        view: new ol.View({
+        //   center: [loc_hist[0]['longitude'], loc_hist[0]['latitude']],
+            center: ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']]),
+            zoom: 12,
         }),
       });
+}
+
+function fetch_location_hist(date){
+    loc = {}
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/lochis/" + date,
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function(res) {
+            console.log(res)
+            if (Object.keys(res["data"]).length !== 0){
+                loc = res["data"]
+            }
+        }
+        });
+    return loc;
+}
+
+function init_map(date){
+    loc_hist = fetch_location_hist(date)
+    draw_map()
 }

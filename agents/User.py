@@ -120,6 +120,9 @@ class UserPool:
     
     def fetch_agent_heartrate(self, _uuid, agent_id, date):
         return self.pool[_uuid].agents_pool.fetch_agent_heartrate(agent_id, date)
+    
+    def fetch_agent_location_hist(self, _uuid, agent_id, date):
+        return self.pool[_uuid].agents_pool.fetch_agent_location_hist(agent_id, date)
 
 
 class User:

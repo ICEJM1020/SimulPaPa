@@ -189,6 +189,10 @@ class AgentsPool:
     
     def fetch_agent_heartrate(self, id, date):
         return self.pool[id].fetch_heartrate(date)
+    
+    def fetch_agent_location_hist(self, id, date):
+        return self.pool[id].fetch_location_hist(date)
+    
 
 
     def fetch_tree_status(self):
@@ -358,6 +362,30 @@ class Agent:
         _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
         _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'heartrate']]
         return _hist.T.to_dict()
+    
+    def fetch_location_hist(self, date):
+        _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'location', 'longitude', 'latitude']]
+
+        loc_hist = {}
+        for idx, (loc, group) in enumerate(_hist.groupby(by=["longitude","latitude"])):
+            date_strings = group.loc[:, 'time']
+            dates = [datetime.strptime(date_str, '%m-%d-%Y %H:%M') for date_str in date_strings]
+            sorted_dates = sorted(dates)
+            sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y %H:%M') for date_obj in sorted_dates]
+
+            _temp = {
+                "location" : list(group['location'].value_counts().index),
+                "longitude" : loc[0],
+                "latitude" : loc[1],
+                "start_time" : sorted_date_strings[0],
+                "end_time" : sorted_date_strings[-1],
+            }
+            loc_hist[idx] = _temp
+        return loc_hist
+    
+    def fetch_schedule(self, date):
+        pass
 
     def fetch_done_dates(self):
         date_strings = [file.split(".")[0] for file in os.listdir(self.activity_folder)]
