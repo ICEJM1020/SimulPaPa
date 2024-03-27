@@ -193,7 +193,8 @@ class AgentsPool:
     def fetch_agent_location_hist(self, id, date):
         return self.pool[id].fetch_location_hist(date)
     
-
+    def fetch_agent_schedule(self, id, date):
+        return self.pool[id].fetch_schedule(date)
 
     def fetch_tree_status(self):
         return self.info_tree.get_status()
@@ -385,7 +386,87 @@ class Agent:
         return loc_hist
     
     def fetch_schedule(self, date):
-        pass
+        data = pd.read_csv(self.activity_folder + f"/{date}.csv")
+
+        # schedule = []
+        # for _, (event, group) in enumerate(data.groupby(by=["event"])):
+        #     date_strings = group.loc[:, 'time'].to_list()
+        #     dates = [datetime.strptime(date_str, '%m-%d-%Y %H:%M') for date_str in date_strings]
+        #     sorted_dates = sorted(dates)
+        #     sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y %H:%M') for date_obj in sorted_dates]
+        #     event_start = sorted_date_strings[0][-5:]
+        #     event_end = sorted_date_strings[-1][-5:]
+
+        #     activities = []
+        #     for _, (activity, group_2) in enumerate(group.groupby(by=["activity"])):
+        #         date_strings = group_2.loc[:, 'time'].to_list()
+        #         dates = [datetime.strptime(date_str, '%m-%d-%Y %H:%M') for date_str in date_strings]
+        #         sorted_dates = sorted(dates)
+        #         sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y %H:%M') for date_obj in sorted_dates]
+        #         activity_start = sorted_date_strings[0][-5:]
+        #         activity_end = sorted_date_strings[-1][-5:]
+
+        #         activities.append({
+        #             "activity":activity[0],
+        #             "start_time":activity_start,
+        #             "end_time":activity_end
+        #         })
+
+        #     _temp = {
+        #         "event" : event[0],
+        #         "start_time" : event_start,
+        #         "end_time" : event_end,
+        #         "activities" : activities
+        #     }
+        #     schedule.append(_temp)
+
+        schedule = []
+
+        cur_event = data["event"][0]
+        event_start_time = data["time"][0]
+        cur_activity = data["activity"][0]
+        activity_start_time = data["time"][0]
+        last_time = ""
+        activities = []
+        for idx, row in data.iterrows():
+            if not cur_activity==row["activity"]:
+                activities.append({
+                    "activity": cur_activity,
+                    "start_time" : activity_start_time,
+                    "end_time" : last_time
+                })
+                cur_activity = row["activity"]
+                activity_start_time = row["time"]
+
+            if not cur_event==row["event"]:
+                schedule.append({
+                    "event": cur_event,
+                    "start_time" : event_start_time,
+                    "end_time" : last_time,
+                    "activities" : activities
+                })
+                cur_event = row["event"]
+                event_start_time = row["time"]
+                activities = []
+            
+
+            last_time = row["time"]
+
+        activities.append({
+            "activity": cur_activity,
+            "start_time" : activity_start_time,
+            "end_time" : last_time
+        })
+        cur_activity = row["activity"]
+        activity_start_time = row["time"]
+        schedule.append({
+            "event": cur_event,
+            "start_time" : event_start_time,
+            "end_time" : last_time,
+            "activities" : activities
+        })
+
+        return schedule
 
     def fetch_done_dates(self):
         date_strings = [file.split(".")[0] for file in os.listdir(self.activity_folder)]

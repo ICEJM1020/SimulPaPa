@@ -374,3 +374,30 @@ def fetch_location_hist(username, agent_id, date):
     response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
     response.headers["Content-Type"] = "application/json"
     return response
+
+
+@abp.route(f"/agent/<username>/<agent_id>/schedule/<date>", methods=["POST", "GET"])
+def fetch_schedule(username, agent_id, date):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "data" : USER_POOL.fetch_agent_schedule(_uuid, int(agent_id), date),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response

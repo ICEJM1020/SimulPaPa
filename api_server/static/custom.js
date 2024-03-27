@@ -571,6 +571,7 @@ let agent_info = {}
 let donedates =  []
 let chat_his = {}
 let loc_hist = {}
+let schedules = {}
 
 function load_agent_page(){
 
@@ -586,7 +587,7 @@ function load_agent_page(){
     draw_agent_heartrate(donedates[0]);
     draw_cloud(donedates[0]);
     init_map(donedates[0]);
-    init_calendar(window.jQuery);
+    init_schedule();
 }
 
 function load_info(){
@@ -617,6 +618,9 @@ function fetch_done_date() {
         });
 }
 
+//
+// draw wordcloud
+// 
 function wordFreq(words) {
     // var words = string.replace(/[.]/g, '').split(/\s/);
     // words
@@ -691,7 +695,7 @@ function d3_draw_cloud(myWords){
 }
 
 function fetch_chat_his(date){
-    chathis = {0:{"time":"null", "chatbot":"null null null"}}
+    let chathis = {0:{"time":"null", "chatbot":"null null null"}}
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/chathis/" + date,
         type: 'GET',
@@ -731,6 +735,9 @@ function draw_cloud(date){
     }
 }
 
+//
+// draw heartrate
+// 
 function draw_agent_heartrate(date){
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/heartrate/" + date,
@@ -741,14 +748,12 @@ function draw_agent_heartrate(date){
             draw_agent_heartrate_charjs(res["data"])
         }
         });
-
 }
 
-// import Map from 'ol/Map.js';
-// import OSM from 'ol/source/OSM.js';
-// import TileLayer from 'ol/layer/Tile.js';
-// import View from 'ol/View.js';
 
+//
+// draw maps
+// 
 function draw_map(){
 
     icons = []
@@ -793,14 +798,13 @@ function draw_map(){
 }
 
 function fetch_location_hist(date){
-    loc = {}
+    let loc = {}
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/lochis/" + date,
         type: 'GET',
         async: false,
         dataType: 'json',
         success: function(res) {
-            console.log(res)
             if (Object.keys(res["data"]).length !== 0){
                 loc = res["data"]
             }
@@ -810,6 +814,45 @@ function fetch_location_hist(date){
 }
 
 function init_map(date){
-    loc_hist = fetch_location_hist(date)
-    draw_map()
+    try{
+        document.getElementById("location_backup").classList.add("d-none")
+        loc_hist = fetch_location_hist(date)
+        draw_map()
+    }
+    catch{
+        document.getElementById("map").classList.add("d-none")
+        document.getElementById("location_backup").classList.remove("d-none")
+    }
+}
+
+
+//
+// draw schedule
+// 
+
+function fetch_schedule(date){
+    let schedule = {}
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/schedule/" + date,
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function(res) {
+            if (Object.keys(res["data"]).length !== 0){
+                schedule = res["data"]
+            }
+        }
+        });
+    return schedule;
+}
+
+function fetch_all_schedule(){
+    for (let idx in donedates){
+        schedules[donedates[idx]] = fetch_schedule(donedates[idx])
+    }
+}
+
+function init_schedule(){
+    fetch_all_schedule();
+    init_calendar(window.jQuery, schedules);
 }

@@ -88,13 +88,13 @@
 </div> -->
 
 <div class="row col-md-12">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header">
                 <h4 class="card-title">Profile</h4>
             </div>
             <div class="card-body">
-                <div class="row">
+                <!-- <div class="row">
                     <div class="media pt-3 pb-3 col-md-4">
                         <img id="portrait" src="{{ url_for('static', filename='test_portrait.webp') }}" alt="image" class="col-md-12 px-0" style="justify-content: center;">
                     </div>
@@ -116,11 +116,41 @@
                             <h5 id="description" class="mb-5">Emily Park is a 25-year-old Asian female living in 1st Avenue, New York, Stuyvesant Town-Peter Cooper Village, New York, 10009. The physical status of she is Healthy. She is a Senior Production Manager with an annual income of $165,000, working at Hudson Manufacturing Company, First Avenue, Stuyvesant Town-Peter Cooper Village, New York, New York. She speaks English. Her education background is High School. Her date of birth is 05-22-1995.</h5>
                         </div>
                     </div>
+                </div> -->
+                <div class="media pt-3 pb-3 col-md-12">
+                    <img id="portrait" src="{{ url_for('static', filename='test_portrait.webp') }}" alt="image" class="col-md-12 px-0" style="justify-content: center;">
                 </div>
-                    
+                <div class="basic-list-group col-md-12 mb-3">
+                    <ul class="list-group">
+                        <li class="list-group-item list-group-item-success" id="name-show">
+                            Name:
+                        </li>
+                        <li class="list-group-item list-group-item-success" id="birthday-show">
+                            Birthday:
+                        </li>
+                        <li class="list-group-item list-group-item-danger"  id="disease-show">
+                            Disease(s):
+                        </li>
+                    </ul>
+                </div>
+                <div class="media-body col-md-12">
+                    <h5 id="description" class="mb-5">Emily Park is a 25-year-old Asian female living in 1st Avenue, New York, Stuyvesant Town-Peter Cooper Village, New York, 10009. The physical status of she is Healthy. She is a Senior Production Manager with an annual income of $165,000, working at Hudson Manufacturing Company, First Avenue, Stuyvesant Town-Peter Cooper Village, New York, New York. She speaks English. Her education background is High School. Her date of birth is 05-22-1995.</h5>
+                </div>
             </div>
         </div>
     </div>
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-body">
+                <div id="calendar" class="fc fc-unthemed fc-ltr" style="height: 800px;">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<div class="row col-md-12">
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
@@ -131,20 +161,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="card-title">Location</h4>
-            </div>
-            <div class="card-body">
-                <div id="map" class="col-md-12 map mx-0 px-0"></div>
-                <img src="{{ url_for('static', filename='test_map.png') }}" alt="image" class="pl-5 col-md-12 d-none">
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row col-md-12">
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
@@ -157,12 +174,16 @@
         </div>
     </div>
 
-    <div class="col-md-8">
+    <div class="col-md-4">
         <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Location</h4>
+            </div>
             <div class="card-body">
-                <div id="calendar" class="fc fc-unthemed fc-ltr" style="height: 600px;">
-                </div>
+                <div id="map" class="col-md-12 map mx-0 px-0"></div>
+                <img src="{{ url_for('static', filename='test_map.png') }}" alt="image" class="pl-5 col-md-12 d-none" id="location_backup">
             </div>
         </div>
     </div>
+    
 </div>
