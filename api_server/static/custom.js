@@ -3,10 +3,11 @@ let cur_user = ""
 let agent_list = []
 
 let check_tree_interval = {}
-let tree_status = "building"
+let tree_status = ""
 let check_pool_interval = {}
-let pool_status = "building"
+let pool_status = ""
 let new_user_start_simulation = {}
+let simul_status = ""
 let check_simul_interval = {}
 
 let check_interval = 100
@@ -419,9 +420,20 @@ function check_simulation(username){
             success: function(res) {
                 console.log("Simulation status: " + res["message"])
                 update_status_area(res, "Simulation status")
-                if (res["message"].includes("ready") || res["message"].includes("failed")){
+                if (res["message"].includes("ing")){
+                    simul_status = "working";
+                    if (cur_user in check_simul_interval){
+                        clearInterval(check_simul_interval[cur_user]);
+                        delete check_simul_interval[cur_user];
+                    }
+                    check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+                }
+                else if (res["message"].includes("ready") || res["message"].includes("failed")){
                     clearInterval(check_simul_interval[username]);
                     delete check_simul_interval[username];
+                }
+                else {
+                    
                 }
             }
         });
@@ -429,6 +441,8 @@ function check_simulation(username){
 }
 
 function start_simulation(username){
+    // if (simul_status == "working") return;
+
     if (username){
         console.log("Start simulate for " + username)
         $.ajax({
@@ -436,7 +450,11 @@ function start_simulation(username){
             type: 'GET',
             async: true,
             success: function(res) {
-                console.log(res)
+                if (cur_user in check_simul_interval){
+                    clearInterval(check_simul_interval[cur_user]);
+                    delete check_simul_interval[cur_user];
+                }
+                check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
             }
           });
     }
@@ -457,6 +475,8 @@ function start_simulation(username){
 }
 
 function continue_simulation(){
+    if (simul_status == "working") return;
+
     var formData = new FormData()
     formData.set("days", document.getElementsByName("new_days").value)
 
@@ -546,12 +566,13 @@ function GenerateAgentsPool(username){
 function load_user_page(username){
     if_activated = activate_user(username)
     if (if_activated) {
-        tree_status = "building"
-        pool_status = "building"
+        tree_status = ""
+        pool_status = ""
+        simul_status = ""
 
         if (!(username in check_tree_interval)) check_tree_interval[username] = setInterval(check_info_tree, check_interval, username);
         if (!(username in check_pool_interval)) check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
-        if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval*1, username);
+        if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval, username);
 
         document.getElementById("top-user-name").innerText = username
         // 1. load agents

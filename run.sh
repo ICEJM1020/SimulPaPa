@@ -1,0 +1,1 @@
+nohup /home/ubuntu/.venv/sima/bin/python -i /home/ubuntu/SimulPaPa/main.py > /home/ubuntu/SimulPaPa/run.log &
