@@ -83,8 +83,6 @@ class Brain:
         self._output_cache = ""
         self._output_cache_length = 500
         self._out_activity_file = os.path.join(agent_folder, "activity.csv")
-        with open(self._out_activity_file, "w") as f:
-            f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
         self._retry_times = retry_times
         self._verbose = verbose
         ## status
@@ -127,10 +125,10 @@ class Brain:
         
         if simul_type=="new":
             start_date = self.base_date
-            cur_time = "07:00"
+            cur_time = "00:00"
+            with open(self._out_activity_file, "w") as f:
+                f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
         elif simul_type=="continue":
-            self.short_memory.load_cache()
-            self.long_memory.load_cache()
             start_date = self.short_memory.cur_date
             cur_time = self.short_memory.cur_time
         else:

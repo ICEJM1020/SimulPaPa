@@ -6,7 +6,7 @@ let check_tree_interval = {}
 let tree_status = "building"
 let check_pool_interval = {}
 let pool_status = "building"
-let user_simulation = {}
+let new_user_start_simulation = {}
 let check_simul_interval = {}
 
 let check_interval = 100
@@ -138,7 +138,7 @@ function create_user(){
         success: function(res) {
             activate_user(formData.get("username"));
             alert("Success");
-            user_simulation[formData.get("username")] = setInterval(GenerateAgentsPool, check_interval, formData.get("username"));
+            new_user_start_simulation[formData.get("username")] = setInterval(GenerateAgentsPool, check_interval, formData.get("username"));
         },
         error: function(res){
             console.log(res)
@@ -247,7 +247,7 @@ function load_agent_pool(username){
         success: function( res ) {
             console.log("Load agents pool");
             // update_status_area({"message":"ready-Loaded from local machine"}, "Agents Pool");
-            check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
+            if (!(username in check_pool_interval)) check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
         }
       });
 }
@@ -259,24 +259,29 @@ function fetch_agents_list(username){
         async: false,
         dataType: 'json',
         success: function( res ) {
+            console.log(res['message'])
             agent_list = res['data'];
 
             if (res['message']=="done"){
-                update_status_area({"message":"Ready in last agents creation."}, "Agents Pool")
+                update_status_area({"message":"ready in last agents creation."}, "Agents Pool")
             }
             else{
                 update_status_area({"message":"error in last agents pool creation. Regenerate or use exitsed agents."}, "Agents Pool")
             }
-
-            load_agent_pool(username)
-            clearInterval(check_pool_interval[username]);
-            delete check_pool_interval[username]
         }
       });
 }
 
 function update_agents_list(username){
-    fetch_agents_list(username);
+
+    if (username=="ready_update"){
+        fetch_agents_list(cur_user);
+    } 
+    else{
+        fetch_agents_list(username);
+        load_agent_pool(username);
+    }
+
     len_agent = Object.keys(agent_list).length
 
     _html = ""
@@ -324,8 +329,10 @@ function check_agents_pool(username){
                 if (res["message"].includes("ready")){
                     pool_status = "ready"
                     document.getElementById("generate_agent_btn").innerText = "Regenerate Agents"
-                    // clearInterval(check_pool_interval[username]);
-                    // delete check_pool_interval[username]
+                    clearInterval(check_pool_interval[username]);
+                    delete check_pool_interval[username]
+
+                    update_agents_list("ready_update");
                 }
                 else if (res["message"].includes("error")){
                     pool_status = "error"
@@ -334,13 +341,14 @@ function check_agents_pool(username){
                 }
                 else if (res["message"].includes("init")){
                     pool_status = "init"
-                    // clearInterval(check_pool_interval[username]);
-                    // delete check_pool_interval[username]
+                    clearInterval(check_pool_interval[username]);
+                    delete check_pool_interval[username];
+
+                    update_agents_list(username);
                 }
                 else {
                     pool_status = res["message"]
                 }
-                update_agents_list(username);
             }
           });
 
@@ -486,8 +494,8 @@ function GenerateInfoTree(){
 
 function new_user_simulation(username){
     if (tree_status==="ready" && pool_status==="ready"){
-        clearInterval(user_simulation[username]);
-        delete user_simulation[username];
+        clearInterval(new_user_start_simulation[username]);
+        delete new_user_start_simulation[username];
         load_agent_pool(username);
         start_simulation(username);
     }
@@ -503,13 +511,13 @@ function GenerateAgentsPool(username){
             dataType: 'json',
             success: function(res) {
                 if (res["message"].includes("error") || res["message"].includes("ing")){
-                    clearInterval(user_simulation[username]);
-                    delete user_simulation[username];
+                    clearInterval(new_user_start_simulation[username]);
+                    delete new_user_start_simulation[username];
                     if (res["message"].includes("error")){
                         alert("Error creation for " + username)
                     }
                     else{
-                        user_simulation[username] = setInterval(new_user_simulation, check_interval*50, username)
+                        new_user_start_simulation[username] = setInterval(new_user_simulation, check_interval*50, username)
                     }
 
                 }
@@ -538,6 +546,9 @@ function GenerateAgentsPool(username){
 function load_user_page(username){
     if_activated = activate_user(username)
     if (if_activated) {
+        tree_status = "building"
+        pool_status = "building"
+
         if (!(username in check_tree_interval)) check_tree_interval[username] = setInterval(check_info_tree, check_interval, username);
         if (!(username in check_pool_interval)) check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
         if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval*1, username);

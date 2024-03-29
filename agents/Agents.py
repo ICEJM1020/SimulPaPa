@@ -107,7 +107,8 @@ class AgentsPool:
 
     def _load_pool(self):
         error = ""
-        if_err = False
+        if_err = 0
+        exists = 0
         for i in range(1, self.size+1):
             if CONFIG["debug"]:
                 self.pool[i] = Agent(index=i, user_folder=self.user_folder)
@@ -115,18 +116,23 @@ class AgentsPool:
                 try:
                     self.pool[i] = Agent(index=i, user_folder=self.user_folder)
                 except:
-                    if_err = True
-                    error += f"{i}, "
+                    if_err += 1
+                    error += f"Agent {i}, "
                     logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
+                else:
+                    exists += 1
 
-        if if_err:
-            self._status = "error load " + error
-        else:
+        if if_err==self.size:
+            self._status = "error load all agents"
+        elif if_err==0:
             self._status = "ready"
+        else:
+            self.size = exists
+            self._status = "ready but miss " + error
 
 
     def save_pool(self, ):
-        if self._status=="ready":
+        if self._status.startswith("ready"):
             for idx in self.pool:
                 self.pool[idx].save()
         elif self._status=="working":
@@ -309,7 +315,9 @@ class Agent:
             self._status = "error"
 
     def start_planing(self, days=1):
-        # self.brain.init_brain()
+        if os.path.exists(self.activity_folder):
+            rmtree(self.activity_folder)
+            os.mkdir(self.activity_folder)
         self._status = "working"
         self.brain.plan(days=days, simul_type="new")
 
@@ -338,7 +346,7 @@ class Agent:
 
     @property
     def status(self):
-        self._monitor_brain_status()
+        if self._status=="working": self._monitor_brain_status()
         return self._status
     
     @status.setter

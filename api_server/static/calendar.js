@@ -1,5 +1,6 @@
-function create_calendar(e, events, date) {
+function create_calendar(e, events, _first_date) {
     "use strict";
+    console.log(_first_date)
     var t = function() {
         this.$body = e("body"), this.$modal = e("#event-modal"), this.$event = "#external-events div.external-event", this.$calendar = e("#calendar"), this.$calendarObj = null
     };
@@ -42,7 +43,7 @@ function create_calendar(e, events, date) {
             slotDuration: "00:10:00",
             minTime: "00:00:00",
             maxTime: "23:59:00",
-            defaultDate: date,
+            defaultDate: _first_date,
             defaultView: "agendaWeek",
             handleWindowResize: !0,
             height: 'parent',
