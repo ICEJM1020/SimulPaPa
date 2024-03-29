@@ -259,7 +259,7 @@ class User:
 
     
     def start_simulation(self):
-        self.agents_pool.start_simulation(self.simul_days)
+        self.agents_pool.start_simulation()
 
 
     def continue_simulation(self, days):

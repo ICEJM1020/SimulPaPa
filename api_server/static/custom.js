@@ -259,8 +259,13 @@ function fetch_agents_list(username){
         dataType: 'json',
         success: function( res ) {
             agent_list = res['data'];
-            if (res['message']==="done"){
-                load_agent_pool(username)
+            load_agent_pool(username)
+
+            clearInterval(check_pool_interval[username]);
+            delete check_pool_interval[username]
+
+            if (res['message']=="done"){
+                update_status_area({"message":"Ready in last agents creation."}, "Agents Pool")
             }
             else{
                 update_status_area({"message":"error in last agents pool creation. Regenerate or use exitsed agents."}, "Agents Pool")
@@ -318,8 +323,8 @@ function check_agents_pool(username){
                 if (res["message"].includes("ready")){
                     pool_status = "ready"
                     document.getElementById("generate_agent_btn").innerText = "Regenerate Agents"
-                    clearInterval(check_pool_interval[username]);
-                    delete check_pool_interval[username]
+                    // clearInterval(check_pool_interval[username]);
+                    // delete check_pool_interval[username]
                     update_agents_list(username)
                 }
                 else if (res["message"].includes("error")){
@@ -330,7 +335,6 @@ function check_agents_pool(username){
                 else if (res["message"].includes("init")){
                     pool_status = "init"
                     update_agents_list(username)
-                    // fetch_agents_list(username)
                     // clearInterval(check_pool_interval[username]);
                     // delete check_pool_interval[username]
                 }
