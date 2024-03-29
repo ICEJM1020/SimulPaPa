@@ -246,7 +246,8 @@ function load_agent_pool(username){
         dataType: 'json',
         success: function( res ) {
             console.log("Load agents pool");
-            update_status_area({"message":"ready-Loaded from local machine"}, "Agents Pool");
+            // update_status_area({"message":"ready-Loaded from local machine"}, "Agents Pool");
+            check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
         }
       });
 }
@@ -259,10 +260,6 @@ function fetch_agents_list(username){
         dataType: 'json',
         success: function( res ) {
             agent_list = res['data'];
-            load_agent_pool(username)
-
-            clearInterval(check_pool_interval[username]);
-            delete check_pool_interval[username]
 
             if (res['message']=="done"){
                 update_status_area({"message":"Ready in last agents creation."}, "Agents Pool")
@@ -270,6 +267,10 @@ function fetch_agents_list(username){
             else{
                 update_status_area({"message":"error in last agents pool creation. Regenerate or use exitsed agents."}, "Agents Pool")
             }
+
+            load_agent_pool(username)
+            clearInterval(check_pool_interval[username]);
+            delete check_pool_interval[username]
         }
       });
 }
@@ -325,7 +326,6 @@ function check_agents_pool(username){
                     document.getElementById("generate_agent_btn").innerText = "Regenerate Agents"
                     // clearInterval(check_pool_interval[username]);
                     // delete check_pool_interval[username]
-                    update_agents_list(username)
                 }
                 else if (res["message"].includes("error")){
                     pool_status = "error"
@@ -334,13 +334,13 @@ function check_agents_pool(username){
                 }
                 else if (res["message"].includes("init")){
                     pool_status = "init"
-                    update_agents_list(username)
                     // clearInterval(check_pool_interval[username]);
                     // delete check_pool_interval[username]
                 }
                 else {
                     pool_status = res["message"]
                 }
+                update_agents_list(username);
             }
           });
 
