@@ -478,7 +478,7 @@ function continue_simulation(){
     if (simul_status == "working") return;
 
     var formData = new FormData()
-    formData.set("days", document.getElementsByName("new_days").value)
+    formData.set("days", document.getElementsByName("new_days")[0].value)
 
     $.ajax({
         url: "/simulation/continue/" + cur_user,

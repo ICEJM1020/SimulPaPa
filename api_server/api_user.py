@@ -392,15 +392,16 @@ def start_simulation(username):
 
 @ubp.route(f"/simulation/continue/<username>", methods=["GET", "POST"])
 def continue_simulation(username):
-    if "days" not in request.form.keys(): 
+    if "days" in request.form.keys(): 
         days = int(request.form['days'])
     else:
         days=1
+    print(days)
     status, user_list = check_user(username=username)
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            USER_POOL.continue_simulation(_uuid, days)
+            # USER_POOL.continue_simulation(_uuid, days)
             return_body = {
                 "status" : True,
             }
