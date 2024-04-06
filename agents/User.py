@@ -103,6 +103,15 @@ class UserPool:
     def fetch_all_agents(self, _uuid):
         return self.pool[_uuid].agents_pool.fetch_all_agents()
     
+    def update_agents_catelogue(self, _uuid):
+        return self.pool[_uuid].agents_pool.update_agents_catelogue()
+    
+    def fetch_statistical_activity(self, _uuid, date):
+        return self.pool[_uuid].agents_pool.statistical_activity(date)
+    
+    def fetch_all_donedates(self, _uuid):
+        return self.pool[_uuid].agents_pool.fetch_all_donedates()
+    
     ############
     # single agent
     ############

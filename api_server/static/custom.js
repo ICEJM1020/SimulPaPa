@@ -10,6 +10,11 @@ let new_user_start_simulation = {}
 let simul_status = ""
 let check_simul_interval = {}
 
+let update_stat_interval = null
+let all_donedates = []
+let act_stat = {}
+let hr_stat = {}
+
 let check_interval = 100
 
 window.onload = function(){
@@ -35,14 +40,12 @@ function loadContent(content) {
         $("#mainContent").load("/user", success=function(){
             load_user_page(username)
             cur_user = username
-            draw()
             document.getElementsByClassName('nav-control')[0].click();
         }); 
     }
     else if (content.startsWith("back")){
         $("#mainContent").load("/user", success=function(){
             load_user_page(cur_user)
-            draw()
         }); 
     }
     else{
@@ -563,6 +566,44 @@ function GenerateAgentsPool(username){
     }
 }
 
+function fetch_all_donedates(){
+    $.ajax({
+        url: "/agents/" + cur_user + "/all-donedates",
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function(res) {
+            all_donedates = res["data"]
+        }
+        });
+}
+
+function fetch_activity_statistic(date){
+    $.ajax({
+        url: "/agents/" + cur_user + "/statistic/" + date,
+        type: 'GET',
+        async: false,
+        dataType: 'json',
+        success: function(res) {
+            act_stat = res["data"]["activity"]
+            hr_stat = res["data"]["heartrate"]
+        },
+        error: function(res) {
+            console.log(res)
+        }
+        });
+}
+
+function show_stat(){
+    if (pool_status=="ready"){
+        fetch_all_donedates();
+        fetch_activity_statistic(all_donedates[0]);
+        clearInterval(update_stat_interval);
+
+        draw_stat(act_stat, hr_stat)
+    }
+}
+
 function load_user_page(username){
     if_activated = activate_user(username)
     if (if_activated) {
@@ -575,6 +616,11 @@ function load_user_page(username){
         if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval, username);
 
         document.getElementById("top-user-name").innerText = username
+        
+        all_donedates = []
+        act_stat = {}
+        hr_stat = {}
+        update_stat_interval = setInterval(show_stat, check_interval)
         // 1. load agents
         // 2. load statistic
     }
@@ -600,6 +646,21 @@ function fetch_user_info(username){
     return return_val
 }
 
+let chat_display = true
+// true for chat bubble
+// false for word cloud
+function change_chat_display()
+{
+    if (chat_display){
+        document.getElementById("chat_history").classList.remove("d-none");
+        document.getElementById("chatbot_wordcloud").classList.add("d-none");
+        chat_display = false;
+    }else{
+        document.getElementById("chatbot_wordcloud").classList.remove("d-none");
+        document.getElementById("chat_history").classList.add("d-none");
+        chat_display = true;
+    }
+}
 
 // single agent
 let cur_agent_id = ""
@@ -616,6 +677,13 @@ function load_agent_page(){
     // document.getElementById("agent-name").innerText = "Agent "+cur_agent_id
     // document.getElementById("agent-name-link").innerText = "Agent "+cur_agent_id
     document.getElementById("portrait").src = "/agent/"+cur_user+"/"+cur_agent_id+"/portrait"
+
+
+    agent_info = {}
+    donedates =  []
+    chat_his = {}
+    loc_hist = {}
+    schedules = {}
 
     load_info();
     fetch_done_date();
@@ -754,6 +822,44 @@ function count_words_freq(){
     return wordFreq(_str)
 }
 
+function get_utter(chat){
+    if (chat.includes(":")){
+        return chat.split(":")[1];
+    }
+    else{
+        return chat;
+    }
+}
+
+function show_chat_hist(){
+    let _html = "";
+    for (var idx in chat_his){
+        // console.log(chat_his[idx]["chatbot"])
+        // console.log(chat_his[idx]["time"])
+        // <div class="balon1 p-2 m-0 position-relative" data-is="You - 3:20 pm"><a class="float-right"> Hey there! What's up? </a></div>
+        if (chat_his[idx]["chatbot"].includes(";")){
+            _temp = chat_his[idx]["chatbot"].split(";")
+            for (var idx_2 in _temp){
+                // console.log(_temp[idx])
+                // console.log(_temp[idx].toLowerCase().includes("chatbot:"))
+                if ( (_temp[idx_2].toLowerCase().includes("chatbot:")) || (_temp[idx_2].toLowerCase().includes("coco:")) || (_temp[idx_2].toLowerCase().includes("alexa:"))) {
+                    _html += "<div class=\"balonbot p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-left\">" + get_utter(_temp[idx_2]) + "</a></div>"
+                } else {
+                    _html += "<div class=\"balonuser p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-right\">" + get_utter(_temp[idx_2]) + "</a></div>"
+                }
+            }
+        }
+        else{
+            if ( (chat_his[idx]["chatbot"].toLowerCase().includes("chatbot:")) || (chat_his[idx]["chatbot"].toLowerCase().includes("coco:")) || (chat_his[idx]["chatbot"].toLowerCase().includes("alexa:"))) {
+                _html += "<div class=\"balonbot p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-left\">" + get_utter(chat_his[idx]["chatbot"]) + "</a></div>"
+            } else {
+                _html += "<div class=\"balonuser p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-right\">" + get_utter(chat_his[idx]["chatbot"]) + "</a></div>"
+            }        
+        }
+    }
+    document.getElementById("chat_history").innerHTML = _html
+}
+
 function draw_cloud(date){
     // document.getElementById("chatbot_wordcloud_backup").classList.add("d-none")
     // fetch_chat_his(date);
@@ -763,13 +869,16 @@ function draw_cloud(date){
         document.getElementById("chatbot_wordcloud_backup").classList.add("d-none")
         chat_his = fetch_chat_his(date);
         words_freq = count_words_freq();
-        d3_draw_cloud(words_freq)
+        d3_draw_cloud(words_freq);
+        show_chat_hist();
+        
     }
     catch{
         document.getElementById("chatbot_wordcloud").classList.add("d-none")
         document.getElementById("chatbot_wordcloud_backup").classList.remove("d-none")
     }
 }
+
 
 //
 // draw heartrate
@@ -877,8 +986,12 @@ function fetch_schedule(date){
             if (Object.keys(res["data"]).length !== 0){
                 schedule = res["data"]
             }
+        },
+        error: function(res){
+            console.log(res)
         }
         });
+
     return schedule;
 }
 

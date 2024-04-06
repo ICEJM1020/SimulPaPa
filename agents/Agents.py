@@ -110,17 +110,14 @@ class AgentsPool:
         if_err = 0
         exists = 0
         for i in range(1, self.size+1):
-            if CONFIG["debug"]:
+            try:
                 self.pool[i] = Agent(index=i, user_folder=self.user_folder)
+            except:
+                if_err += 1
+                error += f"Agent {i}, "
+                logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
             else:
-                try:
-                    self.pool[i] = Agent(index=i, user_folder=self.user_folder)
-                except:
-                    if_err += 1
-                    error += f"Agent {i}, "
-                    logger.error(f"try to load agent {i} pool for {self.info['name']}({self._uuid}) failed")
-                else:
-                    exists += 1
+                exists += 1
 
         if if_err==self.size:
             self._status = "error load all agents"
@@ -180,6 +177,48 @@ class AgentsPool:
             self.simul_status = "ready"
         if _error == self.size:
             self.simul_status = "failed"
+
+    def statistical_activity(self, date):
+
+        activity_stat = {}
+        heartrate_stat = {}
+        for i, id in enumerate(self.pool):
+            _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catelog", "heartrate"])
+
+            for time in _temp_records.keys():
+                # or (time.endswith("20")) or (time.endswith("40"))
+                if (time.endswith("0")) :
+                    _time = time.split(" ")[1]
+                    if i==0:
+                        activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catelog"]}
+                        heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"] + random.randint(-10,50)}
+                    else:
+                        activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catelog"]
+                        heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"] + random.randint(-10,50)
+                else:
+                    continue
+        return {"activity":activity_stat, "heartrate":heartrate_stat}
+
+    def fetch_all_donedates(self):
+        donedates = []
+
+        for id in self.pool:
+            _donedates = self.pool[id].fetch_done_dates()
+            if donedates:
+                donedates = list(set(donedates).intersection(_donedates))
+            else:
+                donedates = _donedates
+
+        dates = [datetime.strptime(date_str, '%m-%d-%Y') for date_str in donedates]
+        sorted_dates = sorted(dates)
+        sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y') for date_obj in sorted_dates]
+
+        return sorted_date_strings
+        
+
+    def update_agents_catelogue(self):
+        for id in self.pool:
+            self.pool[id].update_catelogue()
 
     def fetch_agent_info(self, id):
         return self.pool[id].fetch_info()
@@ -374,62 +413,34 @@ class Agent:
     
     def fetch_location_hist(self, date):
         _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
-        _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'location', 'longitude', 'latitude']]
 
-        loc_hist = {}
-        for idx, (loc, group) in enumerate(_hist.groupby(by=["longitude","latitude"])):
-            date_strings = group.loc[:, 'time']
-            dates = [datetime.strptime(date_str, '%m-%d-%Y %H:%M') for date_str in date_strings]
-            sorted_dates = sorted(dates)
-            sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y %H:%M') for date_obj in sorted_dates]
+        cur_loc = _hist["location"][0]
+        cur_longi = _hist["longitude"][0]
+        cur_lati = _hist["latitude"][0]
+        loc_start_time = _hist["time"][0]
+        last_time = ""
+        loc_hist = []
+        for idx, row in _hist.iterrows():
+            if not cur_loc==row["location"]:
+                loc_hist.append({
+                    "location" : cur_loc,
+                    "longitude" : cur_longi,
+                    "latitude" : cur_lati,
+                    "start_time" : loc_start_time,
+                    "end_time" : last_time,
+                })
+                cur_loc = row["location"]
+                cur_longi = row["longitude"]
+                cur_lati = row["latitude"]
+                loc_start_time = row["time"]
+            last_time = row["time"]
 
-            _temp = {
-                "location" : list(group['location'].value_counts().index),
-                "longitude" : loc[0],
-                "latitude" : loc[1],
-                "start_time" : sorted_date_strings[0],
-                "end_time" : sorted_date_strings[-1],
-            }
-            loc_hist[idx] = _temp
         return loc_hist
     
     def fetch_schedule(self, date):
         data = pd.read_csv(self.activity_folder + f"/{date}.csv")
 
-        # schedule = []
-        # for _, (event, group) in enumerate(data.groupby(by=["event"])):
-        #     date_strings = group.loc[:, 'time'].to_list()
-        #     dates = [datetime.strptime(date_str, '%m-%d-%Y %H:%M') for date_str in date_strings]
-        #     sorted_dates = sorted(dates)
-        #     sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y %H:%M') for date_obj in sorted_dates]
-        #     event_start = sorted_date_strings[0][-5:]
-        #     event_end = sorted_date_strings[-1][-5:]
-
-        #     activities = []
-        #     for _, (activity, group_2) in enumerate(group.groupby(by=["activity"])):
-        #         date_strings = group_2.loc[:, 'time'].to_list()
-        #         dates = [datetime.strptime(date_str, '%m-%d-%Y %H:%M') for date_str in date_strings]
-        #         sorted_dates = sorted(dates)
-        #         sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y %H:%M') for date_obj in sorted_dates]
-        #         activity_start = sorted_date_strings[0][-5:]
-        #         activity_end = sorted_date_strings[-1][-5:]
-
-        #         activities.append({
-        #             "activity":activity[0],
-        #             "start_time":activity_start,
-        #             "end_time":activity_end
-        #         })
-
-        #     _temp = {
-        #         "event" : event[0],
-        #         "start_time" : event_start,
-        #         "end_time" : event_end,
-        #         "activities" : activities
-        #     }
-        #     schedule.append(_temp)
-
         schedule = []
-
         cur_event = data["event"][0]
         event_start_time = data["time"][0]
         cur_activity = data["activity"][0]
@@ -456,7 +467,6 @@ class Agent:
                 cur_event = row["event"]
                 event_start_time = row["time"]
                 activities = []
-            
 
             last_time = row["time"]
 
@@ -473,8 +483,15 @@ class Agent:
             "end_time" : last_time,
             "activities" : activities
         })
-
         return schedule
+    
+    def fetch_records(self, date, col:list=["time", "activity"]):
+        if not "time" in col:
+            col.append("time")
+        data = pd.read_csv(self.activity_folder + f"/{date}.csv")[col]
+        data.index = data["time"]
+        return data.T.to_dict()
+
 
     def fetch_done_dates(self):
         date_strings = [file.split(".")[0] for file in os.listdir(self.activity_folder)]
@@ -482,3 +499,7 @@ class Agent:
         sorted_dates = sorted(dates)
         sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y') for date_obj in sorted_dates]
         return sorted_date_strings
+    
+    def update_catelogue(self):
+        done_files = [os.path.join(self.activity_folder, file) for file in os.listdir(self.activity_folder)]
+        self.brain.update_catelogue(done_files)

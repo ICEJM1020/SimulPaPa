@@ -100,7 +100,7 @@ class Location(BaseModel):
 
 class ChatBotEntry(BaseModel):
     time : str = Field(description='time when use Chatbot in the format of MM-DD-YYYY HH:MM')
-    conv : str = Field(description='Chatbot conversation with human')
+    conv : str = Field(description='Conversation between Chatbot and Human. Start Chatbot utterence with \"Chatbot:\", start user utterence with \"User\"')
 
     def dump_dict(self):
         res = {
@@ -117,6 +117,20 @@ class Chatbot(BaseModel):
         for item in self.chatbot:
             _item = item.dump_dict()
             res[_item["time"]] = _item["conv"]
+        return res
+    
+
+class CatelogueMapEntry(BaseModel):
+    activity: str = Field(description='The activity in the given activity list.')
+    catelogue: str = Field(description='The catelogue to which the activity belongs.')
+
+class CatelogueMap(BaseModel):
+    maps: list[CatelogueMapEntry]
+
+    def dump_dict(self):
+        res = {}
+        for item in self.maps:
+            res[item.activity] = item.catelogue
         return res
 
 

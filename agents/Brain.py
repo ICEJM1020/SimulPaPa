@@ -7,6 +7,7 @@ import sys
 import os
 import json
 from datetime import datetime, timedelta
+import threading
 import multiprocessing as mp
 
 sys.path.append(os.path.abspath('./'))
@@ -17,6 +18,7 @@ from langchain.chains import LLMChain
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.prompts import PromptTemplate, FewShotPromptTemplate
 from langchain_openai import ChatOpenAI
+import pandas as pd
 
 from config import CONFIG
 from agents.ShortMemory import ShortMemory
@@ -67,6 +69,7 @@ class Brain:
                 self.labels = labels
         else:
             self.free = True
+        self.labels = CONFIG["activity_catelogue"]
         ## if use labels to generate activities
         self.activities_by_labels = activities_by_labels
     
@@ -659,15 +662,75 @@ class Brain:
                 f.write(self._output_cache)
             self._output_cache = ""
 
+    def _categorize_activity(self, _file, retry=10):
+        act_data = pd.read_csv(_file, dtype=str)
+        act_list = [i[0] for i in act_data[["activity"]].value_counts().index.to_list()]
+
+        for try_idx in range(retry):
+            try:
+                act_map = self._categorize_activity_chat(act_list)
+            except:
+                if try_idx + 1 == self._retry_times:
+                    return 0
+                else:
+                    continue
+            else:
+                act_map = act_map.dump_dict()
+                act_data["catelog"] = act_data["activity"].map(act_map)
+                act_data["catelog"] = act_data["catelog"].fillna("Other activities, not elsewhere classified")
+                act_data.to_csv(_file, index=False)
+                break
+
+    def _categorize_activity_chat(self, act_list) -> CatelogueMap:
+        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["categorize_activity"])
+        chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
+
+        catelogue_parser = PydanticOutputParser(pydantic_object=CatelogueMap)
+
+        request = chat_prompt.format_prompt(
+                catelogue = self.labels,
+                activities = json.dumps(act_list),
+                format_instructions = catelogue_parser.get_format_instructions()
+            ).to_messages()
+
+        model = ChatOpenAI(
+                api_key=CONFIG["openai"]["api_key"],
+                organization=CONFIG["openai"]["organization"],
+                model_name='gpt-3.5-turbo',
+                temperature=0.3,
+                verbose=self._verbose
+            )
+        results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+        if CONFIG["debug"]: print(results.content)
+
+        act_map = catelogue_parser.parse(results.content)
+
+        return act_map
+
+    def _update_catelogue(self, file_list):
+        for file in file_list:
+            self._categorize_activity(file)
+
+    def update_catelogue(self, file_list):
+        thread = threading.Thread(target=self._update_catelogue, args=[file_list])
+        thread.start()
+
+
     def save_hist(self):
         with open(self._out_activity_file, "a+") as f:
             f.write(self._output_cache)
         self._output_cache = ""
 
-        os.replace(self._out_activity_file, os.path.join(self.activity_folder, self.short_memory.cur_date + ".csv"))
+        target_file = os.path.join(self.activity_folder, self.short_memory.cur_date + ".csv")
+        os.replace(self._out_activity_file, target_file)
 
         with open(self._out_activity_file, "w") as f:
             f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
+
+        self._categorize_activity(target_file)
+        # thread = threading.Thread(target=self._categorize_activity, args=target_file)
+        # thread.start()
+
 
     def save_cache(self):
         self.short_memory.save_cache()

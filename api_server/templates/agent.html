@@ -165,10 +165,18 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h4 class="card-title">Chatbot Word Cloud</h4>
+                <div class="row col-md-12">
+                    <div class="col-md-8">
+                        <h4 class="card-title">Chatbot Usage</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-dark col-md-12" onclick="change_chat_display()">Change</button>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
-                <div id="chatbot_wordcloud"></div>
+                <div id="chatbot_wordcloud" class=""></div>
+                <div class="col-md-12 px-3 chat-frame d-none" id="chat_history"></div>
                 <img src="{{ url_for('static', filename='test_wordcloud.png') }}" alt="image" class="pl-5 col-md-12 d-none" id="chatbot_wordcloud_backup">
             </div>
         </div>

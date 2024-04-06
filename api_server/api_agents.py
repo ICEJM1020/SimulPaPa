@@ -209,6 +209,86 @@ def load_agents_pool(username):
     return response
 
 
+@abp.route(f"/{route_group}/<username>/statistic/<date>", methods=["POST", "GET"])
+def fetch_statistic(username, date):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "data" : USER_POOL.fetch_statistical_activity(_uuid, date),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@abp.route(f"/{route_group}/<username>/all-donedates", methods=["POST", "GET"])
+def fetch_all_donedates(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "data" : USER_POOL.fetch_all_donedates(_uuid),
+                "message" : "",
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@abp.route(f"/{route_group}/<username>/update-catelogue", methods=["POST", "GET"])
+def update_agents_catelogue(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            return_body = {
+                "status" : True,
+                "message" : USER_POOL.update_agents_catelogue(_uuid)
+            }
+            logger.info(f"User {username}'s agents pool has loaded from local machine")
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
 ########
 #
 # single agent group

@@ -49,3 +49,72 @@
 .table {
     color: black !important;
 }
+
+
+.balonuser, .balonbot {
+
+	margin-top: 5px !important;
+	margin-bottom: 5px !important;
+
+	}
+
+
+.balonuser a {
+
+	background: #42a5f5;
+	color: #fff !important;
+	border-radius: 20px 20px 3px 20px;
+	display: block;
+	max-width: 75%;
+	padding: 7px 13px 7px 13px;
+
+	}
+
+.balonuser:before {
+
+	content: attr(data-is);
+	position: absolute;
+	right: 15px;
+	bottom: -0.8em;
+	display: block;
+	font-size: .750rem;
+	color: rgba(84, 110, 122,1.0);
+	
+	}
+
+.balonbot a {
+
+	background: #f1f1f1;
+	color: #000 !important;
+	border-radius: 20px 20px 20px 3px;
+	display: block;
+	max-width: 75%;
+	padding: 7px 13px 7px 13px;
+	
+	}
+	
+.balonbot:before {
+
+	content: attr(data-is);
+	position: absolute;
+	left: 13px;
+	bottom: -0.8em;
+	display: block;
+	font-size: .750rem;
+	color: rgba(84, 110, 122,1.0);
+  
+	}
+
+
+.chat-frame {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    max-height: 590px;
+    background: #d6edb7;
+	border-radius: 10px;
+    border:2px solid black;
+    overflow-y:scroll;
+    -webkit-overflow-scrolling: touch;
+}
+

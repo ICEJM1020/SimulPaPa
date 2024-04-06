@@ -1,419 +1,145 @@
-function draw() {
-    "use strict"
 
-    //basic bar chart
+const catelog = [
+    "Personal care activities",
+    "Eating and drinking",
+    "Household activities",
+    "Purchasing goods and services",
+    "Consumer goods purchases",
+    "Professional and personal care services",
+    "Caring for and helping others",
+    "Working and work-related activities",
+    "Educational activities",
+    "Organizational, civic, and religious activities",
+    "Leisure and sports",
+    "Telephone calls, mail, and e-mail",
+    "Other activities, not elsewhere classified",
+]
 
-    const barChart_1 = document.getElementById("activity_bar").getContext('2d');
-    
-    barChart_1.height = 100;
+const colors_rgb = [
+    'rgb(23,75,205)', 
+    'rgb(195,230,222)', 
+    'rgb(62,95,23)', 
+    'rgb(148,50,207)', 
+    'rgb(88,116,44)', 
+    'rgb(191,28,181)', 
+    'rgb(206,222,159)', 
+    'rgb(128,112,41)', 
+    'rgb(51,56,161)', 
+    'rgb(135,138,236)', 
+    'rgb(49,9,24)', 
+    'rgb(170,103,182)', 
+    'rgb(209,171,151)', 
+    'rgb(234,77,198)', 
+    'rgb(154,24,174)'
+]
 
-    new Chart(barChart_1, {
-        type: 'bar',
-        data: {
-            defaultFontFamily: 'Poppins',
-            labels: ["Light Mov", "Sitting", "Eating", "Heavy Mov", "Sleeping", "Screen Use", "Drinking", ],
-            datasets: [
-                {
-                    data: [12, 9, 5, 5, 3, 2, 2],
-                    borderColor: 'rgba(26, 51, 213, 1)',
-                    borderWidth: "0",
-                    backgroundColor: 'rgba(26, 51, 213, 1)'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            legend: false, 
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }],
-                xAxes: [{
-                    // Change here
-                    barPercentage: 0.5
-                }]
-            }
-        }
+const colors_rgba = [
+    'rgba(100,224,188,0.78)', 
+    'rgba(27,160,141,0.21)', 
+    'rgba(221,230,134,0.33)', 
+    'rgba(71,212,99,0.08)', 
+    'rgba(170,58,96,0.44)', 
+    'rgba(40,119,63,0.48)', 
+    'rgba(182,177,169,0.45)', 
+    'rgba(50,197,218,0.11)', 
+    'rgba(163,101,126,0.20)', 
+    'rgba(192,240,119,0.81)', 
+    'rgba(167,5,28,0.08)', 
+    'rgba(39,222,98,0.05)', 
+    'rgba(255,139,71,0.48)', 
+    'rgba(114,54,176,0.19)', 
+    'rgba(116,34,92,0.17)'
+]
+
+let act_dist_line = null;
+let act_dist = null;
+let heartrate_line = null;
+let heart_rate_activity = null;
+
+function avg(array) {
+    var total = 0;
+    var count = 0;
+
+    array.forEach(function(item, index) {
+        total += item;
+        count++;
     });
 
+    return total / count;
+}
 
+function draw_stat() {
+    draw_act_dist_line()
+    draw_act_dist("12:00")
 
-//gradient bar chart
-    // const barChart_2 = document.getElementById("h-a-sankey").getContext('2d');
-    // //generate gradient
-    // const barChart_2gradientStroke = barChart_2.createLinearGradient(0, 0, 0, 250);
-    // barChart_2gradientStroke.addColorStop(0, "rgba(26, 51, 213, 1)");
-    // barChart_2gradientStroke.addColorStop(1, "rgba(26, 51, 213, 0.5)");
+    draw_heart_rate_line()
+    draw_heart_rate_activity("12:00")
+}
 
-    // barChart_2.height = 100;
-
-    // new Chart(barChart_2, {
-    //     type: 'bar',
-    //     data: {
-    //         defaultFontFamily: 'Poppins',
-    //         labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-    //         datasets: [
-    //             {
-    //                 label: "My First dataset",
-    //                 data: [65, 59, 80, 81, 56, 55, 40],
-    //                 borderColor: barChart_2gradientStroke,
-    //                 borderWidth: "0",
-    //                 backgroundColor: barChart_2gradientStroke, 
-    //                 hoverBackgroundColor: barChart_2gradientStroke
-    //             }
-    //         ]
-    //     },
-    //     options: {
-    //         responsive: true,
-    //         maintainAspectRatio: false,
-    //         legend: false, 
-    //         scales: {
-    //             yAxes: [{
-    //                 ticks: {
-    //                     beginAtZero: true
-    //                 }
-    //             }],
-    //             xAxes: [{
-    //                 // Change here
-    //                 barPercentage: 0.5
-    //             }]
-    //         }
-    //     }
-    // });
-
-
-
-// //stalked bar chart
-//     const barChart_3 = document.getElementById("barChart_3").getContext('2d');
-//     //generate gradient
-//     const barChart_3gradientStroke = barChart_3.createLinearGradient(50, 100, 50, 50);
-//     barChart_3gradientStroke.addColorStop(0, "rgba(26, 51, 213, 1)");
-//     barChart_3gradientStroke.addColorStop(1, "rgba(26, 51, 213, 0.5)");
-
-//     const barChart_3gradientStroke2 = barChart_3.createLinearGradient(50, 100, 50, 50);
-//     barChart_3gradientStroke2.addColorStop(0, "rgba(56, 164, 248, 1)");
-//     barChart_3gradientStroke2.addColorStop(1, "rgba(56, 164, 248, 1)");
-
-//     const barChart_3gradientStroke3 = barChart_3.createLinearGradient(50, 100, 50, 50);
-//     barChart_3gradientStroke3.addColorStop(0, "rgba(40, 199, 111, 1)");
-//     barChart_3gradientStroke3.addColorStop(1, "rgba(40, 199, 111, 1)");
+function draw_act_dist_line() {
+    if (act_dist_line) {act_dist_line.destroy();}
+    const _act_dist_line = document.getElementById("daily_activity").getContext('2d');
+    let count_max = 0;
     
-//     barChart_3.height = 100;
+    let time_labels = [];
+    let catelog_datasets = {};
+    let datasets = [];
 
-//     let barChartData = {
-//         defaultFontFamily: 'Poppins',
-//         labels: ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'],
-//         datasets: [{
-//             label: 'Red',
-//             backgroundColor: barChart_3gradientStroke,
-//             hoverBackgroundColor: barChart_3gradientStroke, 
-//             data: [
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12'
-//             ]
-//         }, {
-//             label: 'Green',
-//             backgroundColor: barChart_3gradientStroke2,
-//             hoverBackgroundColor: barChart_3gradientStroke2, 
-//             data: [
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12'
-//             ]
-//         }, {
-//             label: 'Blue',
-//             backgroundColor: barChart_3gradientStroke3,
-//             hoverBackgroundColor: barChart_3gradientStroke3, 
-//             data: [
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12',
-//                 '12'
-//             ]
-//         }]
-
-//     };
-
-//     new Chart(barChart_3, {
-//         type: 'bar',
-//         data: barChartData,
-//         options: {
-//             legend: {
-//                 display: false
-//             }, 
-//             title: {
-//                 display: false
-//             },
-//             tooltips: {
-//                 mode: 'index',
-//                 intersect: false
-//             },
-//             responsive: true,
-//             scales: {
-//                 xAxes: [{
-//                     stacked: true,
-//                 }],
-//                 yAxes: [{
-//                     stacked: true
-//                 }]
-//             }
-//         }
-//     });
-
-
-
-
-let draw = Chart.controllers.line.__super__.draw; //draw shadow
-
-//basic line chart
-    const lineChart_1 = document.getElementById("h-a-sankey").getContext('2d');
-
-    Chart.controllers.line = Chart.controllers.line.extend({
-        draw: function () {
-            draw.apply(this, arguments);
-            let nk = this.chart.chart.ctx;
-            let _stroke = nk.stroke;
-            nk.stroke = function () {
-                nk.save();
-                nk.shadowColor = 'rgba(255, 0, 0, .2)';
-                nk.shadowBlur = 10;
-                nk.shadowOffsetX = 0;
-                nk.shadowOffsetY = 10;
-                _stroke.apply(this, arguments)
-                nk.restore();
-            }
+    for (var i=0;i<catelog.length;i++){
+        // console.log(catelog[i])
+        catelog_datasets[catelog[i]] = {
+            label: catelog[i],
+            data: [],
+            borderColor: colors_rgb[i],
+            borderWidth: "2",
+            backgroundColor: 'transparent', 
+            pointBackgroundColor: colors_rgb[i]
         }
-    });
-    
-    lineChart_1.height = 100;
+    }
 
-    new Chart(lineChart_1, {
+    for (const time in act_stat) {
+        if (count_max==0){
+            count_max = act_stat[time].length
+        }
+
+        time_labels.push(time)
+
+        let _temp_act = {}
+        for (const key of catelog) {_temp_act[key] = 0;}
+
+        for (const agent_id in act_stat[time]){_temp_act[act_stat[time][agent_id]] += 1;}
+        
+        for (const key of catelog){catelog_datasets[key].data.push(_temp_act[key])}
+    }
+    for (const key of catelog){datasets.push(catelog_datasets[key])}
+        
+    _act_dist_line.height = 100;
+    act_dist_line = new Chart(_act_dist_line, {
         type: 'line',
         data: {
             defaultFontFamily: 'Poppins',
-            labels: [59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81],
-            datasets: [
-                {
-                    label: "Count",
-                    data: [2, 2, 5, 0, 5, 4, 2, 2, 3, 3, 5, 6, 0, 5, 0, 1, 4, 1, 0, 1, 0, 1, 1],
-                    borderColor: 'rgba(56, 164, 248, 1)',
-                    borderWidth: "2",
-                    backgroundColor: 'transparent',  
-                    pointBackgroundColor: 'rgba(56, 164, 248, 1)'
-                }
-            ]
+            labels: time_labels,
+            datasets: datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             legend: false, 
+            onClick: function(Event){
+                const points = this.getElementAtEvent(Event);
+                if (points.length) {
+                    const firstPoint = points[0];
+                    draw_act_dist(this.data.labels[firstPoint._index])
+                    draw_heart_rate_activity(this.data.labels[firstPoint._index])
+                }
+            },
             scales: {
                 yAxes: [{
                     ticks: {
                         beginAtZero: true, 
-                        // max: 100, 
+                        max: count_max,
                         min: 0, 
-                        // stepSize: 20, 
-                        // padding: 10
-                    }
-                }],
-                xAxes: [{
-                    ticks: {
-                        padding: 5
-                    }
-                }]
-            }
-        }
-    });
-    
-
-
-// //gradient line chart
-//     const lineChart_2 = document.getElementById("lineChart_2").getContext('2d');
-//     //generate gradient
-//     const lineChart_2gradientStroke = lineChart_2.createLinearGradient(500, 0, 100, 0);
-//     lineChart_2gradientStroke.addColorStop(0, "rgba(26, 51, 213, 1)");
-//     lineChart_2gradientStroke.addColorStop(1, "rgba(26, 51, 213, 0.5)");
-
-//     Chart.controllers.line = Chart.controllers.line.extend({
-//         draw: function () {
-//             draw.apply(this, arguments);
-//             let nk = this.chart.chart.ctx;
-//             let _stroke = nk.stroke;
-//             nk.stroke = function () {
-//                 nk.save();
-//                 nk.shadowColor = 'rgba(0, 0, 128, .2)';
-//                 nk.shadowBlur = 10;
-//                 nk.shadowOffsetX = 0;
-//                 nk.shadowOffsetY = 10;
-//                 _stroke.apply(this, arguments)
-//                 nk.restore();
-//             }
-//         }
-//     });
-        
-//     lineChart_2.height = 100;
-
-//     new Chart(lineChart_2, {
-//         type: 'line',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-//             datasets: [
-//                 {
-//                     label: "My First dataset",
-//                     data: [25, 20, 60, 41, 66, 45, 80],
-//                     borderColor: lineChart_2gradientStroke,
-//                     borderWidth: "2",
-//                     backgroundColor: 'transparent', 
-//                     pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-//                 }
-//             ]
-//         },
-//         options: {
-//             legend: false, 
-//             scales: {
-//                 yAxes: [{
-//                     ticks: {
-//                         beginAtZero: true, 
-//                         max: 100, 
-//                         min: 0, 
-//                         stepSize: 20, 
-//                         padding: 10
-//                     }
-//                 }],
-//                 xAxes: [{ 
-//                     ticks: {
-//                         padding: 5
-//                     }
-//                 }]
-//             }
-//         }
-//     });
-
-
-//dual line chart
-    const lineChart_3 = document.getElementById("daily_activity").getContext('2d');
-    //generate gradient
-    // const lineChart_3gradientStroke1 = lineChart_3.createLinearGradient(500, 0, 100, 0);
-    // lineChart_3gradientStroke1.addColorStop(0, "rgba(26, 51, 213, 1)");
-    // lineChart_3gradientStroke1.addColorStop(1, "rgba(26, 51, 213, 0.5)");
-
-    // const lineChart_3gradientStroke2 = lineChart_3.createLinearGradient(500, 0, 100, 0);
-    // lineChart_3gradientStroke2.addColorStop(0, "rgba(56, 164, 248, 1)");
-    // lineChart_3gradientStroke2.addColorStop(1, "#ce1d76");
-
-    let colors = ['rgba(142,174,50,0.46)', 'rgba(255,91,20,0.78)', 'rgba(202,77,159,0.73)', 'rgba(72,8,33,0.91)', 'rgba(185,24,132,0.90)', 'rgba(31,142,173,0.68)', 'rgba(161,35,42,0.44)']
-
-    Chart.controllers.line = Chart.controllers.line.extend({
-        draw: function () {
-            draw.apply(this, arguments);
-            let nk = this.chart.chart.ctx;
-            let _stroke = nk.stroke;
-            nk.stroke = function () {
-                nk.save();
-                nk.shadowColor = 'rgba(0, 0, 0, 0)';
-                nk.shadowBlur = 10;
-                nk.shadowOffsetX = 0;
-                nk.shadowOffsetY = 10;
-                _stroke.apply(this, arguments)
-                nk.restore();
-            }
-        }
-    });
-        
-    lineChart_3.height = 100;
-
-    new Chart(lineChart_3, {
-        type: 'line',
-        data: {
-            defaultFontFamily: 'Poppins',
-            labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
-            datasets: [
-                {
-                    label: "My First dataset",
-                    data: [5, 1, 3, 0, 4, 22, 2, 4, 7, 0, 2, 5, 1, 5, 5, 0, 0, 3, 2, 1, 4, 4, 1, 2],
-                    borderColor: colors[0],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-                }, 
-                {
-                    label: "My First dataset",
-                    data: [1, 2, 4, 1, 15, 4, 14, 2, 1, 1, 4, 3, 0, 0, 0, 0, 0, 2, 4, 1, 0, 4, 2, 0],
-                    borderColor: colors[1],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(56, 164, 248, 1)'
-                },
-                {
-                    label: "My First dataset",
-                    data: [3, 0, 1, 2, 4, 3, 2, 5, 5, 3, 2, 5, 4, 0, 3, 2, 0, 4, 4, 5, 3, 3, 2, 1],
-                    borderColor: colors[2],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-                },
-                {
-                    label: "My First dataset",
-                    data: [2, 0, 0, 2, 0, 0, 2, 4, 7, 2, 6, 1, 0, 15, 2, 2, 1, 3, 0, 0, 0, 2, 1, 0],
-                    borderColor: colors[3],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-                },
-                {
-                    label: "My First dataset",
-                    data: [0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 40, 1, 0],
-                    borderColor: colors[4],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-                },
-                {
-                    label: "My First dataset",
-                    data: [2, 2, 0, 2, 2, 1, 0, 1, 2, 0, 0, 1, 2, 0, 1, 0, 1, 1, 25, 1, 2, 0, 0, 0],
-                    borderColor: colors[5],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-                },
-                {
-                    label: "My First dataset",
-                    data: [1, 0, 2, 0, 1, 2, 1, 0, 17, 2, 0, 1, 2, 1, 0, 17, 1, 2, 2, 0, 0, 0, 1, 0],
-                    borderColor: colors[6],
-                    borderWidth: "2",
-                    backgroundColor: 'transparent', 
-                    pointBackgroundColor: 'rgba(26, 51, 213, 0.5)'
-                },
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            legend: false, 
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true, 
-                        max: 40, 
-                        min: 0, 
-                        stepSize: 5, 
+                        stepSize: Math.floor(count_max/5), 
                         padding: 10
                     }
                 }],
@@ -425,63 +151,148 @@ let draw = Chart.controllers.line.__super__.draw; //draw shadow
             }
         }
     });
-    
+}
 
+function draw_act_dist(time) {
+    if (act_dist) {act_dist.destroy();}
+    const _act_dist = document.getElementById("activity_bar").getContext('2d');
+    _act_dist.height = 100;
 
-//basic area chart
+    let _temp_act = {}
+    let data = []
+    let labels = []
+    for (const key of catelog) {_temp_act[key] = [];}
+    for (const agent_id in act_stat[time]){_temp_act[act_stat[time][agent_id]].push(agent_id);}
+    for (const key of catelog) {data.push(_temp_act[key].length)}
+    for (var key of catelog){
+        let _agents = "\n"
+        for (const agent of _temp_act[key]){
+            _agents += agent;
+            _agents += "\n";
+        }
+        labels.push(_agents)
+    }
 
-    const areaChart_1 = document.getElementById("heartrate").getContext('2d');
-    
-    areaChart_1.height = 100;
-
-    new Chart(areaChart_1, {
-        type: 'line',
+    act_dist = new Chart(_act_dist, {
+        type: 'bar',
         data: {
             defaultFontFamily: 'Poppins',
-            labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
+            labels: catelog,
             datasets: [
-                // {
-                //     label: "My First dataset",
-                //     data: [25, 20, 60, 41, 66, 45, 80],
-                //     borderColor: 'rgba(0, 0, 1128, .3)',
-                //     borderWidth: "1",
-                //     backgroundColor: 'rgba(0, 171, 197, .5)', 
-                //     pointBackgroundColor: 'rgba(0, 0, 1128, .3)'
-                // }
-
                 {
-                    label: "Mean",
-                    type: "line",
-                    backgroundColor: "rgb(75, 192, 192, 0.5)",
-                    borderColor: "rgb(75, 192, 192)",
-                    hoverBorderColor: "rgb(175, 192, 192)",
-                    fill: false,
-                    tension: 0,
-                    data: [64, 68, 62, 77, 64, 68, 78, 63, 78, 61, 71, 78, 63, 80, 68, 72, 68, 70, 77, 79, 76, 71, 64, 78],
-                  },
-                  {
-                    label: "Max",
-                    type: "line",
-                    backgroundColor: "rgb(75, 192, 255, 0.5)",
-                    borderColor: "transparent",
-                    pointRadius: 0,
-                    fill: 0,
-                    tension: 0,
-                    data: [92, 80, 94, 100, 100, 93, 87, 95, 89, 81, 82, 91, 94, 88, 90, 93, 90, 93, 95, 86, 90, 95, 99, 85],
-                  },
-                  {
-                    label: "Min",
-                    type: "line",
-                    backgroundColor: "rgb(75, 192, 255, 0.5)",
-                    borderColor: "transparent",
-                    pointRadius: 0,
-                    fill: 0,
-                    tension: 0,
-                    data: [58, 56, 56, 50, 52, 52, 51, 54, 53, 50, 59, 50, 58, 54, 51, 57, 60, 60, 54, 60, 52, 54, 54, 59],
-                  }
+                    labels: labels,
+                    data: data,
+                    borderColor: 'rgba(26, 51, 213, 0.8)',
+                    borderWidth: "0",
+                    backgroundColor: 'rgba(26, 51, 213, 0.8)'
+                }
             ]
         },
         options: {
+            title: {
+                display: true,
+                text: time
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        var label = 'Count : ';
+                        label += Math.round(tooltipItem.yLabel * 100) / 100;
+                        return label;
+                    },
+                    footer: function(tooltipItems, data) {
+                        var label = "Agents:"
+                        label += data.datasets[tooltipItems[0].datasetIndex].labels[tooltipItems[0].index] || '';
+                        return label;
+                    },
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: false, 
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }],
+                xAxes: [{
+                    barPercentage: 0.8
+                }]
+            }
+        }
+    });
+}
+
+function draw_heart_rate_line() {
+
+    if (heartrate_line) {heartrate_line.destroy();}
+    const _heartrate_line = document.getElementById("heartrate").getContext('2d');
+    
+    let time_labels = [];
+    let datasets = [
+        {
+            label: "Mean",
+            type: "line",
+            backgroundColor: "rgb(75, 192, 192, 0.5)",
+            borderColor: "rgb(75, 192, 192)",
+            hoverBorderColor: "rgb(175, 192, 192)",
+            fill: false,
+            tension: 0,
+            data: [],
+        },
+        {
+            label: "Max",
+            type: "line",
+            backgroundColor: "rgb(75, 192, 255, 0.5)",
+            borderColor: "transparent",
+            pointRadius: 0,
+            fill: 0,
+            tension: 0,
+            data: [],
+        },
+        {
+            label: "Min",
+            type: "line",
+            backgroundColor: "rgb(75, 192, 255, 0.5)",
+            borderColor: "transparent",
+            pointRadius: 0,
+            fill: 0,
+            tension: 0,
+            data: [],
+        }
+    ]
+
+    for (const time in hr_stat) {
+
+        time_labels.push(time)
+
+        let _temp_hr = []
+
+        for (const agent_id in hr_stat[time]){_temp_hr.push(parseInt([hr_stat[time][agent_id]]));}
+        datasets[0].data.push(avg(_temp_hr))
+        datasets[1].data.push(Math.max(..._temp_hr))
+        datasets[2].data.push(Math.min(..._temp_hr))
+    }
+    
+    _heartrate_line.height = 100;
+
+    heartrate_line = new Chart(_heartrate_line, {
+        type: 'line',
+        data: {
+            defaultFontFamily: 'Poppins',
+            labels: time_labels,
+            datasets: datasets
+        },
+        options: {
+            onClick: function(Event){
+                const points = this.getElementAtEvent(Event);
+                if (points.length) {
+                    const firstPoint = points[0];
+                    draw_act_dist(this.data.labels[firstPoint._index])
+                    draw_heart_rate_activity(this.data.labels[firstPoint._index])
+                }
+            },
             responsive: true,
             maintainAspectRatio: false,
             legend: false, 
@@ -503,260 +314,91 @@ let draw = Chart.controllers.line.__super__.draw; //draw shadow
             }
         }
     });
+}
 
-// //gradient area chart
+function draw_heart_rate_activity(time) {
+    if (heart_rate_activity) {heart_rate_activity.destroy();}
 
-//     const areaChart_2 = document.getElementById("areaChart_2").getContext('2d');
-//     //generate gradient
-//     const areaChart_2gradientStroke = areaChart_2.createLinearGradient(500, 0, 100, 0);
-//     areaChart_2gradientStroke.addColorStop(0, "rgba(26, 51, 213, 1)");
-//     areaChart_2gradientStroke.addColorStop(1, "rgba(26, 51, 213, 0.5)");
+    const _heart_rate_activity = document.getElementById("h-a-sankey").getContext('2d');
+
+    const _cur_time_hr = hr_stat[time];
+    const _cur_time_act = act_stat[time];
     
-//     areaChart_2.height = 100;
+    let catelog_datasets = {};
+    let datasets = [];
 
-//     new Chart(areaChart_2, {
-//         type: 'line',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-//             datasets: [
-//                 {
-//                     label: "My First dataset",
-//                     data: [25, 20, 60, 41, 66, 45, 80],
-//                     borderColor: areaChart_2gradientStroke,
-//                     borderWidth: "1",
-//                     backgroundColor: areaChart_2gradientStroke
-//                 }
-//             ]
-//         },
-//         options: {
-//             legend: false, 
-//             scales: {
-//                 yAxes: [{
-//                     ticks: {
-//                         beginAtZero: true, 
-//                         max: 100, 
-//                         min: 0, 
-//                         stepSize: 20, 
-//                         padding: 10
-//                     }
-//                 }],
-//                 xAxes: [{ 
-//                     ticks: {
-//                         padding: 5
-//                     }
-//                 }]
-//             }
-//         }
-//     });
-    
+    for (var i=0;i<catelog.length;i++){
+        // console.log(catelog[i])
+        catelog_datasets[catelog[i]] = {
+            label: catelog[i],
+            data: [0,0,0,0],
+            backgroundColor: colors_rgb[i],
+            agents : ["","","",""]
+        }
+    }
 
-// //gradient area chart
+    for (const agent_id in _cur_time_hr) {
+        if (_cur_time_hr[agent_id] < 60){
+            catelog_datasets[_cur_time_act[agent_id]].data[0] += 1;
+            catelog_datasets[_cur_time_act[agent_id]].agents[0] += agent_id +"\n"
+        }
+        else if (_cur_time_hr[agent_id] < 80 && _cur_time_hr[agent_id] >= 60){
+            catelog_datasets[_cur_time_act[agent_id]].data[1] += 1;
+            catelog_datasets[_cur_time_act[agent_id]].agents[1] += agent_id +"\n"
+        }
+        else if (_cur_time_hr[agent_id] < 100 && _cur_time_hr[agent_id] >= 80){
+            catelog_datasets[_cur_time_act[agent_id]].data[2] += 1;
+            catelog_datasets[_cur_time_act[agent_id]].agents[2] += agent_id +"\n"
+        }
+        else{
+            catelog_datasets[_cur_time_act[agent_id]].data[3] += 1;
+            catelog_datasets[_cur_time_act[agent_id]].agents[3] += agent_id +"\n"
+        }
+    }
+    for (const key of catelog){datasets.push(catelog_datasets[key])}
 
-//     const areaChart_3 = document.getElementById("areaChart_3").getContext('2d');
-    
-//     areaChart_3.height = 100;
+    _heart_rate_activity.height = 100;
 
-//     new Chart(areaChart_3, {
-//         type: 'line',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-//             datasets: [
-//                 {
-//                     label: "My First dataset",
-//                     data: [25, 20, 60, 41, 66, 45, 80],
-//                     borderColor: 'rgb(0, 171, 197)',
-//                     borderWidth: "1",
-//                     backgroundColor: 'rgba(0, 171, 197, .5)'
-//                 }, 
-//                 {
-//                     label: "My First dataset",
-//                     data: [5, 25, 20, 41, 36, 75, 70],
-//                     borderColor: 'rgb(0, 0, 128)',
-//                     borderWidth: "1",
-//                     backgroundColor: 'rgba(0, 0, 128, .5)'
-//                 }
-//             ]
-//         },
-//         options: {
-//             legend: false, 
-//             scales: {
-//                 yAxes: [{
-//                     ticks: {
-//                         beginAtZero: true, 
-//                         max: 100, 
-//                         min: 0, 
-//                         stepSize: 20, 
-//                         padding: 10
-//                     }
-//                 }],
-//                 xAxes: [{ 
-//                     ticks: {
-//                         padding: 5
-//                     }
-//                 }]
-//             }
-//         }
-//     });
-    
+    heart_rate_activity = new Chart(_heart_rate_activity, {
+        type: 'bar',
+        data: {
+            defaultFontFamily: 'Poppins',
+            labels: ["<60","60-80", "80-100", ">=100"],
+            datasets: datasets
+        },
+        options: {
+            title: {
+                display: true,
+                text: time
+            },
+            tooltips: {
+                callbacks: {
+                    footer: function(tooltipItems, data) {
+                        var label = 'Agents:\n';
+                        label += data.datasets[tooltipItems[0].datasetIndex].agents[tooltipItems[0].index]
+                        return label;
+                    },
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: false, 
+            scales: {
+                yAxes: [{
+                    stacked: true,
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }],
+                xAxes: [{
+                    stacked: true,
+                    barPercentage: 1.0
+                }]
+            }
+        }
+    });
 
-
-    
-//     //radar chart
-//     const radar_chart = document.getElementById("radar_chart").getContext('2d');
-
-//     const radar_chartgradientStroke1 = radar_chart.createLinearGradient(500, 0, 100, 0);
-//     radar_chartgradientStroke1.addColorStop(0, "rgba(54, 185, 216, .5)");
-//     radar_chartgradientStroke1.addColorStop(1, "rgba(75, 255, 162, .5)");
-
-//     const radar_chartgradientStroke2 = radar_chart.createLinearGradient(500, 0, 100, 0);
-//     radar_chartgradientStroke2.addColorStop(0, "rgba(68, 0, 235, .5");
-//     radar_chartgradientStroke2.addColorStop(1, "rgba(68, 236, 245, .5");
-
-//     // radar_chart.height = 100;
-//     new Chart(radar_chart, {
-//         type: 'radar',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             labels: [["Eating", "Dinner"], ["Drinking", "Water"], "Sleeping", ["Designing", "Graphics"], "Coding", "Cycling", "Running"],
-//             datasets: [
-//                 {
-//                     label: "My First dataset",
-//                     data: [65, 59, 66, 45, 56, 55, 40],
-//                     borderColor: '#f21780',
-//                     borderWidth: "1",
-//                     backgroundColor: radar_chartgradientStroke2
-//                 },
-//                 {
-//                     label: "My Second dataset",
-//                     data: [28, 12, 40, 19, 63, 27, 87],
-//                     borderColor: '#f21780',
-//                     borderWidth: "1",
-//                     backgroundColor: radar_chartgradientStroke1
-//                 }
-//             ]
-//         },
-//         options: {
-//             legend: false,
-//             maintainAspectRatio: false, 
-//             scale: {
-//                 ticks: {
-//                     beginAtZero: true
-//                 }
-//             }
-//         }
-//     });
-    
-
-
-// //pie chart
-
-//     //pie chart
-//     const pie_chart = document.getElementById("pie_chart").getContext('2d');
-//     // pie_chart.height = 100;
-//     new Chart(pie_chart, {
-//         type: 'pie',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             datasets: [{
-//                 data: [45, 25, 20, 10],
-//                 borderWidth: 0, 
-//                 backgroundColor: [
-//                     "rgba(0, 171, 197, .9)",
-//                     "rgba(0, 171, 197, .7)",
-//                     "rgba(0, 171, 197, .5)",
-//                     "rgba(0,0,0,0.07)"
-//                 ],
-//                 hoverBackgroundColor: [
-//                     "rgba(0, 171, 197, .9)",
-//                     "rgba(0, 171, 197, .7)",
-//                     "rgba(0, 171, 197, .5)",
-//                     "rgba(0,0,0,0.07)"
-//                 ]
-
-//             }],
-//             labels: [
-//                 "one",
-//                 "two",
-//                 "three", 
-//                 "four"
-//             ]
-//         },
-//         options: {
-//             responsive: true, 
-//             legend: false, 
-//             maintainAspectRatio: false
-//         }
-//     });
-    
-    
-    
-//     //doughut chart
-//     const doughnut_chart = document.getElementById("doughnut_chart").getContext('2d');
-//     // doughnut_chart.height = 100;
-//     new Chart(doughnut_chart, {
-//         type: 'doughnut',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             datasets: [{
-//                 data: [45, 25, 20, 10],
-//                 borderWidth: 0, 
-//                 backgroundColor: [
-//                     "rgba(0, 0, 128, .9)",
-//                     "rgba(0, 0, 128, .7)",
-//                     "rgba(0, 0, 128, .5)",
-//                     "rgba(0, 0, 128, .4)"
-//                 ],
-//                 hoverBackgroundColor: [
-//                     "rgba(0, 0, 128, .5)",
-//                     "rgba(0, 0, 128, .4)",
-//                     "rgba(0, 0, 128, .3)",
-//                     "rgba(0, 0, 128, .2)"
-//                 ]
-
-//             }],
-//             // labels: [
-//             //     "green",
-//             //     "green",
-//             //     "green",
-//             //     "green"
-//             // ]
-//         },
-//         options: {
-//             responsive: true,
-//             maintainAspectRatio: false
-//         }
-//     });
-    
-    
-    
-//     //polar chart
-//     const polar_chart = document.getElementById("polar_chart").getContext('2d');
-//     // polar_chart.height = 100;
-//     new Chart(polar_chart, {
-//         type: 'polarArea',
-//         data: {
-//             defaultFontFamily: 'Poppins',
-//             datasets: [{
-//                 data: [15, 18, 9, 6, 19],
-//                 borderWidth: 0, 
-//                 backgroundColor: [
-//                     "rgba(0, 171, 197, .5)",
-//                     "rgba(0, 0, 128, .5)",
-//                     "rgba(192, 10, 39, .5)",
-//                     "rgba(206, 29, 118, .5)",
-//                     "rgba(7, 135, 234, .5)"
-//                 ]
-
-//             }]
-//         },
-//         options: {
-//             responsive: true, 
-//             maintainAspectRatio: false
-//         }
-//     });
-};
+}
 
 
 function draw_agent_heartrate_charjs(data) {
@@ -793,12 +435,15 @@ function draw_agent_heartrate_charjs(data) {
             responsive: true,
             maintainAspectRatio: false,
             legend: false, 
+            tooltips: {
+                enabled : false,
+            },
             scales: {
                 yAxes: [{
                     ticks: {
                         beginAtZero: true, 
-                        max: 120, 
-                        min: 50, 
+                        max: 140, 
+                        min: 40, 
                         stepSize: 20, 
                         padding: 10
                     }
