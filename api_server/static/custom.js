@@ -646,21 +646,7 @@ function fetch_user_info(username){
     return return_val
 }
 
-let chat_display = true
-// true for chat bubble
-// false for word cloud
-function change_chat_display()
-{
-    if (chat_display){
-        document.getElementById("chat_history").classList.remove("d-none");
-        document.getElementById("chatbot_wordcloud").classList.add("d-none");
-        chat_display = false;
-    }else{
-        document.getElementById("chatbot_wordcloud").classList.remove("d-none");
-        document.getElementById("chat_history").classList.add("d-none");
-        chat_display = true;
-    }
-}
+
 
 // single agent
 let cur_agent_id = ""
@@ -689,7 +675,7 @@ function load_agent_page(){
     fetch_done_date();
 
     draw_agent_heartrate(donedates[0]);
-    draw_cloud(donedates[0]);
+    draw_chat(donedates[0]);
     init_map(donedates[0]);
     init_schedule();
 }
@@ -720,6 +706,34 @@ function fetch_done_date() {
             donedates = res["data"]
         }
         });
+}
+
+let chat_display = true
+// true for chat bubble
+// false for word cloud
+function change_chat_display()
+{
+    // if (chat_display){
+    //     document.getElementById("chat_history").classList.remove("d-none");
+    //     document.getElementById("chatbot_wordcloud").classList.add("d-none");
+    //     chat_display = false;
+    // }else{
+    //     document.getElementById("chatbot_wordcloud").classList.remove("d-none");
+    //     document.getElementById("chat_history").classList.add("d-none");
+    //     chat_display = true;
+    // }
+
+    if (chat_display){
+        document.getElementById("chatbot_wordcloud").classList.remove("d-none");
+        document.getElementById("chat_history").classList.add("d-none");
+        document.getElementById("change_chat_display").innerText = "Dialogue"
+        chat_display = false;
+    }else{
+        document.getElementById("chat_history").classList.remove("d-none");
+        document.getElementById("chatbot_wordcloud").classList.add("d-none");
+        document.getElementById("change_chat_display").innerText = "Word Cloud"
+        chat_display = true;
+    }
 }
 
 //
@@ -843,24 +857,43 @@ function show_chat_hist(){
                 // console.log(_temp[idx])
                 // console.log(_temp[idx].toLowerCase().includes("chatbot:"))
                 if ( (_temp[idx_2].toLowerCase().includes("chatbot:")) || (_temp[idx_2].toLowerCase().includes("coco:")) || (_temp[idx_2].toLowerCase().includes("alexa:"))) {
-                    _html += "<div class=\"balonbot p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-left\">" + get_utter(_temp[idx_2]) + "</a></div>"
+                    _html += "<div class=\"row balonbot p-2 m-0 position-relative\" data-is=\"" 
+                    _html += chat_his[idx]["time"] 
+                    _html += "\"><img class=\"balon-img mx-1 mt-3\" src=\"static/chatbot.png\"><a class=\"float-left mt-auto\">" 
+                    _html += get_utter(_temp[idx_2])
+                    _html += "</a></div>"
                 } else {
-                    _html += "<div class=\"balonuser p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-right\">" + get_utter(_temp[idx_2]) + "</a></div>"
+                    _html += "<div class=\"row balonuser p-2 m-0 position-relative\" data-is=\"" 
+                    _html += chat_his[idx]["time"] 
+                    _html += "\"><a class=\"float-right ml-auto mt-auto\">" 
+                    _html += get_utter(_temp[idx_2]) 
+                    _html += "</a><img class=\"float-right balon-img mt-3 mx-1\" src=\""
+                    _html += "/agent/"+cur_user+"/"+cur_agent_id+"/portrait"
+                    _html += "\"></div>"
                 }
             }
         }
         else{
             if ( (chat_his[idx]["chatbot"].toLowerCase().includes("chatbot:")) || (chat_his[idx]["chatbot"].toLowerCase().includes("coco:")) || (chat_his[idx]["chatbot"].toLowerCase().includes("alexa:"))) {
-                _html += "<div class=\"balonbot p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-left\">" + get_utter(chat_his[idx]["chatbot"]) + "</a></div>"
+                _html += "<div class=\"row balonbot p-2 m-0 position-relative\" data-is=\"" 
+                _html += chat_his[idx]["time"] 
+                _html += "\"><img class=\"balon-img  mx-1 mt-3\" src=\"static/chatbot.png\"><a class=\"float-left mt-auto\">" 
+                _html += get_utter(chat_his[idx]["chatbot"]) 
+                _html += "</a></div>"
             } else {
-                _html += "<div class=\"balonuser p-2 m-0 position-relative\" data-is=\"" + chat_his[idx]["time"] + "\"><a class=\"float-right\">" + get_utter(chat_his[idx]["chatbot"]) + "</a></div>"
+                _html += "<div class=\"row balonuser p-2 m-0 position-relative\" data-is=\"" 
+                _html += chat_his[idx]["time"] + "\"><a class=\"float-right ml-auto mt-auto\">" 
+                _html += get_utter(chat_his[idx]["chatbot"]) 
+                _html += "</a><img class=\"float-right balon-img mt-3 mx-1\" src=\""
+                _html += "/agent/"+cur_user+"/"+cur_agent_id+"/portrait"
+                _html += "\"></div>"
             }        
         }
     }
     document.getElementById("chat_history").innerHTML = _html
 }
 
-function draw_cloud(date){
+function draw_chat(date){
     // document.getElementById("chatbot_wordcloud_backup").classList.add("d-none")
     // fetch_chat_his(date);
     // words_freq = count_words_freq();
@@ -870,6 +903,7 @@ function draw_cloud(date){
         chat_his = fetch_chat_his(date);
         words_freq = count_words_freq();
         d3_draw_cloud(words_freq);
+        document.getElementById("chatbot_wordcloud").classList.add("d-none");
         show_chat_hist();
         
     }
