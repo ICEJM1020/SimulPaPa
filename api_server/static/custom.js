@@ -1135,18 +1135,18 @@ function init_map(){
 
 function show_location_hist(date){
 
-    document.getElementById("location_backup").classList.add("d-none");
-    init_map();
-    draw_map(date);
-    // try{
-    //     document.getElementById("location_backup").classList.add("d-none");
-    //     init_map();
-    //     draw_map(date);
-    // }
-    // catch{
-    //     document.getElementById("map").classList.add("d-none")
-    //     document.getElementById("location_backup").classList.remove("d-none")
-    // }
+    // document.getElementById("location_backup").classList.add("d-none");
+    // init_map();
+    // draw_map(date);
+    try{
+        document.getElementById("location_backup").classList.add("d-none");
+        init_map();
+        draw_map(date);
+    }
+    catch{
+        document.getElementById("map").classList.add("d-none")
+        document.getElementById("location_backup").classList.remove("d-none")
+    }
 }
 
 
