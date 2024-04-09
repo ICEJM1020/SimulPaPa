@@ -188,10 +188,16 @@
                 <h4 class="card-title">Location</h4>
             </div>
             <div class="card-body">
+                <div class="col-12 px-0 mx-0 mb-2 map-scale" style="height: 20px;"><span class="float-left pl-2" style="color: black;">Start</span><span class="float-right pr-2" style="color: black;">End</span></div>
                 <div id="map" class="col-md-12 map mx-0 px-0"></div>
                 <img src="{{ url_for('static', filename='test_map.png') }}" alt="image" class="pl-5 col-md-12 d-none" id="location_backup">
             </div>
         </div>
+    </div>
+
+    <div id="ol-popup" class="ol-popup">
+        <a href="#" id="ol-popup-closer" class="ol-popup-closer"></a>
+        <div id="ol-popup-content"></div>
     </div>
     
 </div>

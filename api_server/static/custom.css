@@ -39,7 +39,11 @@
 
 
 .map {
-    height: 400px;
+    height: 600px;
+}
+
+.map-scale {
+    background-image: linear-gradient(to right, rgba(0,255,0,1), rgba(255,0,0,1) );
 }
 
 .popover {
@@ -69,7 +73,7 @@
 .balonuser a {
     height: fit-content;
 	background: #42a5f5;
-	color: #fff !important;
+	color: #ffffff !important;
 	border-radius: 20px 20px 3px 20px;
 	display: block;
 	max-width: 75%;
@@ -125,4 +129,48 @@
     overflow-y:scroll;
     -webkit-overflow-scrolling: touch;
 }
+
+
+.ol-popup {
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #cccccc;
+    bottom: 12px;
+    left: -50px;
+    min-width: 280px;
+  }
+  .ol-popup:after, .ol-popup:before {
+    top: 100%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+  }
+  .ol-popup:after {
+    border-top-color: white;
+    border-width: 10px;
+    left: 48px;
+    margin-left: -10px;
+  }
+  .ol-popup:before {
+    border-top-color: #cccccc;
+    border-width: 11px;
+    left: 48px;
+    margin-left: -11px;
+  }
+  .ol-popup-closer {
+    text-decoration: none;
+    position: absolute;
+    top: 2px;
+    right: 8px;
+  }
+  .ol-popup-closer:after {
+    content: "✖";
+  }
+
 

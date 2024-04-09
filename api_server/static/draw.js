@@ -400,11 +400,13 @@ function draw_heart_rate_activity(time) {
 
 }
 
+let agent_heartrate = null;
 
 function draw_agent_heartrate_charjs(data) {
-    const areaChart_4 = document.getElementById("agent-heartrate").getContext('2d');
+    if (agent_heartrate) {agent_heartrate.destroy();}
+    const _agent_heartrate = document.getElementById("agent-heartrate").getContext('2d');
     
-    areaChart_4.height = 100;
+    _agent_heartrate.height = 100;
 
     labels = []
     heartrate = []
@@ -413,7 +415,7 @@ function draw_agent_heartrate_charjs(data) {
         heartrate.push(data[idx]["heartrate"])
     }
 
-    new Chart(areaChart_4, {
+    agent_heartrate = new Chart(_agent_heartrate, {
         type: 'line',
         data: {
             defaultFontFamily: 'Poppins',

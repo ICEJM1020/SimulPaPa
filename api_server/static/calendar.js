@@ -58,7 +58,7 @@ function create_calendar(e, events, _first_date) {
                     html: true,
                     title: eventObj.title,
                     content: $(eventObj.activities),
-                    trigger: 'click hover',
+                    trigger: 'hover',
                     placement: 'left',
                     container: 'body',
                 });
@@ -66,9 +66,9 @@ function create_calendar(e, events, _first_date) {
             // editable: !0,
             // eventLimit: !0,
             selectable: !0,
-            select: function(e, t, n) {
-                o.onSelect(e, t, n)
-            },
+            // select: function(e, t, n) {
+            //     o.onSelect(e, t, n)
+            // },
             eventClick: function(e, t, n) {
                 o.onEventClick(e, t, n)
             }

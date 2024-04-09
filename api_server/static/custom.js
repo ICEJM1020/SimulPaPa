@@ -12,8 +12,11 @@ let check_simul_interval = {}
 
 let update_stat_interval = null
 let all_donedates = []
+let cur_date = ""
 let act_stat = {}
 let hr_stat = {}
+
+let page_status = 'user'
 
 let check_interval = 100
 
@@ -67,7 +70,7 @@ function loadAgent(id) {
         console.log(cur_user + "," + id.toString())
         load_agent_page()
     }); 
-};
+}; 
 
 function addListener() {
 
@@ -594,19 +597,50 @@ function fetch_activity_statistic(date){
         });
 }
 
+function show_donedates_cal(){
+    $('.year-calendar').pignoseCalendar({
+        format: 'MM-DD-YYYY',
+        date: cur_date,
+        minDate: all_donedates[0],
+        maxDate: all_donedates[all_donedates.length-1],
+        theme: 'blue', // light, dark, blue
+
+        select: function(date, context) {
+
+            
+            cur_date = date[0].format('MM-DD-YYYY');
+            if (page_status=='user'){
+                fetch_activity_statistic(cur_date);
+                draw_stat(act_stat, hr_stat);
+            }
+            else{
+                draw_agent_heartrate(cur_date);
+                draw_chat(cur_date);
+                draw_map(cur_date);
+            }
+        }
+    });
+}
+
 function show_stat(){
     if (pool_status=="ready"){
-        fetch_all_donedates();
-        fetch_activity_statistic(all_donedates[0]);
         clearInterval(update_stat_interval);
 
-        draw_stat(act_stat, hr_stat)
+        fetch_all_donedates();
+        cur_date = all_donedates[0]
+        fetch_activity_statistic(cur_date);
+
+        show_donedates_cal();
+        draw_stat(act_stat, hr_stat);
     }
 }
 
 function load_user_page(username){
     if_activated = activate_user(username)
     if (if_activated) {
+        cur_date = ""
+        page_status = 'user'
+
         tree_status = ""
         pool_status = ""
         simul_status = ""
@@ -657,6 +691,7 @@ let loc_hist = {}
 let schedules = {}
 
 function load_agent_page(){
+    page_status = 'agent'
 
     // document.getElementById("back_btn").onclick = function() { loadContent("user-"+cur_user)}
     // document.getElementById("user-name").innerText = cur_user
@@ -674,9 +709,25 @@ function load_agent_page(){
     load_info();
     fetch_done_date();
 
-    draw_agent_heartrate(donedates[0]);
-    draw_chat(donedates[0]);
-    init_map(donedates[0]);
+    var missing_date = []
+    for (var _date of donedates){
+        if (!(all_donedates.includes(_date))){
+            missing_date.push(_date)
+        }
+    }
+    console.log(missing_date)
+    if (missing_date.length!==0){
+        console.log('here')
+        $('.year-calendar').pignoseCalendar('settings', {
+            disabledDates: missing_date
+        })
+        cur_date = donedates[0];
+        $('.year-calendar').pignoseCalendar('set', cur_date);
+    }
+
+    draw_agent_heartrate(cur_date);
+    draw_chat(cur_date);
+    show_location_hist(cur_date);
     init_schedule();
 }
 
@@ -754,10 +805,10 @@ function wordFreq(words) {
 }
 
 function d3_draw_cloud(myWords){
-    // List of words
-    // var myWords = ["Hello", "Everybody", "How", "Are", "You", "Today", "It", "Is", "A", "Lovely", "Day", "I", "Love", "Coding", "In", "My", "Van", "Mate"]
-    words = []
-    large = -1
+    document.getElementById("chatbot_wordcloud").innerHTML = ""
+
+    let words = []
+    let large = -1
     for (var key in myWords) {
         large = Math.max(large, myWords[key])
     }
@@ -903,9 +954,10 @@ function draw_chat(date){
         chat_his = fetch_chat_his(date);
         words_freq = count_words_freq();
         d3_draw_cloud(words_freq);
-        document.getElementById("chatbot_wordcloud").classList.add("d-none");
+        if (chat_display){
+            document.getElementById("chatbot_wordcloud").classList.add("d-none");
+        }
         show_chat_hist();
-        
     }
     catch{
         document.getElementById("chatbot_wordcloud").classList.add("d-none")
@@ -933,47 +985,82 @@ function draw_agent_heartrate(date){
 //
 // draw maps
 // 
-function draw_map(){
 
-    icons = []
+let map = null;
+let data_layer=null;
+const styles = {
+    'icon' : new ol.style.Style({
+        image: new ol.style.Icon({
+            anchor: [0.5, 1],
+            src: "/static/marker.png"
+        })
+    }),
+    'route' : new ol.style.Style({
+        renderer: (_coords, state) => {
+            const ctx = state.context;
+            const coords = _coords;
+            ctx.lineWidth = 5;
+            
+            for (let i = 1; i < coords.length; i++) {
+                const start = coords[i - 1];
+                const end = coords[i];
+                const grd = ctx.createLinearGradient(start[0], start[1], end[0], end[1]);
+                grd.addColorStop(0, '#00ff00ff');
+                grd.addColorStop(1, '#ff0000ff');
+                ctx.strokeStyle = grd;
+                ctx.beginPath();
+                ctx.moveTo(start[0], start[1]);
+                ctx.lineTo(end[0], end[1]);
+                ctx.stroke();
+            }
+        }
+    }),
+}
+
+function draw_map(date){
+    loc_hist = fetch_location_hist(date)
+
+    let icons = [];
     for (var idx in loc_hist) {
-        // const iconFeature = new ol.Feature({
-        //     geometry: new ol.geom.Point(ol.proj.fromLonLat([, 53])),
-        //     name: 'Somewhere near Nottingham',
-        //   });
         let _temp = new ol.Feature({
-            geometry: new ol.geom.Point(ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']])),
-            name: loc_hist[idx]['location'][0],
+                type : 'icon',
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']])),
+                name: loc_hist[idx]['location'],
+                start_time: loc_hist[idx]['start_time'],
+                end_time: loc_hist[idx]['end_time'], 
             });
         icons.push(_temp)
     }
 
-    const map = new ol.Map({
-        target: 'map',
-        layers: [
-          new ol.layer.Tile({
-            source: new ol.source.OSM(),
-          }),
-          new ol.layer.Vector({
+    var polyline = new ol.geom.LineString(loc_hist.map(function(entry){
+        return [entry['longitude'], entry['latitude']]
+    }));
+    let routeFeature = new ol.Feature({
+        type: 'route',
+        geometry: polyline.transform('EPSG:4326', 'EPSG:3857')
+    });
+
+    try{
+        data_layer.getSource().clear()
+        data_layer.getSource().addFeatures([...icons, routeFeature])
+        data_layer.setStyle(function (feature) {
+            return styles[feature.get('type')];
+        })
+        console.log("Map Features Update Successfully!")
+    }
+    catch{
+        data_layer = new ol.layer.Vector({
             source: new ol.source.Vector({
-              features: icons,
+                features: [...icons, routeFeature],
             }),
-            style: new ol.style.Style({
-              image: new ol.style.Icon({
-                anchor: [0.5, 0],
-                anchorXUnits: 'fraction',
-                anchorYUnits: 'pixels',
-                src: "/static/marker.png"
-              })
-            })
-          })
-        ],
-        view: new ol.View({
-        //   center: [loc_hist[0]['longitude'], loc_hist[0]['latitude']],
-            center: ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']]),
-            zoom: 12,
-        }),
-      });
+            style: function (feature) {
+                return styles[feature.get('type')];
+            },
+        })
+        map.addLayer(data_layer);
+    }
+    map.getView().setCenter(ol.proj.fromLonLat([loc_hist[Math.floor(idx / 2)]['longitude'], loc_hist[Math.floor(idx / 2)]['latitude']]));
+    map.getView().setZoom(12);
 }
 
 function fetch_location_hist(date){
@@ -992,16 +1079,74 @@ function fetch_location_hist(date){
     return loc;
 }
 
-function init_map(date){
-    try{
-        document.getElementById("location_backup").classList.add("d-none")
-        loc_hist = fetch_location_hist(date)
-        draw_map()
-    }
-    catch{
-        document.getElementById("map").classList.add("d-none")
-        document.getElementById("location_backup").classList.remove("d-none")
-    }
+function init_map(){
+    const container = document.getElementById('ol-popup');
+    const content = document.getElementById('ol-popup-content');
+    const closer = document.getElementById('ol-popup-closer');
+
+    closer.onclick = function () {
+        overlay.setPosition(undefined);
+        closer.blur();
+        return false;
+    };
+
+    map = new ol.Map({
+        target: 'map',
+        overlays: [
+            new ol.Overlay({
+                element: container,
+                autoPan: {
+                    animation: {
+                        duration: 250,
+                    },
+                },
+            })
+        ],
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM(),
+            }),
+        ],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([0.0, 0.0]),
+            zoom: 1,
+        }),
+    });
+
+    map.on(['singleclick'], function (evt) {
+        // console.log(evt.pixel)
+        let feature = null;
+        feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+            return feature;
+        }, options={"hitTolerance":10});
+        if (feature) {
+            if (feature.get('type')=="icon"){
+                const coordinates = feature.getGeometry().getCoordinates();
+                content.innerHTML =
+                    '<p>Location:</p><code>' + feature.get('name') + '</code><br>' +
+                    '<p>Start:</p><code>' + feature.get('start_time') + '</code><br>' +
+                    '<p>End:</p><code>' + feature.get('end_time') + '</code>'
+                overlay.setPosition(coordinates);
+            }
+        }
+    });
+
+}
+
+function show_location_hist(date){
+
+    document.getElementById("location_backup").classList.add("d-none");
+    init_map();
+    draw_map(date);
+    // try{
+    //     document.getElementById("location_backup").classList.add("d-none");
+    //     init_map();
+    //     draw_map(date);
+    // }
+    // catch{
+    //     document.getElementById("map").classList.add("d-none")
+    //     document.getElementById("location_backup").classList.remove("d-none")
+    // }
 }
 
 
