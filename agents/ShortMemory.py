@@ -70,6 +70,8 @@ class ShortMemory:
         self._cur_location_list = []
         self._cur_location_list_index = 0
         self._cur_chatbot_dict = {}
+        self._cur_heartrate_list = []
+        self._cur_heartrate_list_index = 0
 
         self._cur_activity = "Sleeping"
 
@@ -159,13 +161,13 @@ class ShortMemory:
         if location:
             self._cur_location_list = location
         else:
-            self._cur_location_list = {
+            self._cur_location_list = [{
                 "start_time" : "01-01-1900 00:00",
                 "end_time" : "12-31-2100 23:59",
                 "location" : "unknown",
                 "longitude" : "unknown",
                 "latitude" : "unknown",
-            }
+            }]
         self._cur_location_list_index = 0
 
     @property
@@ -175,6 +177,23 @@ class ShortMemory:
     @cur_chatbot_dict.setter
     def cur_chatbot_dict(self, uasge):
         self._cur_chatbot_dict = uasge
+
+    @property
+    def cur_heartrate_list(self):
+        return self._cur_heartrate_list
+    
+    @cur_heartrate_list.setter
+    def cur_heartrate_list(self, heartrate_list):
+        if heartrate_list:
+            self._cur_heartrate_list = heartrate_list
+        else:
+            self._cur_heartrate_list = [{
+                "start_time" : "01-01-1900 00:00",
+                "end_time" : "12-31-2100 23:59",
+                "mean" : "70",
+                "std" : "20",
+            }]
+        self._cur_heartrate_list_index = 0
 
     @property
     def cur_activity(self):
@@ -191,7 +210,7 @@ class ShortMemory:
             "longitude" : self.cur_location['longitude'],
             "latitude" : self.cur_location['latitude'],
             "chatbot":  self.cur_chatbot,
-            "heartrate" : 60,
+            "heartrate" : self.cur_heartrate,
         })
 
     @property
@@ -260,6 +279,24 @@ class ShortMemory:
                 }
             
     @property
+    def cur_heartrate(self):
+        try:
+            _heartrate_entry = self._cur_heartrate_list[self._cur_heartrate_list_index]
+            start_time = datetime.strptime(_heartrate_entry["start_time"], "%m-%d-%Y %H:%M")
+            end_time = datetime.strptime(_heartrate_entry["end_time"], "%m-%d-%Y %H:%M")
+        except:
+            return int(np.random.normal(loc=70, scale=20))
+        else:
+            if start_time <= self.date_time_dt < end_time:
+                return int(np.random.normal(loc=float(_heartrate_entry['mean']), scale=float(_heartrate_entry['std'])))
+            else:
+                if self._cur_location_list_index < len(self._cur_location_list) - 1:
+                    self._cur_location_list_index += 1
+
+                return int(np.random.normal(loc=float(_heartrate_entry['mean']), scale=float(_heartrate_entry['std'])))
+            
+    
+    @property
     def cur_chatbot(self):
         if self.date_time in self._cur_chatbot_dict.keys():
             return self._cur_chatbot_dict[self.date_time].replace("\n", ";")
@@ -311,6 +348,16 @@ class ShortMemory:
                 "chatbot" : entry['chatbot']
             })
         return records
+    
+    def fetch_heartrate_records(self, num_items):
+        records = []
+        for entry in self.memory_cache.fetch(num_items):
+            records.append({
+                "time" : entry["time"],
+                "activity" : entry['activity'],
+                "heartrate" : entry['heartrate']
+            })
+        return records
 
     def save_cache(self):
 
@@ -326,6 +373,9 @@ class ShortMemory:
             "cur_decompose_index" : self._cur_decompose_index,
             "cur_location_list" : self._cur_location_list,
             "cur_location_list_index" : self._cur_location_list_index,
+            "cur_heartrate_list" : self._cur_heartrate_list,
+            "cur_heartrate_list_index" : self._cur_heartrate_list_index,
+            "cur_chatbot_dict" : self._cur_chatbot_dict,
 
             "cur_activity" : self._cur_activity,
 
@@ -351,6 +401,9 @@ class ShortMemory:
             self._cur_decompose_index = local_cache["cur_decompose_index"]
             self._cur_location_list = local_cache["cur_location_list"]
             self._cur_location_list_index = local_cache["cur_location_list_index"]
+            self._cur_heartrate_list = local_cache["cur_heartrate_list"]
+            self._cur_heartrate_list_index = local_cache["cur_heartrate_list_index"]
+            self._cur_chatbot_dict = local_cache["cur_chatbot_dict"]
 
             self._cur_activity = local_cache["cur_activity"]
 

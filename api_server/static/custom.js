@@ -715,9 +715,7 @@ function load_agent_page(){
             missing_date.push(_date)
         }
     }
-    console.log(missing_date)
     if (missing_date.length!==0){
-        console.log('here')
         $('.year-calendar').pignoseCalendar('settings', {
             disabledDates: missing_date
         })
@@ -1090,18 +1088,18 @@ function init_map(){
         return false;
     };
 
+    const overlay = new ol.Overlay({
+        element: container,
+        autoPan: {
+            animation: {
+                duration: 250,
+            },
+        },
+    })
+
     map = new ol.Map({
         target: 'map',
-        overlays: [
-            new ol.Overlay({
-                element: container,
-                autoPan: {
-                    animation: {
-                        duration: 250,
-                    },
-                },
-            })
-        ],
+        overlays: [overlay],
         layers: [
             new ol.layer.Tile({
                 source: new ol.source.OSM(),
@@ -1118,7 +1116,7 @@ function init_map(){
         let feature = null;
         feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
             return feature;
-        }, options={"hitTolerance":10});
+        }, options={"hitTolerance":15});
         if (feature) {
             if (feature.get('type')=="icon"){
                 const coordinates = feature.getGeometry().getCoordinates();

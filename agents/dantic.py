@@ -75,7 +75,7 @@ class Decompose(BaseModel):
 
 class LocationEntry(BaseModel):
     start_time : str = Field(description='Start time of this activity in the format of MM-DD-YYYY HH:MM')
-    end_time : str = Field(description='Start time of this activity in the format of MM-DD-YYYY HH:MM')
+    end_time : str = Field(description='End time of this activity in the format of MM-DD-YYYY HH:MM')
     location: str = Field(description='The place where the activity happen, including two or three parts: room(optional), building, street')
     latitude: float = Field(description='The corresponding latitude of the location')
     longitude: float = Field(description='The corresponding longitude of the location')
@@ -118,6 +118,28 @@ class Chatbot(BaseModel):
             _item = item.dump_dict()
             res[_item["time"]] = _item["conv"]
         return res
+
+
+class HeartRateEntry(BaseModel):
+    start_time : str = Field(description='Start time of this heart rate range in the format of MM-DD-YYYY HH:MM')
+    end_time : str = Field(description='Start time of this heart rate range in the format of MM-DD-YYYY HH:MM')
+    mean: float = Field(description='The mean value of this heart rate range')
+    std: float = Field(description='The standard deviation value of heart rate range')
+
+    def dump_dict(self):
+        res = {
+            'mean' : self.mean,
+            'std' : self.std,
+            'start_time' : self.start_time, 
+            'end_time' : self.end_time
+        }
+        return res
+
+class HeartRate(BaseModel):
+    heartrate: list[HeartRateEntry]
+
+    def dump_list(self):
+        return [i.dump_dict() for i in self.heartrate]
     
 
 class CatelogueMapEntry(BaseModel):

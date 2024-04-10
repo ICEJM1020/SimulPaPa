@@ -111,7 +111,7 @@ class AgentsPool:
         exists = 0
         for i in range(1, self.size+1):
             try:
-                self.pool[i] = Agent(index=i, user_folder=self.user_folder)
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder, start_date=self.start_date)
             except:
                 if_err += 1
                 error += f"Agent {i}, "
@@ -191,10 +191,10 @@ class AgentsPool:
                     _time = time.split(" ")[1]
                     if i==0:
                         activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catelog"]}
-                        heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"] + random.randint(-10,50)}
+                        heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"]}
                     else:
                         activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catelog"]
-                        heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"] + random.randint(-10,50)
+                        heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"]
                 else:
                     continue
         return {"activity":activity_stat, "heartrate":heartrate_stat}

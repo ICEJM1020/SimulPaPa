@@ -301,7 +301,7 @@ function draw_heart_rate_line() {
                     ticks: {
                         beginAtZero: true, 
                         max: 120, 
-                        min: 50, 
+                        min: 30, 
                         stepSize: 20, 
                         padding: 10
                     }
@@ -445,7 +445,7 @@ function draw_agent_heartrate_charjs(data) {
                     ticks: {
                         beginAtZero: true, 
                         max: 140, 
-                        min: 40, 
+                        min: 30, 
                         stepSize: 20, 
                         padding: 10
                     }

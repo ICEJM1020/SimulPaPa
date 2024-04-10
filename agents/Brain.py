@@ -19,6 +19,8 @@ from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplat
 from langchain.prompts import PromptTemplate, FewShotPromptTemplate
 from langchain_openai import ChatOpenAI
 import pandas as pd
+import numpy as np
+from scipy.signal import savgol_filter
 
 from config import CONFIG
 from agents.ShortMemory import ShortMemory
@@ -115,14 +117,6 @@ class Brain:
         else:
             self.status = "error"
 
-    def init_brain(self):
-
-        # if not self.long_memory.memory_tree["user_chatbot_pref"]:
-        #     self.long_memory.memory_tree["user_chatbot_pref"] = self._summary_user_chatbot_preference()
-        # if not self.long_memory.memory_tree["agent_chatbot_pref"]:
-        #     self.long_memory.memory_tree["agent_chatbot_pref"] = self._generate_agent_chatbot_preference()
-        pass
-
 
     def plan(self, days, simul_type="new"):
         
@@ -138,7 +132,15 @@ class Brain:
             self.status = "error"
             raise Exception("Simulation type error!")
         self.status = "working"
-        simul_process = mp.Process(target=self._plan, args=(self.running_status, days, start_date, cur_time))
+        simul_process = mp.Process(
+            target=self._plan, 
+            kwargs={
+                '_status':self.running_status, 
+                'days':days, 
+                'start_date':start_date, 
+                'start_time':cur_time
+                }
+                )
         simul_process.start()
 
 
@@ -148,7 +150,7 @@ class Brain:
             days:int=1,
             start_date:str="03-01-2024",
             start_time:str="00:00", 
-            end_time:str="23:59"
+            end_time:str="00:00"
             ):
         _status.value = 1
         try:
@@ -164,10 +166,10 @@ class Brain:
         ## create end_time to end the simulation in that time
         self.end_time = self.short_memory.date_time_dt + timedelta(days=days, hours=int(end_time.split(":")[0]), minutes=int(end_time.split(":")[1]))
 
-        try:
-            if not self.long_memory.chatbot_preference:
-                self.long_memory.chatbot_preference = self._generate_chatbot_preference()
+        if not self.long_memory.chatbot_preference:
+            self.long_memory.chatbot_preference = self._generate_chatbot_preference()
 
+        if CONFIG['debug']:
             for _ in range(days + 1):
                 # if not self.long_memory.daily_purpose:
                 _purpose = self._define_daily_purpose()
@@ -188,11 +190,36 @@ class Brain:
                     # self.status = "ready"
                     _status.value = 0
                     return True
-        except:
-            _status.value = 2
-            # self.status = "error"
-            self.save_cache()
-            return False
+        else:
+            try:
+                if not self.long_memory.chatbot_preference:
+                    self.long_memory.chatbot_preference = self._generate_chatbot_preference()
+
+                for _ in range(days + 1):
+                    # if not self.long_memory.daily_purpose:
+                    _purpose = self._define_daily_purpose()
+                    self.long_memory.daily_purpose = _purpose
+
+                    # if not self.short_memory.schedule:
+                    _schedule = self._create_range_schedule(
+                        start_date=self.short_memory.cur_date,
+                        start_time=self.short_memory.cur_time
+                    )
+                    self.short_memory.schedule =_schedule.dump_dict()
+                    if CONFIG["debug"]: print(self.short_memory.schedule)
+
+                    response = self._run_schedule()
+                    self.save_cache()
+
+                    if response:
+                        # self.status = "ready"
+                        _status.value = 0
+                        return True
+            except:
+                _status.value = 2
+                # self.status = "error"
+                self.save_cache()
+                return False
 
     def _run_schedule(self):
         
@@ -378,6 +405,12 @@ class Brain:
         self.short_memory.cur_chatbot_dict = chatbot
         if CONFIG["debug"]: print(chatbot)
 
+        heartrate = self._predict_heartrate(decompose=decompose)
+        if isinstance(heartrate, HeartRate):
+            heartrate = heartrate.dump_list()
+        self.short_memory.cur_heartrate_list = heartrate
+        if CONFIG["debug"]: print(heartrate)
+
 
     def _decompose_task(self, re_decompose=False) -> Decompose:
         for try_idx in range(self._retry_times):
@@ -542,8 +575,68 @@ class Brain:
         return location_parser.parse(response)
 
 
-    def _predict_heartrate(self):
-        pass
+    def _predict_heartrate(self, decompose) -> HeartRate:
+        # heartrate = self._predict_heartrate_chat(decompose)
+        # return heartrate
+        for try_idx in range(self._retry_times):
+            try:
+                heartrate = self._predict_heartrate_chat(decompose)
+            except:
+                if try_idx + 1 == self._retry_times:
+                    return {}
+                else:
+                    continue
+            else:
+                return heartrate
+            
+    def _predict_heartrate_chat(self, decompose, llm_temperature=1.0) -> HeartRate:
+        hr_example = []
+        for entry in self._mmdata_prompts['heartrate_example']:
+            # print(entry)
+            hr_example.append({
+                    "cur_hr": entry["cur_hr"],
+                    "activity": entry["activity"],
+                    "mean": entry["mean"],
+                    "std": entry["std"],
+                })
+        example_prompt = PromptTemplate(
+            input_variables=["cur_hr", "activity", "mean", "std"],
+            template=self._mmdata_prompts["heartrate_example_prompt"]
+        )
+
+        hr_parser = PydanticOutputParser(pydantic_object=HeartRate)
+        
+        prompt = FewShotPromptTemplate(
+            examples=hr_example,
+            example_prompt=example_prompt,
+            prefix=self._mmdata_prompts["heartrate_prefix"],
+            suffix=self._mmdata_prompts["heartrate_suffix"],
+            input_variables=['description', 'hr_hist', 'decompose', 'cur_time', 'cur_hr'],
+            partial_variables={"format_instructions": hr_parser.get_format_instructions()},
+        )
+
+        chain = LLMChain(
+            llm=ChatOpenAI(
+                    api_key=CONFIG["openai"]["api_key"],
+                    organization=CONFIG["openai"]["organization"],
+                    model_name='gpt-3.5-turbo-16k',
+                    temperature=llm_temperature,
+                    verbose=self._verbose,
+                ),
+                prompt=prompt,
+            )
+        
+        results = chain.invoke(input={
+            'description' : self.long_memory.description,
+            'preference' : self.long_memory.chatbot_preference,
+            'hr_hist' : self._summarize_mmdata(self.short_memory.fetch_heartrate_records(num_items=60)),
+            'decompose' : json.dumps(decompose),
+            'cur_time' : self.short_memory.cur_time,
+            'cur_hr' : self.short_memory.cur_heartrate,
+        }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+
+        response = results['text'].replace("24:00", "23:59")
+        return hr_parser.parse(response)
 
 
     def _predict_botusage(self, decompose) -> Chatbot:
@@ -715,6 +808,15 @@ class Brain:
         thread = threading.Thread(target=self._update_catelogue, args=[file_list])
         thread.start()
 
+    def _smooth_heartrate(self, _file):
+        act_data = pd.read_csv(_file, dtype=str)
+        hr_list = act_data['heartrate'].to_numpy(np.float16)
+
+        smoothed_heart_rates = savgol_filter(hr_list, window_length=15, polyorder=3)
+
+        act_data['heartrate'] = smoothed_heart_rates
+        act_data.to_csv(_file, index=False)
+
 
     def save_hist(self):
         with open(self._out_activity_file, "a+") as f:
@@ -727,6 +829,7 @@ class Brain:
         with open(self._out_activity_file, "w") as f:
             f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
 
+        self._smooth_heartrate(target_file)
         self._categorize_activity(target_file)
         # thread = threading.Thread(target=self._categorize_activity, args=target_file)
         # thread.start()
@@ -744,8 +847,8 @@ class Brain:
 
 if __name__ == "__main__":
     brain = Brain(
-        user_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2",
-        agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/19d7bf69-7fdc-3648-9c87-9bfca20611c2/agents/9",
+        user_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/ad458d15-76fa-3cd2-827c-2838c0e24a8b",
+        agent_folder="/Users/timberzhang/Documents/Documents/Long-SimulativeAgents/Code/SimulPaPa/.Users/ad458d15-76fa-3cd2-827c-2838c0e24a8b/agents/1",
     )
     brain.init_brain()
     brain.plan()
