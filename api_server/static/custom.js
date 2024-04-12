@@ -492,18 +492,18 @@ function start_simulation(username){
     }
     else{
         send_intervention()
-        // $.ajax({
-        //     url: "/simulation/start/" + cur_user,
-        //     type: 'GET',
-        //     async: true,
-        //     success: function(res) {
-        //         if (cur_user in check_simul_interval){
-        //             clearInterval(check_simul_interval[cur_user]);
-        //             delete check_simul_interval[cur_user];
-        //         }
-        //         check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
-        //     }
-        //   });
+        $.ajax({
+            url: "/simulation/start/" + cur_user,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                if (cur_user in check_simul_interval){
+                    clearInterval(check_simul_interval[cur_user]);
+                    delete check_simul_interval[cur_user];
+                }
+                check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+            }
+          });
     }
 }
 
@@ -515,22 +515,22 @@ function continue_simulation(){
     var formData = new FormData()
     formData.set("days", document.getElementsByName("new_days")[0].value)
 
-    // $.ajax({
-    //     url: "/simulation/continue/" + cur_user,
-    //     type: 'POST',
-    //     async: true,
-    //     data: formData,
-    //     processData: false,
-    //     contentType: false,
-    //     dataType: 'json',
-    //     success: function(res) {
-    //         if (cur_user in check_simul_interval){
-    //             clearInterval(check_simul_interval[cur_user]);
-    //             delete check_simul_interval[cur_user];
-    //         }
-    //         check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
-    //     }
-    //     });
+    $.ajax({
+        url: "/simulation/continue/" + cur_user,
+        type: 'POST',
+        async: true,
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(res) {
+            if (cur_user in check_simul_interval){
+                clearInterval(check_simul_interval[cur_user]);
+                delete check_simul_interval[cur_user];
+            }
+            check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+        }
+        });
 }
 
 function GenerateInfoTree(){
