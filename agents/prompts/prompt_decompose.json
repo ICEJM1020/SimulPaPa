@@ -1,5 +1,5 @@
 {
-    "prefix" : "{description}\n\n{past_activity_summary}\n\nNow ({cur_time}), he/she is {cur_activity} and want to decompose current schedule event into several activities, {cur_event}.",
+    "prefix" : "Description:\n{description}\n\nActivity Records:\n{past_activity_summary}\n\nIntervention Plan:\n{intervention}\n\nNow ({cur_time}), he/she is {cur_activity} and want to decompose current schedule event into several activities, {cur_event}.",
     "re_prefix" : "{description}\n\n{past_activity_summary}.\n\nAt {cur_time}, he/she has changed idea and want to do {cur_activity}. So he/she need to re-decompose remaining schedule event ({cur_event}) start from {cur_time} and end at {end_time}.",
     "example_prompt" : "Current activity is {cur_activity}. Given these options:{options}. Here is an example of how to decompose a schedule event, {event}: {decompose}",
     "example" : [
@@ -44,5 +44,5 @@
             ]
         }
     ],
-    "suffix" : "Now, decompose the current event {cur_event}, start from {cur_time} and end at {end_time}. As for this event, you need to decompose it into several activities step by step following regular human activity routine. Decomposition needs to be based on current activities and have coherence with past activities (do not repeat already done activity in a short time period). {format_instructions}"
+    "suffix" : "Now, decompose the current event {cur_event}, start from {cur_time} and end at {end_time}. As for this event, you need to decompose it into several activities step by step following regular human activity routine. Decomposition needs to be based on current activities and have coherence with past activities (do not repeat already done activity in a short time period). You need to pay attention to the Intervention plan. {format_instructions}"
 }

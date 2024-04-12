@@ -459,7 +459,7 @@ class Brain:
             example_prompt=example_prompt,
             prefix=self._decompose_prompts["re_prefix"] if re_decompose else self._decompose_prompts["prefix"],
             suffix=self._decompose_prompts["suffix"],
-            input_variables=['description', 'past_activity_summary','cur_activity', 'cur_event', 'cur_time', 'end_time'],
+            input_variables=['description', 'intervention', 'past_activity_summary','cur_activity', 'cur_event', 'cur_time', 'end_time'],
             partial_variables={"format_instructions": decompose_parser.get_format_instructions()},
         )
 
@@ -476,6 +476,7 @@ class Brain:
         
         results = chain.invoke(input={
             'description':self.long_memory.description,
+            'intervention':self.long_memory.intervention,
             'cur_time':self.short_memory.date_time if re_decompose else self.short_memory.cur_event['start_time'],
             'end_time':self.short_memory.cur_event['end_time'],
             'cur_activity':self.short_memory.cur_activity,
