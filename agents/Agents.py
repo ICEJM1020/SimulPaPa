@@ -24,7 +24,7 @@ class AgentsPool:
                     info: dict, 
                     user_folder: str, 
                     size:int=10,
-                    start_date=datetime.strptime("03-01-2024", '%m-%d-%Y'),
+                    start_date="03-01-2024",
                     simul_days:int=1
                  ) -> None:
         self._uuid = user_folder.split('/')[-1]
@@ -160,6 +160,10 @@ class AgentsPool:
         for agent in self.pool.values():
             agent.continue_planing(days)
 
+    def set_intervention(self, plan):
+        logger.info(f"Set intervention plan for {self.info['name']}({self._uuid}): {plan}")
+        for agent in self.pool.values():
+            agent.set_intervention(plan)
 
     def _monitor_agent_status(self):
         _status = ""
@@ -250,6 +254,8 @@ class AgentsPool:
     def fetch_simul_status(self):
         self._monitor_agent_status()
         return self.simul_status
+    
+    
 
 
 class Agent:
@@ -364,6 +370,11 @@ class Agent:
         self._status = "working"
         self.brain.load_cache()
         self.brain.plan(days=days, simul_type="continue")   
+
+    def set_intervention(self, plan):
+        self.brain.load_cache()
+        self.brain.set_intervention(plan)
+        self.save()
 
     def save(self):
         with open(self.folder + "/info.json", "w") as f:

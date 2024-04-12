@@ -814,7 +814,7 @@ class Brain:
 
         smoothed_heart_rates = savgol_filter(hr_list, window_length=15, polyorder=3)
 
-        act_data['heartrate'] = smoothed_heart_rates
+        act_data['heartrate'] = smoothed_heart_rates.astype(int)
         act_data.to_csv(_file, index=False)
 
 

@@ -396,12 +396,11 @@ def continue_simulation(username):
         days = int(request.form['days'])
     else:
         days=1
-    print(days)
     status, user_list = check_user(username=username)
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            # USER_POOL.continue_simulation(_uuid, days)
+            USER_POOL.continue_simulation(_uuid, days)
             return_body = {
                 "status" : True,
             }
@@ -440,6 +439,38 @@ def simulation_status(username):
                 "status" : False,
                 "message" : f"{username} doesn't exist"
             }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@ubp.route(f"/simulation/interplan/<username>", methods=["GET", "POST"])
+def set_intervention(username):
+    status, user_list = check_user(username=username)
+    if "plan" in request.form.keys(): 
+        plan = request.form['plan']
+        if status:
+            _uuid = user_list[username]
+            if USER_POOL.exist(_uuid):
+                return_body = {
+                    "status" : True,
+                    "message" : USER_POOL.set_intervention(_uuid, plan)
+                }
+            else:
+                return_body = {
+                    "status" : False,
+                    "message" : f"{username} has not been activated"
+                }
+        else:
+            return_body = {
+                    "status" : False,
+                    "message" : f"{username} doesn't exist"
+                } 
+    else:
+        return_body = {
+                    "status" : False,
+                    "message" : f"No intervention plan, missing \"plan\" key in form data."
+                }
     response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
     response.headers["Content-Type"] = "application/json"
     return response
