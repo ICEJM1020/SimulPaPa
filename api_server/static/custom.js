@@ -73,17 +73,36 @@ function loadAgent(id) {
 }; 
 
 function addListener() {
-
-    document.getElementById('create_user_form').addEventListener('submit', (event) => {
+    try{
+        document.getElementById('create_user_form').addEventListener('submit', (event) => {
             console.log("success find create_user_form")
             event.preventDefault();
             create_user()
         });
-    document.getElementById('description_form').addEventListener('submit', (event) => {
+    }
+    catch{
+        console.log("No create_user_form")
+    }
+    try{
+        document.getElementById('description_form').addEventListener('submit', (event) => {
             console.log("success find description_form")
             event.preventDefault();
             random_create_user()
         });
+    }
+    catch{
+        console.log("No description_form")
+    }
+    try{
+        document.getElementById('vague_create_form').addEventListener('submit', (event) => {
+            console.log("success find vague_create_form")
+            event.preventDefault();
+            vague_create_user();
+        });
+    }
+    catch{
+        console.log("No vague_create_form")
+    }
 }
 
 function update_user_list(){
@@ -145,14 +164,14 @@ function create_user(){
         success: function(res) {
             activate_user(formData.get("username"));
             alert("Success");
-            new_user_start_simulation[formData.get("username")] = setInterval(GenerateAgentsPool, check_interval, formData.get("username"));
+            new_user_start_simulation[formData.get("username")] = setInterval(GenerateAgentsPool, check_interval*50, formData.get("username"));
+            loadContent("/dashboard");
         },
         error: function(res){
             console.log(res)
             alert("Error\n" + res)
         }
     });
-    loadContent("/dashboard");
 }
 
 function check_info_tree(username){
@@ -182,6 +201,71 @@ function check_info_tree(username){
       });
 }
 
+function vague_create_user(){
+    var formData = new FormData(document.getElementById('vague_create_form'))
+
+    var _random_create_form = new FormData();
+
+    for (var [key, value] of formData.entries()) {
+        if (["short_description"].includes(key)){
+            if (value=='None' || value=='') {
+                alert("Missing " + key)
+                return 0
+            }
+            else{
+                _random_create_form.set("short_description", value)
+            }
+        }
+        if (["start_date"].includes(key)){
+            splited = value.split("-");
+            formData.set(key, splited[1]+"-"+splited[2]+"-"+splited[0]);
+        }
+    }
+
+    $.ajax({
+        url: "/user/random",
+        type: 'POST',
+        async: false,
+        data: _random_create_form,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(res) {
+            infos = res["infos"]
+
+            formData.delete("short_description")
+
+            for (var key in infos){
+                formData.set(key, infos[key])
+            }
+
+            $.ajax({
+                url: "/user/create",
+                type: 'POST',
+                async: false,
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(res) {
+                    activate_user(formData.get("username"));
+                    alert("Success");
+                    new_user_start_simulation[formData.get("username")] = setInterval(GenerateAgentsPool, check_interval*50, formData.get("username"));
+                    loadContent("/dashboard");
+                },
+                error: function(res){
+                    console.log(res)
+                    alert("Error\n" + res)
+                }
+            });
+        },
+        error: function(res){
+            console.log(res)
+            alert("Error\n" + res)
+        }
+      });
+}
+
 function random_create_user(){
     var formData = new FormData(document.getElementById('description_form'))
     for (var [key, value] of formData.entries()) {
@@ -192,7 +276,6 @@ function random_create_user(){
             }
         }
     }
-
     document.getElementById('waiting').classList.remove("d-none");
 
     $.ajax({

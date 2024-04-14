@@ -31,16 +31,16 @@ def create_user(name=None):
 def random_create_user(name=None):
     return render_template('random_create_user.html', name=name)
 
+@mbp.route('/vague_create')
+def vague_create_user(name=None):
+    return render_template('vague_create.html', name=name)
+
 @mbp.route('/user')
 def user_page(name=None):
     return render_template('user.html', name=name)
 
 @mbp.route('/<username>/<agentID>')
 def agent_page(username, agentID, name=None):
-    print(username, agentID)
-    ############################
-    # !!!!!!! Agent Page !!!!!!!
-    ############################
     return render_template('agent.html', name=name)
 
 

@@ -1,0 +1,47 @@
+<div class="container-fluid">
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Input a description to start</h5>
+        </div>
+        <div class="card-body">
+            <div class="basic-form">
+                <form id="vague_create_form">
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="username">Casename (Used to index the case)(*)</label>
+                            <input type="text" class="form-control" name="username">
+                        </div>
+                        <div class="form-group col-md-6"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="short_description">Description</label>
+                        <input type="text" class="form-control" name="short_description">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 form-group">
+                            <label for="company">Start Date</label>
+                            <input type="date" class="form-control" name="start_date" value="2024-03-01">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label for="company">Simulation Day(s)</label>
+                            <input type="number" class="form-control" name="simul_days" value="1">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label for="company">Agents Size</label>
+                            <input type="number" class="form-control" name="agents_size" value="5">
+                        </div>
+                        <div class="col-md-3 pt-4">
+                            <button type="submit" class="btn btn-primary mt-2">Confirm</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
