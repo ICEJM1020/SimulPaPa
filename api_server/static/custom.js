@@ -1,6 +1,7 @@
 let user_dict = {}
 let cur_user = ""
 let agent_list = []
+let intervention_list = []
 
 let check_tree_interval = {}
 let tree_status = ""
@@ -411,7 +412,7 @@ function update_agents_list(username){
     _html = ""
     // <button class="btn btn-primary" type="button">Button</button>
     for(var idx in agent_list) {
-        _html += "<button class=\"btn btn-outline-primary\" type=\"button\">" + agent_list[idx] + "</button>"
+        _html += "<button name=\"agent-intervention-btn\" class=\"btn btn-outline-primary\" type=\"button\" onclick=\"intervention_agent(\'" + agent_list[idx] + "\')\">" + agent_list[idx] + "</button>"
     }
     if (len_agent>3){
         document.getElementById("agent-btn-group").classList.add("agent-btn-list")
@@ -548,6 +549,7 @@ function send_intervention(){
     else{
         var formData = new FormData();
         formData.set("plan", intervention_plan)
+        formData.set('agent_list', intervention_list)
     
         $.ajax({
             url: "/simulation/interplan/" + username,
@@ -882,6 +884,62 @@ function modify_user_info(){
             alert("Error\n" + res)
         }
     });
+}
+
+function update_intervention_agent_btn(){
+    var agent_btns = document.getElementsByName("agent-intervention-btn");
+
+    for (var btn of agent_btns){
+        if (intervention_list.includes(btn.innerText)){
+            btn.classList.remove("btn-outline-primary");
+            btn.classList.add("btn-primary");
+        }
+        else {
+            btn.classList.remove("btn-primary");
+            btn.classList.add("btn-outline-primary");
+        }
+    }
+}
+
+function inter_all_agent(){
+    intervention_list = agent_list;
+    update_intervention_agent_btn();
+}
+
+function getRandomSubarray(arr, size) {
+    var shuffled = arr.slice(0), i = arr.length, temp, index;
+    while (i--) {
+        index = Math.floor((i + 1) * Math.random());
+        temp = shuffled[index];
+        shuffled[index] = shuffled[i];
+        shuffled[i] = temp;
+    }
+    return shuffled.slice(0, size);
+}
+
+function inter_random_agent(){
+    intervention_list = getRandomSubarray(agent_list, Math.floor(agent_list.length / 2));
+    update_intervention_agent_btn();
+}
+
+function inter_clear_agent(){
+    intervention_list = [];
+    update_intervention_agent_btn();
+}
+
+function intervention_agent(agent){
+    if (agent_list.includes(agent)){
+        if (intervention_list.includes(agent)){
+            const index = intervention_list.indexOf(agent);
+            if (index > -1) {
+                intervention_list.splice(index, 1);
+            }
+        }
+        else{
+            intervention_list.push(agent);
+        }
+    }
+    update_intervention_agent_btn();
 }
 
 // single agent

@@ -75,8 +75,8 @@ class UserPool:
     def fetch_simulation_status(self, _uuid):
         return self.pool[_uuid].agents_pool.fetch_simul_status()
     
-    def set_intervention(self, _uuid, plan):
-        self.pool[_uuid].set_intervention(plan)
+    def set_intervention(self, _uuid, plan, agent_list):
+        self.pool[_uuid].set_intervention(plan, agent_list)
 
 
     ############
@@ -278,8 +278,8 @@ class User:
         self.agents_pool.continue_simulation(days)
 
     
-    def set_intervention(self, plan):
-        self.agents_pool.set_intervention(plan)
+    def set_intervention(self, plan, agent_list):
+        self.agents_pool.set_intervention(plan, agent_list)
 
 
     def get_status(self):

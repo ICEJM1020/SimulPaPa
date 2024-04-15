@@ -478,12 +478,13 @@ def set_intervention(username):
     status, user_list = check_user(username=username)
     if "plan" in request.form.keys(): 
         plan = request.form['plan']
+        agent_list = request.form['agent_list']
         if status:
             _uuid = user_list[username]
             if USER_POOL.exist(_uuid):
                 return_body = {
                     "status" : True,
-                    "message" : USER_POOL.set_intervention(_uuid, plan)
+                    "message" : USER_POOL.set_intervention(_uuid, plan, agent_list)
                 }
             else:
                 return_body = {

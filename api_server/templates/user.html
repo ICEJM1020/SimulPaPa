@@ -16,19 +16,6 @@
             </ol>
         </div>
     </div>
-    <!-- <div class="row page-titles mx-0">
-        <div class="col-sm-5 p-md-0">
-            <div class="welcome-text pt-2">
-                <h4 id="agent-name">Agent 1</h4>
-            </div>
-        </div>
-        <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item" ><a href="javascript:void(0)" id="user-name">timberzhang</a></li>
-                <li class="breadcrumb-item active" ><a href="javascript:void(0)" id="agent-name-link">Agent 1</a></li>
-            </ol>
-        </div>
-    </div> -->
 
     <div class="col-md-12 row">
         <div class="col-md-8">
@@ -41,11 +28,11 @@
                             <textarea name="textarea" id="intervention_plan" cols="30" rows="5" class="form-control bg-transparent" placeholder="Please type your intervention plan"></textarea>
                         </div>
                         <div class="col-md-3">
-                            <div class="col-md-12 mx-0 my-1 p-0">Select the agent who will execute the plan</div>
+                            <div class="col-md-12 mx-0 my-1 p-0">Select the agent who will take the plan</div>
                             <div class="col-md-12 my-1 p-0 btn-group">
-                                <button class="btn btn-secondary" type="button" id="agent-all-btn">All</button>
-                                <button class="btn btn-secondary" type="button" id="agent-random-btn">Random Half</button>
-                                <button class="btn btn-secondary" type="button" id="agent-clear-btn">Clear</button>
+                                <button class="btn btn-secondary" type="button" onclick="inter_all_agent()">All</button>
+                                <button class="btn btn-secondary" type="button" onclick="inter_random_agent()">Random Half</button>
+                                <button class="btn btn-secondary" type="button" onclick="inter_clear_agent()">Clear</button>
                             </div>
                             <div class="basic-list-group col-md-10 mx-3 mt-2 px-0">
                                 <div class="btn-group-vertical col-md-12" id="agent-btn-group">
