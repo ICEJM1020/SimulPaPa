@@ -277,7 +277,7 @@ def fetch_user_status(username):
 
 ########
 #
-# description group
+# information group
 #
 ########
 
@@ -289,7 +289,36 @@ def fetch_user_description(username):
         if USER_POOL.exist(_uuid):
             return_body = {
                 "status" : True,
-                "description" : USER_POOL.fetch_user_description(_uuid)
+                "data" : USER_POOL.fetch_user_description(_uuid),
+                "message" : ""
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@ubp.route(f"/{route_group}/information/<username>", methods=["POST", "GET"])
+def fetch_user_information(username):
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            _temp = USER_POOL.fetch_user_information(_uuid)
+            _temp['username'] = username
+            return_body = {
+                "status" : True,
+                "data" : _temp,
+                "message" : ""
             }
         else:
             return_body = {
@@ -340,10 +369,10 @@ def modify_user_description(username):
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            USER_POOL.modify_user_info(_uuid, req_form)
+            
             return_body = {
                 "status" : True,
-                "description" : USER_POOL.fetch_user_description(_uuid)
+                "message" : USER_POOL.modify_user_info(_uuid, req_form)
             }
         else:
             return_body = {

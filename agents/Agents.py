@@ -424,6 +424,7 @@ class Agent:
     
     def fetch_location_hist(self, date):
         _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        _hist = _hist[_hist["location"].notna()]
 
         cur_loc = _hist["location"][0]
         cur_longi = _hist["longitude"][0]
@@ -432,6 +433,7 @@ class Agent:
         last_time = ""
         loc_hist = []
         for idx, row in _hist.iterrows():
+
             if not cur_loc==row["location"]:
                 loc_hist.append({
                     "location" : cur_loc,

@@ -39,21 +39,22 @@ function loadContent(content) {
             }
         }
         username = username.slice(0, -1);
-        console.log(username)
+        
         $("#mainContent").load("/user", success=function(){
             load_user_page(username)
-            cur_user = username
+            addListener();
             document.getElementsByClassName('nav-control')[0].click();
         }); 
     }
     else if (content.startsWith("back")){
         $("#mainContent").load("/user", success=function(){
             load_user_page(cur_user)
+            addListener();
         }); 
     }
     else{
         $("#mainContent").load(content, success=function(){
-            addListener()
+            addListener();
         }); 
     }
     update_user_list();
@@ -75,33 +76,45 @@ function loadAgent(id) {
 function addListener() {
     try{
         document.getElementById('create_user_form').addEventListener('submit', (event) => {
-            console.log("success find create_user_form")
             event.preventDefault();
             create_user()
         });
+        console.log("success find create_user_form")
     }
     catch{
         console.log("No create_user_form")
     }
     try{
         document.getElementById('description_form').addEventListener('submit', (event) => {
-            console.log("success find description_form")
             event.preventDefault();
             random_create_user()
         });
+        console.log("success find description_form")
     }
     catch{
         console.log("No description_form")
     }
+
     try{
         document.getElementById('vague_create_form').addEventListener('submit', (event) => {
-            console.log("success find vague_create_form")
             event.preventDefault();
             vague_create_user();
         });
+        console.log("success find vague_create_form")
     }
     catch{
         console.log("No vague_create_form")
+    }
+    
+    try{
+        document.getElementById('modify_user_form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            modify_user_info();
+        });
+        console.log("success find modify_user_form")
+    }
+    catch{
+        console.log("No modify_user_form")
     }
 }
 
@@ -120,7 +133,7 @@ function update_user_list(){
 }
 
 function fetch_users(){
-    let return_val = null
+    var return_val = null
     $.ajax({
         url: "/user/all",
         type: 'POST',
@@ -446,7 +459,7 @@ function check_agents_pool(username){
 }
 
 function activate_user(username){
-    let status=false
+    var status=false
     $.ajax({
         url: "/user/activate/" + username,
         type: 'GET',
@@ -750,6 +763,8 @@ function show_stat(){
 function load_user_page(username){
     if_activated = activate_user(username)
     if (if_activated) {
+        cur_user = username
+
         cur_date = ""
         page_status = 'user'
 
@@ -760,6 +775,8 @@ function load_user_page(username){
         if (!(username in check_tree_interval)) check_tree_interval[username] = setInterval(check_info_tree, check_interval, username);
         if (!(username in check_pool_interval)) check_pool_interval[username] = setInterval(check_agents_pool, check_interval, username);
         if (!(username in check_simul_interval)) check_simul_interval[username] = setInterval(check_simulation, check_interval, username);
+
+        show_case_info(username);
 
         document.getElementById("top-user-name").innerText = username
         
@@ -776,14 +793,14 @@ function load_user_page(username){
 }
 
 function fetch_user_info(username){
-    let return_val = "Waiting for Server..."
+    var return_val = {}
     $.ajax({
-        url: "/user/description/" + username,
+        url: "/user/information/" + username,
         type: 'GET',
         async: false,
         dataType: 'json',
         success: function(res) {
-            return_val = res["description"]
+            return_val = res["data"]
         },
         error: function(res){
             console.log(res)
@@ -792,7 +809,80 @@ function fetch_user_info(username){
     return return_val
 }
 
+function show_case_info(username){
+    var user_infos = fetch_user_info(username);
 
+    for (var key in user_infos){
+        var value = user_infos[key];
+
+        if (key=="description"){
+            document.getElementById("modal-description").innerText = value
+        }
+        else{
+            _list = document.getElementsByName(key);
+            if (_list.length > 0){
+                if(key==="gender"){
+                    if (value.toLowerCase()==="male"){
+                        _list[0].value = "Male"
+                    }
+                    else{
+                        _list[0].value = "Female"
+                    }
+                }
+                else if (key==="retirement") {
+                    if (value.toLowerCase()==="yes"){
+                        _list[0].value = "Yes"
+                    }
+                    else{
+                        _list[0].value = "No"
+                    }
+                }
+                else if ( key==="birthday" || key==="start_date"){
+                    splited = value.split("-")
+                    _list[0].value = splited[2]+"-"+splited[0]+"-"+splited[1];
+                }
+                else{
+                    _list[0].value = value;
+                }
+            }
+        }
+    }
+}
+
+function modify_user_info(){
+    var formData = new FormData(document.getElementById('modify_user_form'))
+
+    for (var [key, value] of formData.entries()) {
+        if (["username","birthday","city"].includes(key)){
+            if (value=='None' || value=='') {
+                alert("Missing " + key);
+                return 0;
+            }
+        }
+        if (["start_date","birthday"].includes(key)){
+            splited = value.split("-");
+            formData.set(key, splited[1]+"-"+splited[2]+"-"+splited[0]);
+        }
+    }
+    
+    $.ajax({
+        url: "/user/description/modify/" + formData.get("username"),
+        type: 'POST',
+        async: true,
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(res) {
+            alert("If you modify some key information that may affect the generation of agents, e.g. city, diseases, it is better to regenerate the Information Tree and then regenerate the Agents Pool");
+            $("#case_info_close").click()
+        },
+        error: function(res){
+            console.log(res)
+            alert("Error\n" + res)
+        }
+    });
+}
 
 // single agent
 let cur_agent_id = ""
@@ -801,6 +891,13 @@ let donedates =  []
 let chat_his = {}
 let loc_hist = {}
 let schedules = {}
+
+let chat_display = true
+// true for chat bubble
+// false for word cloud
+let map = null;
+let data_layer=null;
+
 
 function load_agent_page(){
     page_status = 'agent'
@@ -817,6 +914,10 @@ function load_agent_page(){
     chat_his = {}
     loc_hist = {}
     schedules = {}
+
+    chat_display = true
+    map = null;
+    data_layer=null;
 
     load_info();
     fetch_done_date();
@@ -869,9 +970,6 @@ function fetch_done_date() {
         });
 }
 
-let chat_display = true
-// true for chat bubble
-// false for word cloud
 function change_chat_display()
 {
     // if (chat_display){
@@ -917,8 +1015,8 @@ function wordFreq(words) {
 function d3_draw_cloud(myWords){
     document.getElementById("chatbot_wordcloud").innerHTML = ""
 
-    let words = []
-    let large = -1
+    var words = []
+    var large = -1
     for (var key in myWords) {
         large = Math.max(large, myWords[key])
     }
@@ -974,7 +1072,7 @@ function d3_draw_cloud(myWords){
 }
 
 function fetch_chat_his(date){
-    let chathis = {0:{"time":"null", "chatbot":"null null null"}}
+    var chathis = {0:{"time":"null", "chatbot":"null null null"}}
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/chathis/" + date,
         type: 'GET',
@@ -1007,7 +1105,7 @@ function get_utter(chat){
 }
 
 function show_chat_hist(){
-    let _html = "";
+    var _html = "";
     for (var idx in chat_his){
         // console.log(chat_his[idx]["chatbot"])
         // console.log(chat_his[idx]["time"])
@@ -1095,9 +1193,6 @@ function draw_agent_heartrate(date){
 //
 // draw maps
 // 
-
-let map = null;
-let data_layer=null;
 const styles = {
     'icon' : new ol.style.Style({
         image: new ol.style.Icon({
@@ -1111,7 +1206,7 @@ const styles = {
             const coords = _coords;
             ctx.lineWidth = 5;
             
-            for (let i = 1; i < coords.length; i++) {
+            for (var i = 1; i < coords.length; i++) {
                 const start = coords[i - 1];
                 const end = coords[i];
                 const grd = ctx.createLinearGradient(start[0], start[1], end[0], end[1]);
@@ -1128,11 +1223,11 @@ const styles = {
 }
 
 function draw_map(date){
-    loc_hist = fetch_location_hist(date)
+    loc_hist = fetch_location_hist(date);
 
-    let icons = [];
+    var icons = [];
     for (var idx in loc_hist) {
-        let _temp = new ol.Feature({
+        var _temp = new ol.Feature({
                 type : 'icon',
                 geometry: new ol.geom.Point(ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']])),
                 name: loc_hist[idx]['location'],
@@ -1145,7 +1240,7 @@ function draw_map(date){
     var polyline = new ol.geom.LineString(loc_hist.map(function(entry){
         return [entry['longitude'], entry['latitude']]
     }));
-    let routeFeature = new ol.Feature({
+    var routeFeature = new ol.Feature({
         type: 'route',
         geometry: polyline.transform('EPSG:4326', 'EPSG:3857')
     });
@@ -1174,7 +1269,7 @@ function draw_map(date){
 }
 
 function fetch_location_hist(date){
-    let loc = {}
+    var loc = {}
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/lochis/" + date,
         type: 'GET',
@@ -1184,6 +1279,9 @@ function fetch_location_hist(date){
             if (Object.keys(res["data"]).length !== 0){
                 loc = res["data"]
             }
+        },
+        error: function(res) {
+            console.log(res)
         }
         });
     return loc;
@@ -1225,7 +1323,7 @@ function init_map(){
 
     map.on(['singleclick'], function (evt) {
         // console.log(evt.pixel)
-        let feature = null;
+        var feature = null;
         feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
             return feature;
         }, options={"hitTolerance":15});
@@ -1265,7 +1363,7 @@ function show_location_hist(date){
 // 
 
 function fetch_schedule(date){
-    let schedule = {}
+    var schedule = {}
     $.ajax({
         url: "/agent/" + cur_user + "/" + cur_agent_id + "/schedule/" + date,
         type: 'GET',
@@ -1285,7 +1383,7 @@ function fetch_schedule(date){
 }
 
 function fetch_all_schedule(){
-    for (let idx in donedates){
+    for (var idx in donedates){
         schedules[donedates[idx]] = fetch_schedule(donedates[idx])
     }
 }

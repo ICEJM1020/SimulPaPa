@@ -816,6 +816,17 @@ class Brain:
         smoothed_heart_rates = savgol_filter(hr_list, window_length=15, polyorder=3)
 
         act_data['heartrate'] = smoothed_heart_rates.astype(int)
+
+        act_data.to_csv(_file, index=False)
+
+
+    def _avoid_nan(self, _file):
+        act_data = pd.read_csv(_file, dtype=str)
+
+        act_data["location"] = act_data["location"].fillna(self.long_memory.home_addr)
+        act_data["longitude"] = act_data["longitude"].fillna(self.long_memory.info['home_longitude'])
+        act_data["latitude"] = act_data["latitude"].fillna(self.long_memory.info['home_latitude'])
+
         act_data.to_csv(_file, index=False)
 
 
@@ -832,6 +843,7 @@ class Brain:
 
         self._smooth_heartrate(target_file)
         self._categorize_activity(target_file)
+        self._avoid_nan(target_file)
         # thread = threading.Thread(target=self._categorize_activity, args=target_file)
         # thread.start()
 

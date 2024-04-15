@@ -70,18 +70,181 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
+                    <!-- Modal -->
+                    <div class="modal fade" id="CaseInfoModal">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Information</h5>
+                                    <button id="case_info_close" type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="basic-form">
+                                        <form id="modify_user_form">
+                                            <div class="col-md-12, m-3">
+                                                <p id="modal-description"></p>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="username">Casename</label>
+                                                    <input type="text" class="form-control" name="username" readonly>
+                                                </div>
+                                                <div class="form-group col-md-6"></div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="name">Name</label>
+                                                    <input type="text" class="form-control" name="name">
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="gender">Gender</label>
+                                                    <select class="form-control" name="gender">
+                                                        <option>None</option>
+                                                        <option>Male</option>
+                                                        <option>Female</option>
+                                                        <option>Other</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group  col-md-4">
+                                                    <label for="race">Race</label>
+                                                    <input type="text" class="form-control" name="race">
+                                                </div>
+                                            </div>
+                            
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="birthday">Birthday</label>
+                                                    <input type="date" class="form-control" name="birthday">
+                                                </div>
+                                                <div class="form-group col-md-8">
+                                                    <label for="disease">Disease</label>
+                                                    <input type="text" class="form-control" name="disease" placeholder="Multiple inputs supported">
+                                                </div>
+                                            </div>
+                            
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="building">Building</label>
+                                                    <input type="text" class="form-control" name="building">
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="street">Street</label>
+                                                    <input type="text" class="form-control" name="street">
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="district">District</label>
+                                                    <input type="text" class="form-control" name="district">
+                                                </div>
+                                            </div>
+                            
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="city">City</label>
+                                                    <input type="text" class="form-control" name="city">
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="state">State</label>
+                                                    <input type="text" class="form-control" name="state">
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="zipcode">Zipcode</label>
+                                                    <input type="text" class="form-control" name="zipcode">
+                                                </div>
+                                            </div>
+                            
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="education">Education</label>
+                                                    <input type="text" class="form-control" name="education">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="language">Speaking Language</label>
+                                                    <input type="text" class="form-control" name="language">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="industry">Industry</label>
+                                                    <input type="text" class="form-control" name="industry">
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="occupation">Occupation</label>
+                                                    <input type="text" class="form-control" name="occupation">
+                                                </div>
+                                            </div>
+                            
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="income">Income</label>
+                                                    <input type="text" class="form-control" name="income">
+                                                </div>
+                                                
+                                                <div class="form-group col-md-6">
+                                                    <label for="retirement">Retirement</label>
+                                                    <select class="form-control" name="retirement">
+                                                        <option>None</option>
+                                                        <option>Yes</option>
+                                                        <option>No</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label for="company">Company</label>
+                                                <input type="text" class="form-control" name="company">
+                                            </div>
+                            
+                                            <div class="form-group">
+                                                <label for="work_addr">Work Address</label>
+                                                <input type="text" class="form-control" name="work_addr">
+                                            </div>
+                        
+                        
+                                            <div class="row">
+                                                <div class="col-md-3 form-group">
+                                                    <label for="company">Start Date</label>
+                                                    <input type="date" class="form-control" name="start_date" value="2024-03-01">
+                                                </div>
+                                                <div class="col-md-3 form-group">
+                                                    <label for="company">Simulation Day(s)</label>
+                                                    <input type="number" class="form-control" name="simul_days" value="1">
+                                                </div>
+                                                <div class="col-md-3 form-group">
+                                                    <label for="company">Agents Size</label>
+                                                    <input type="number" class="form-control" name="agents_size" value="5">
+                                                </div>
+                                                <!-- <div class="col-md-3 pt-4">
+                                                    <button type="submit" class="btn btn-primary mt-2">Confirm</button>
+                                                </div> -->
+                                            </div>
+                                            
+                                            
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-outline-primary">Save changes</button>
+                                                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div id="status_area" class="alert alert-success solid alert-right-icon col-md-12 mb-1">
                         <span><i id="status_icon" class="mdi mdi-check"></i></span>
                         <b id="status_text">Ready</b> 
                     </div>
 
-                    <div class="row col-md-12">
-                        <div class="col-md-6 mt-2 d-flex justify-content-center">
-                            <button id="generate_agent_btn" onclick="GenerateAgentsPool()" class="btn btn-lg btn-outline-dark">Generate Agents</button>
+                    <div class="row col-md-12 px-0 mx-0">
+                        <div class="col-md-4 mt-2 mx-0 p-2">
+                            <button class="w-100 btn btn-lg btn-outline-dark" data-toggle="modal" data-target="#CaseInfoModal">Case Details</button>
                         </div>
-                        <div class="col-md-6 mt-2 d-flex justify-content-center">
-                            <button id="generate_pool_btn" onclick="GenerateInfoTree()" class="btn btn-lg btn-outline-dark">Generate InfoTree</button>
+                        <div class="col-md-4 mt-2 mx-0 p-2">
+                            <button class="w-100 btn btn-lg btn-outline-dark" id="generate_agent_btn" onclick="GenerateAgentsPool()">Generate Agents</button>
+                        </div>
+                        <div class="col-md-4 mt-2 mx-0 p-2">
+                            <button class="w-100 btn btn-lg btn-outline-dark" id="generate_pool_btn" onclick="GenerateInfoTree()">Generate InfoTree</button>
                         </div>
                     </div>
                 </div>

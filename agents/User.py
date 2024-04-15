@@ -58,6 +58,9 @@ class UserPool:
     def fetch_user_description(self, _uuid):
         return self.pool[_uuid].get_description()
     
+    def fetch_user_information(self, _uuid):
+        return self.pool[_uuid].get_information()
+    
 
     ############
     # simulation
@@ -154,7 +157,7 @@ class User:
         self.status = "ready"
         self.agents_size = 5
         self.simul_days = 1
-        self.start_date = datetime.strptime("03-01-2024", '%m-%d-%Y')
+        self.start_date = "03-01-2024"
 
         # user info
         self.info = {key:None for key in CONFIG["info"]}
@@ -201,7 +204,7 @@ class User:
         if "description" in info.keys(): self.description = info["description"]
         if "agents_size" in info.keys(): self.agents_size = int(info["agents_size"])
         if "simul_days" in info.keys(): self.simul_days = int(info["simul_days"])
-        if "start_date" in info.keys(): self.start_date = datetime.strptime(info["start_date"], '%m-%d-%Y')
+        if "start_date" in info.keys(): self.start_date = info["start_date"]
         
         return missing
 
@@ -223,7 +226,7 @@ class User:
                 "description" : self.description,
                 "agents_size" : self.agents_size,
                 "simul_days" : self.simul_days,
-                "start_date" : self.start_date.strftime("%m-%d-%Y"),
+                "start_date" : self.start_date,
             }
             for key in self.info.keys():
                 dumps[key] = self.info[key]
@@ -232,14 +235,13 @@ class User:
     
 
     def modify_info(self, info):
-        for key in info.keys():
-            if key in self.info.keys():
-                self.info[key] = info[key]
-            else:
-                continue
+        
+        res = self._fill_info(info)
+
         self.generate_description()
         self.save()
         logger.info(f"UUID {self._uuid} modified the information")
+        return res
 
 
     def generate_activity_file(self):
@@ -263,7 +265,6 @@ class User:
             os.mkdir(act_dir)
             
             decompose_activity_file(csv_files, act_dir)
-
         else:
             logger.info(f"There is no activity file of {self.info['name']}({self.user_folder.split('/')[-1]})")
             self.status = "error"
@@ -284,10 +285,19 @@ class User:
     def get_status(self):
         return self.status
 
-
     def get_description(self):
         return self.description
     
+    def get_information(self):
+        _temp = {
+            "description" : self.description,
+            "agents_size" : self.agents_size,
+            "simul_days" : self.simul_days,
+            "start_date" : self.start_date,
+        }
+        for key in self.info.keys():
+            _temp[key] = self.info[key]
+        return _temp
 
     def check_ready(self):
         return self.status=="ready"
