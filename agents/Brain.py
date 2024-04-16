@@ -329,7 +329,7 @@ class Brain:
         # Generate schedule examples
         # We need to add .replace("{", "{{").replace("}", "}}") after serialising as JSON
         schedule_examples = []
-        for idx, entry in enumerate(self._schedule_prompts['schedule_examples']):
+        for idx, entry in enumerate(self._schedule_prompts[CONFIG['schedule_type']]):
             schedule_examples.append({
                     "intervention": entry["intervention"],
                     "description": entry["description"], 
