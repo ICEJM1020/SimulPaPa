@@ -111,7 +111,7 @@ class AgentsPool:
         exists = 0
         for i in range(1, self.size+1):
             try:
-                self.pool[i] = Agent(index=i, user_folder=self.user_folder, start_date=self.start_date)
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder)
             except:
                 if_err += 1
                 error += f"Agent {i}, "
@@ -290,11 +290,13 @@ class Agent:
         if info==None:
             self._load_info()
         else:
-            self._fill_info(info=info)
+            self._fill_info(info=info, start_date=self.start_date)
+
         if self.description=="":
             self.generate_description()
         if not os.path.exists(os.path.join(self.folder, "portrait.png")):
             self.draw_portrait()
+
         self.save()
 
         # brain
@@ -318,7 +320,7 @@ class Agent:
             self._status = "ready"
 
 
-    def _fill_info(self, info):
+    def _fill_info(self, info, start_date=None):
         missing = ""
         for key in self.info.keys():
             if key in info.keys():
@@ -329,18 +331,20 @@ class Agent:
             self.description = info["description"]
         except:
             self.description = ""
-        try:
-            self.start_date = info["start_date"]
-        except:
-            self.start_date = "03-01-2024"
+        if start_date:
+            self.start_date = start_date
+        else:
+            try:
+                self.start_date = info["start_date"]
+            except:
+                self.start_date = "03-01-2024"
 
         return missing
 
 
     def generate_description(self):
         try:
-            info = gpt_description(**self.info)
-            self._fill_info(info)
+            self.description = gpt_description(**self.info)
         except:
             self._status = "error"            
             logger.info(f"{self._uuid} agent({self.index}) generate description unsuccessfully")

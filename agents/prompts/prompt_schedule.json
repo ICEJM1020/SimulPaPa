@@ -2,7 +2,7 @@
     "prefix" : "INTERVENTION PLAN:\n{intervention}\n\nProfile:\n{description}\nHome location: {home_addr}\nWork location: {work_addr}\n\nDaily Purpose:{daily_purpose}\n\nNow he/she just got up and needs to plan events for today, start from {start_date} {start_time}. ",
     "event_examples" : ["Sleep", "Work", "Shower", "Bath", "Meeting", "Study", "Breakfast", "Dinner", "Shower", "Commute", "Cinema Movie", "Office chat"],
     "schedule_example_prompt" : "INTERVENTION PLAN:\n{intervention}\nProfile:\n{description}\nHere is a schedule of him/her from {start_time} to the evening sleep:\n {schedule}",
-    "schedule_examples_location" : [
+    "schedule_examples_backup" : [
         {
             "intervention" : "No intervention plan.",
             "description" : "Emma Thompson is a 19-year-old Caucasian female living in 142 Maple Street, Athens, Green Meadows, Georgia, 30605. The physical status of her is asthmatic, which she manages with medication. She is a college student and barista with an annual income of $6,000, working at The Daily Grind, 784 College Avenue, Athens, GA 30605. She speaks English and is learning French. Her education background is studying for a Bachelor of Arts in English Literature. Her date of birth is September 8, 2005.",
