@@ -754,11 +754,14 @@ function show_stat(){
         clearInterval(update_stat_interval);
 
         fetch_all_donedates();
-        cur_date = all_donedates[0]
-        fetch_activity_statistic(cur_date);
 
-        show_donedates_cal();
-        draw_stat(act_stat, hr_stat);
+        if (all_donedates.length > 0){
+            cur_date = all_donedates[0]
+            fetch_activity_statistic(cur_date);
+    
+            show_donedates_cal();
+            draw_stat(act_stat, hr_stat);
+        }
     }
 }
 
@@ -1258,6 +1261,12 @@ const styles = {
             src: "/static/marker.png"
         })
     }),
+    'icon_start' : new ol.style.Style({
+        image: new ol.style.Icon({
+            anchor: [0.5, 1],
+            src: "/static/home.png"
+        })
+    }),
     'route' : new ol.style.Style({
         renderer: (_coords, state) => {
             const ctx = state.context;
@@ -1285,8 +1294,10 @@ function draw_map(date){
 
     var icons = [];
     for (var idx in loc_hist) {
+        var _type = 'icon'
+        if (idx==0){ _type = 'icon_start' }
         var _temp = new ol.Feature({
-                type : 'icon',
+                type : _type,
                 geometry: new ol.geom.Point(ol.proj.fromLonLat([loc_hist[idx]['longitude'], loc_hist[idx]['latitude']])),
                 name: loc_hist[idx]['location'],
                 start_time: loc_hist[idx]['start_time'],

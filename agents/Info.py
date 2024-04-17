@@ -60,7 +60,7 @@ def gpt_description(name, birthday, retry=5,  **kwargs):
             else:
                 continue
         else:
-            return description
+            return description["description"]
 
 
 def _gpt_description(name, birthday, **kwargs) -> dict:
@@ -152,6 +152,7 @@ def dalle_portrait(description):
         n=1,
     )
     image_url = response.data[0].url
+    print(response)
     response = requests.get(image_url)
     return response.content
 

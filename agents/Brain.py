@@ -207,6 +207,7 @@ class Brain:
                     )
                     self.short_memory.schedule =_schedule.dump_dict()
                     if CONFIG["debug"]: print(self.short_memory.schedule)
+                    print(self.short_memory.schedule)
 
                     response = self._run_schedule()
                     self.save_cache()
@@ -290,7 +291,7 @@ class Brain:
         model = ChatOpenAI(
                 api_key=CONFIG["openai"]["api_key"],
                 organization=CONFIG["openai"]["organization"],
-                model_name='gpt-3.5-turbo',
+                model_name=CONFIG["openai"]["model"],
                 temperature=1.5,
                 verbose=self._verbose
             )
@@ -362,7 +363,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name='gpt-3.5-turbo-16k',
+                    model_name=CONFIG["openai"]["model-16k"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -410,6 +411,7 @@ class Brain:
             heartrate = heartrate.dump_list()
         self.short_memory.cur_heartrate_list = heartrate
         if CONFIG["debug"]: print(heartrate)
+        print(heartrate)
 
 
     def _decompose_task(self, re_decompose=False) -> Decompose:
@@ -467,7 +469,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name='gpt-3.5-turbo-16k',
+                    model_name=CONFIG["openai"]["model-16k"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -504,7 +506,7 @@ class Brain:
         model = ChatOpenAI(
                 api_key=CONFIG["openai"]["api_key"],
                 organization=CONFIG["openai"]["organization"],
-                model_name='gpt-3.5-turbo',
+                model_name=CONFIG["openai"]["model"],
                 temperature=0.5,
                 verbose=self._verbose
             )
@@ -556,7 +558,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name='gpt-3.5-turbo-16k',
+                    model_name=CONFIG["openai"]["model-16k"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -620,7 +622,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name='gpt-3.5-turbo-16k',
+                    model_name=CONFIG["openai"]["model-16k"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -681,7 +683,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name='gpt-3.5-turbo-16k',
+                    model_name=CONFIG["openai"]["model-16k"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -710,7 +712,7 @@ class Brain:
         model = ChatOpenAI(
                 api_key=CONFIG["openai"]["api_key"],
                 organization=CONFIG["openai"]["organization"],
-                model_name='gpt-3.5-turbo',
+                model_name=CONFIG["openai"]["model"],
                 temperature=0.5,
                 verbose=self._verbose
             )
@@ -727,7 +729,7 @@ class Brain:
         model = ChatOpenAI(
                 api_key=CONFIG["openai"]["api_key"],
                 organization=CONFIG["openai"]["organization"],
-                model_name='gpt-3.5-turbo',
+                model_name=CONFIG["openai"]["model"],
                 temperature=1.5,
                 verbose=self._verbose
             )
@@ -790,7 +792,7 @@ class Brain:
         model = ChatOpenAI(
                 api_key=CONFIG["openai"]["api_key"],
                 organization=CONFIG["openai"]["organization"],
-                model_name='gpt-3.5-turbo',
+                model_name=CONFIG["openai"]["model"],
                 temperature=0.3,
                 verbose=self._verbose
             )
@@ -813,7 +815,7 @@ class Brain:
         act_data = pd.read_csv(_file, dtype=str)
         hr_list = act_data['heartrate'].to_numpy(np.float16)
 
-        smoothed_heart_rates = savgol_filter(hr_list, window_length=15, polyorder=3)
+        smoothed_heart_rates = savgol_filter(hr_list, window_length=10, polyorder=3)
 
         act_data['heartrate'] = smoothed_heart_rates.astype(int)
 

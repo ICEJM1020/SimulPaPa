@@ -105,6 +105,11 @@ function generate_event_list(schedules) {
                 activities_string += "</td></tr>"
             }
             activities_string += "</tbody></table></div>"
+            for (var loc of schedule[idx]["location_list"]){
+                activities_string += "<div><p class=\"text-primary\">"
+                activities_string += loc
+                activities_string += "</p></div>"
+            }
             //
             event_list.push({
                 title : schedule[idx]['event'],

@@ -172,8 +172,8 @@ class AgentsPool:
         _ready = 0
         _error = 0
         for key, agent in self.pool.items():
-            if agent.status == "error":
-                _status += f"Error-Agent-{key}; "
+            if agent.status.startswith("error"):
+                _status += f"Error-Agent-{key}:{agent.status}; "
                 _error += 1
             if agent.status == "ready":
                 _ready += 1
@@ -182,7 +182,7 @@ class AgentsPool:
         if _ready == self.size:
             self.simul_status = "ready"
         if _error == self.size:
-            self.simul_status = "failed"
+            self.simul_status = "failed-" + _status
 
     def statistical_activity(self, date):
 
@@ -363,7 +363,7 @@ class Agent:
             with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
                 file.write(content)
         except:
-            self._status = "error"
+            self._status = "error-load portrait"
 
     def start_planing(self, days=1):
         if os.path.exists(self.activity_folder):
@@ -466,6 +466,8 @@ class Agent:
         activity_start_time = data["time"][0]
         last_time = ""
         activities = []
+        cur_location = data["location"][0]
+        location_list = []
         for idx, row in data.iterrows():
             if not cur_activity==row["activity"]:
                 activities.append({
@@ -476,16 +478,22 @@ class Agent:
                 cur_activity = row["activity"]
                 activity_start_time = row["time"]
 
+            if not cur_location==row["location"]:
+                location_list.append(cur_location)
+                cur_location = row["location"]
+
             if not cur_event==row["event"]:
                 schedule.append({
                     "event": cur_event,
                     "start_time" : event_start_time,
                     "end_time" : last_time,
-                    "activities" : activities
+                    "activities" : activities,
+                    "location_list" : location_list
                 })
                 cur_event = row["event"]
                 event_start_time = row["time"]
                 activities = []
+                location_list = []
 
             last_time = row["time"]
 
@@ -494,13 +502,12 @@ class Agent:
             "start_time" : activity_start_time,
             "end_time" : last_time
         })
-        cur_activity = row["activity"]
-        activity_start_time = row["time"]
         schedule.append({
             "event": cur_event,
             "start_time" : event_start_time,
             "end_time" : last_time,
-            "activities" : activities
+            "activities" : activities,
+            "location_list" : location_list
         })
         return schedule
     
