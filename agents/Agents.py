@@ -189,20 +189,23 @@ class AgentsPool:
         activity_stat = {}
         heartrate_stat = {}
         for i, id in enumerate(self.pool):
-            _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catelog", "heartrate"])
+            try:
+                _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catelog", "heartrate"])
 
-            for time in _temp_records.keys():
-                # or (time.endswith("20")) or (time.endswith("40"))
-                if (time.endswith("0")) :
-                    _time = time.split(" ")[1]
-                    if i==0:
-                        activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catelog"]}
-                        heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"]}
+                for time in _temp_records.keys():
+                    # or (time.endswith("20")) or (time.endswith("40"))
+                    if (time.endswith("0")) :
+                        _time = time.split(" ")[1]
+                        if i==0:
+                            activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catelog"]}
+                            heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"]}
+                        else:
+                            activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catelog"]
+                            heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"]
                     else:
-                        activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catelog"]
-                        heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"]
-                else:
-                    continue
+                        continue
+            except:
+                logger.error()
         return {"activity":activity_stat, "heartrate":heartrate_stat}
 
     def fetch_all_donedates(self):
