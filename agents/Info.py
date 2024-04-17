@@ -37,13 +37,13 @@ def description_prompt(**kwargs):
     # prompt += "The income should be in dollars. "
     # prompt += "The birthday should be in the MM-DD-YYYY format. "
     # prompt += "The demographic of this person should represent the US population sample. "
-    prompt += "The generated profile should match the following guidance: <"
+    prompt += "The generated profile should match the following guidance:\n<"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
-    prompt += "The physical status of {Pronoun} is {diesease}. "
-    prompt += "{Pronoun} is a {occupation} with annual income {income}, working at {company}, {company_address}. "
+    prompt += "The physical status of {Pronoun} is {diesease}, {descirbe the effect of the disease}."
+    prompt += "{Pronoun} is a {occupation} with annual income {income} at {company} ({company_address}), {describe retirement status}. "
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
-    prompt += "{Pronoun}'s date of birth is {birthday}.> "
-    prompt += "\n And summarize the key information in your generation, and return your answer in JSON format: "
+    prompt += "{Pronoun}'s date of birth is {birthday}. {possible life activity preference}>\n"
+    prompt += "\nLimit the description within 100 words, return your answer in JSON format: "
     prompt += "{\"description\":\"profile_description\"}"
 
     return prompt
