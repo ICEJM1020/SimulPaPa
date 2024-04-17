@@ -207,7 +207,6 @@ class Brain:
                     )
                     self.short_memory.schedule =_schedule.dump_dict()
                     if CONFIG["debug"]: print(self.short_memory.schedule)
-                    print(self.short_memory.schedule)
 
                     response = self._run_schedule()
                     self.save_cache()
@@ -411,7 +410,6 @@ class Brain:
             heartrate = heartrate.dump_list()
         self.short_memory.cur_heartrate_list = heartrate
         if CONFIG["debug"]: print(heartrate)
-        print(heartrate)
 
 
     def _decompose_task(self, re_decompose=False) -> Decompose:

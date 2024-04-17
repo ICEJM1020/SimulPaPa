@@ -152,7 +152,6 @@ def dalle_portrait(description):
         n=1,
     )
     image_url = response.data[0].url
-    print(response)
     response = requests.get(image_url)
     return response.content
 
