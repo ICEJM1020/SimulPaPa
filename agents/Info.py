@@ -33,37 +33,33 @@ def description_prompt(**kwargs):
     prompt += has_info
     prompt += "The following information is missing and you could jump them: "
     prompt += missing_info
-    # prompt += "This year is 2023. "
-    # prompt += "The income should be in dollars. "
-    # prompt += "The birthday should be in the MM-DD-YYYY format. "
-    # prompt += "The demographic of this person should represent the US population sample. "
     prompt += "The generated profile should match the following guidance:\n<"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
     prompt += "The physical status of {Pronoun} is {diesease}, {descirbe the effect of the disease}."
-    prompt += "{Pronoun} is a {occupation} with annual income {income} at {company} ({company_address}), {describe retirement status}. "
+    prompt += "{Pronoun} is a {occupation} with annual income {income} at {company} ({company_address}), {infer_retirement_status}. "
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
-    prompt += "{Pronoun}'s date of birth is {birthday}. {possible life activity preference}>\n"
+    prompt += "{Pronoun}'s date of birth is {birthday}. {possible_life_activity_preference}>\n"
     prompt += "\nLimit the description within 100 words, return your answer in JSON format: "
     prompt += "{\"description\":\"profile_description\"}"
 
     return prompt
 
 
-def gpt_description(name, birthday, retry=5,  **kwargs):
+def gpt_description(name, birthday, retry=5, **kwargs):
     for try_idx in range(retry):
         try:
             description = _gpt_description(name, birthday, **kwargs)
             assert "description" in description.keys()
         except:
             if try_idx + 1 == retry:
-                raise {"error":"Error generating description."}
+                return {"error":"Error generating description."}
             else:
                 continue
         else:
             return description["description"]
 
 
-def _gpt_description(name, birthday, **kwargs) -> dict:
+def _gpt_description(name, birthday, type="agent", **kwargs) -> dict:
     open_ai_client = OpenAI( 
         api_key=CONFIG["openai"]["api_key"],
         organization=CONFIG["openai"]["organization"],
@@ -72,6 +68,7 @@ def _gpt_description(name, birthday, **kwargs) -> dict:
     age = int(date.today().year) - int(birthday.split("-")[-1])
     
     prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
+
     completion = open_ai_client.chat.completions.create(
         model = CONFIG["openai"]["model"], 
         
@@ -89,7 +86,7 @@ def random_generate(short_description, retry=5):
             infos = _random_generate(short_description)
         except:
             if try_idx + 1 == retry:
-                raise {"error":"Error generating information."}
+                return {"error":"Error generating information."}
             else:
                 continue
         else:
@@ -105,8 +102,6 @@ def _random_generate(short_description) -> dict:
     prompt = "Generate a realistic profile corresponding to the following short description:\n"
     prompt += short_description
     prompt += "\n\n"
-    # prompt += "Example 1:\nJohn Smith is a 75-year-old Caucasian male living in an apartment at 123 Main Street, Downtown, Anytown, California, 90210. The physical status of him is early-stage Parkinson's disease. He is a retired Engineer with an annual income of $50,000, previously working at ABC Engineering located at 456 Industrial Road, Anytown, California, 90210. John speaks English and holds a Bachelor's degree in Engineering. His date of birth is May 12, 1948."
-    # prompt += "\n\n"
     prompt += "This year is 2023. "
     prompt += "The income should be in dollars. "
     prompt += "The birthday should be in the MM-DD-YYYY format. "
@@ -114,7 +109,7 @@ def _random_generate(short_description) -> dict:
     prompt += "Here is the template of the profile description:\n"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
     prompt += "The physical status of {Pronoun} is {diesease}. "
-    prompt += "{Pronoun} is a {occupation} with annual income {income}, working at {company}, {company_address}. "
+    prompt += "{Pronoun} is a {occupation} with annual income {income}, working at {company} ({company_address}), {retirement}. "
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
     prompt += "{Pronoun}'s date of birth is {birthday}.> "
     prompt += "\nSummarize the information and return your answer in JSON format:\n"
@@ -133,6 +128,52 @@ def _random_generate(short_description) -> dict:
     )
     return json.loads(completion.choices[0].message.content)
 
+
+def extract_info(short_description, retry=5):
+    for try_idx in range(retry):
+        try:
+            infos = _extract_info(short_description)
+        except:
+            if try_idx + 1 == retry:
+                return {"error":"Error extracting information."}
+            else:
+                continue
+        else:
+            return infos
+
+def _extract_info(short_description):
+    infos = {key:"" for key in CONFIG["info"]}
+    infos["gender"] = "male_or_female"
+    infos["retirement"] = "yes_or_no"
+
+    prompt = "Extract Key information from this short description:\n"
+    prompt += short_description
+    prompt += "\n\n"
+    prompt += "Here are some options for some key information, which if mentioned in short description, you need to chooose from them:\n"
+    prompt += "Working Industry: "
+    prompt += json.dumps(CONFIG["industry"])
+    prompt += "Education Level: "
+    prompt += json.dumps(CONFIG["education"])
+    prompt += "Annual Income: "
+    prompt += json.dumps(CONFIG["income"])
+    prompt += "Race: "
+    prompt += json.dumps(CONFIG["race"])
+    prompt += "\nBirthday is required, which you can generate an estimated birthday based on the description, format as \"MM-DD-YYYY\". Summarize the information and return your answer in JSON format, keep missing information empty:\n"
+    prompt += json.dumps(infos)
+
+    open_ai_client = OpenAI( 
+        api_key=CONFIG["openai"]["api_key"],
+        organization=CONFIG["openai"]["organization"],
+    )
+
+    completion = open_ai_client.chat.completions.create(
+        model = CONFIG["openai"]["model"],
+        temperature = 0.5,
+        messages=[{
+            "role": "user", "content": prompt
+            }]
+    )
+    return json.loads(completion.choices[0].message.content)
 
 def dalle_portrait(description):
     prompts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")

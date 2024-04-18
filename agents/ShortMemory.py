@@ -299,7 +299,7 @@ class ShortMemory:
     @property
     def cur_chatbot(self):
         if self.date_time in self._cur_chatbot_dict.keys():
-            return self._cur_chatbot_dict[self.date_time].replace("\n", ";")
+            return self._cur_chatbot_dict[self.date_time].replace("\n", ";").replace("\"", "'")
         else:
             return "null"
 

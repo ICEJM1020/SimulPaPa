@@ -205,7 +205,7 @@ class AgentsPool:
                     else:
                         continue
             except:
-                logger.error()
+                logger.error(f"{self._uuid} agent({id}) fetch {date} activity data failed.")
         return {"activity":activity_stat, "heartrate":heartrate_stat}
 
     def fetch_all_donedates(self):

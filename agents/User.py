@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 from config import CONFIG
 from logger import logger
-from agents.Info import gpt_description, random_generate
+from agents.Info import gpt_description, random_generate, extract_info
 from agents.Agents import AgentsPool
 from agents.utils import *
 
@@ -334,4 +334,5 @@ def delete_user_filetree(_uuid):
 def random_user(short_description):
     return random_generate(short_description)
 
-
+def vague_user(short_description):
+    return extract_info(short_description)

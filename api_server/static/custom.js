@@ -29,7 +29,7 @@ function loadContent(content) {
     if (content.startsWith("user")){
 
         username = ""
-        segs = content.split("-")
+        var segs = content.split("-")
         for (var seg in segs){
             if (seg==0){
                 continue;
@@ -218,7 +218,7 @@ function check_info_tree(username){
 function vague_create_user(){
     var formData = new FormData(document.getElementById('vague_create_form'))
 
-    var _random_create_form = new FormData();
+    var _vague_create_form = new FormData();
 
     for (var [key, value] of formData.entries()) {
         if (["short_description"].includes(key)){
@@ -227,7 +227,7 @@ function vague_create_user(){
                 return 0
             }
             else{
-                _random_create_form.set("short_description", value)
+                _vague_create_form.set("short_description", value)
             }
         }
         if (["start_date"].includes(key)){
@@ -237,14 +237,16 @@ function vague_create_user(){
     }
 
     $.ajax({
-        url: "/user/random",
+        // url: "/user/random",
+        url: "/user/vague",
         type: 'POST',
         async: false,
-        data: _random_create_form,
+        data: _vague_create_form,
         processData: false,
         contentType: false,
         dataType: 'json',
         success: function(res) {
+            console.log(res)
             infos = res["infos"]
 
             formData.delete("short_description")
@@ -767,6 +769,20 @@ function show_stat(){
 
 function load_user_page(username){
     if_activated = activate_user(username)
+
+    if ((cur_user in check_tree_interval) && !(cur_user in new_user_start_simulation)){
+        clearInterval(check_tree_interval[cur_user]);
+        delete check_tree_interval[cur_user];
+    }
+    if ((cur_user in check_pool_interval) && !(cur_user in new_user_start_simulation)) {
+        clearInterval(check_pool_interval[cur_user]);
+        delete check_pool_interval[cur_user];
+    }
+    if ((cur_user in check_simul_interval) && !(cur_user in new_user_start_simulation)) {
+        clearInterval(check_simul_interval[cur_user]);
+        delete check_simul_interval[cur_user];
+    }
+
     if (if_activated) {
         cur_user = username
 

@@ -9,7 +9,7 @@ import json
 import os
 
 from config import CONFIG
-from agents import create_user_filetree, delete_user_filetree, random_user, USER_POOL
+from agents import create_user_filetree, delete_user_filetree, random_user, vague_user, USER_POOL
 from logger import logger
 
 from .utils import *
@@ -78,7 +78,7 @@ def create_user():
 
 
 @ubp.route(f"/{route_group}/random", methods=["GET", "POST"])
-def radnom_user():
+def create_random_user():
     req_form = request.form
     return_body = {"status" : False}
     if not ("short_description" in req_form):
@@ -99,6 +99,40 @@ def radnom_user():
         return_body = {
             "status" : False,
             "message" : "Random creation failed"
+        }
+    else:
+        return_body = {
+            "status" : True,
+            "infos" : infos
+        }
+
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@ubp.route(f"/{route_group}/vague", methods=["GET", "POST"])
+def create_vague_user():
+    req_form = request.form
+    return_body = {"status" : False}
+    if not ("short_description" in req_form):
+        return_body = {
+            "status" : False,
+            "message" : "Missing key information"
+        }
+        response = make_response(json.dumps(return_body), 500)
+        response.headers["Content-Type"] = "application/json"
+        return response
+    else:
+        short_description = req_form["short_description"]
+    
+    return_body = {}
+    try:
+        infos = vague_user(short_description)
+    except:
+        return_body = {
+            "status" : False,
+            "message" : "extract information failed"
         }
     else:
         return_body = {
