@@ -33,14 +33,14 @@
     "chatbot_suffix" : "Now it is {cur_time}, based on the history of Chatbot records and current Activity Plan, predict the (maybe multiple) specific time when the Chatbot will be used during the Activity Plan. You could be creative to imagine you are the Chatbot. The useage frequency should match the user's usage preference. The usage of the ChatBot (or the chat topic) must accord with the someone's current status e.g. during a meeting, people may not use ChatBot; during the morning routine, people may ask the weather of today; during the commute to work, people may ask about the trafic. \n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
 
     "heartrate_prefix" : "Personal Description:\n{description}\n\nHeart Rate History:\n{hr_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict the heart rate changes during this activity plan.",
-    "heartrate_example_prompt" : "For example, current heart rate is {cur_hr}, and when doing {activity}, the heart rate may change to follow a gaussian distribution which has mean value of {mean} and standard deviation {std}",
+    "heartrate_example_prompt" : "For example, current heart rate of a {age} years old person is {cur_hr}, and when doing {activity}, the heart rate may change to follow a gaussian distribution which has mean value of {mean} and standard deviation {std}",
     "heartrate_example" : [
-        {"cur_hr": 68, "activity":"Exercising", "mean":100, "std":15},
-        {"cur_hr": 58, "activity":"Eating", "mean":60, "std":8},
-        {"cur_hr": 102, "activity":"Cool-down", "mean":80, "std":12},
-        {"cur_hr": 65, "activity":"Walking to the station", "mean":76, "std":8},
-        {"cur_hr": 68, "activity":"Meeting", "mean":65, "std":8},
-        {"cur_hr": 67, "activity":"Sleeping", "mean":55, "std":5}
+        {"age": 19, "cur_hr": 72, "activity":"Exercising", "mean":120, "std":15},
+        {"age": 25, "cur_hr": 68, "activity":"Eating", "mean":70, "std":8},
+        {"age": 31, "cur_hr": 123, "activity":"Cool-down", "mean":80, "std":12},
+        {"age": 68, "cur_hr": 55, "activity":"Walking to the station", "mean":63, "std":8},
+        {"age": 72, "cur_hr": 58, "activity":"Meeting", "mean":60, "std":8},
+        {"age": 81, "cur_hr": 57, "activity":"Sleeping", "mean":55, "std":5}
     ],
-    "heartrate_suffix" : "Now it is {cur_time}, and the heart rate is {cur_hr}. Based on the history of heart rate records and current Activity Plan, predict the future heart rate range during the Activity Plan. You need to figure out your answer based on realistic human heart rate fluctuation.\n\n!! NOTICE !!: The heart rate mostly depends on what activity is doing, and it need to follow the physical statuts of this person, such as age, disease, and so on, which indicates in Personal Description. You can summarize your thoughts and give a reaasonable estimation of the mean value and standard deviation.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}"
+    "heartrate_suffix" : "Now it is {cur_time}, and the heart rate is {cur_hr}. Based on the history of heart rate records and current Activity Plan, predict the future heart rate range during the Activity Plan. You need to figure out your answer based on realistic human heart rate fluctuation.\n\n!! NOTICE !!: The heart rate mostly depends on what activity is doing, and it need to follow the physical statuts of this person ({description}), such as age ({age}), disease ({disease}), and so on, which indicates in Personal Description. You can summarize your thoughts and give a reaasonable estimation of the mean value and standard deviation.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}"
 }       

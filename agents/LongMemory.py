@@ -68,6 +68,18 @@ class LongMemory:
         return self.info["work_addr"]
     
     @property
+    def disease(self):
+        return self.info["disease"]
+    
+    @property
+    def age(self):
+        return self.info["age"]
+    
+    @property
+    def name(self):
+        return self.info["name"]
+    
+    @property
     def daily_purpose(self):
         return self.memory_tree["daily_purpose"]
     

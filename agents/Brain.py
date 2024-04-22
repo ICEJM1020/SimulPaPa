@@ -595,6 +595,7 @@ class Brain:
         for entry in self._mmdata_prompts['heartrate_example']:
             # print(entry)
             hr_example.append({
+                    "age": entry["age"],
                     "cur_hr": entry["cur_hr"],
                     "activity": entry["activity"],
                     "mean": entry["mean"],
@@ -634,6 +635,9 @@ class Brain:
             'decompose' : json.dumps(decompose),
             'cur_time' : self.short_memory.cur_time,
             'cur_hr' : self.short_memory.cur_heartrate,
+            'age': self.long_memory.age,
+            'disease': self.long_memory.disease,
+
         }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
 
         response = results['text'].replace("24:00", "23:59")

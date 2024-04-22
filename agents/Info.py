@@ -9,6 +9,7 @@ import os
 import threading
 import random
 import re
+from datetime import datetime
 
 from openai import OpenAI
 import requests
@@ -45,7 +46,9 @@ def description_prompt(**kwargs):
     return prompt
 
 
-def gpt_description(name, birthday, retry=5, **kwargs):
+def gpt_description(name, birthday, _type="agent", retry=5, **kwargs):
+    # description = _gpt_description(name, birthday, **kwargs)
+    # return description["description"]
     for try_idx in range(retry):
         try:
             description = _gpt_description(name, birthday, **kwargs)
@@ -59,15 +62,16 @@ def gpt_description(name, birthday, retry=5, **kwargs):
             return description["description"]
 
 
-def _gpt_description(name, birthday, type="agent", **kwargs) -> dict:
+def _gpt_description(name, birthday, _type="agent", **kwargs) -> dict:
     open_ai_client = OpenAI( 
         api_key=CONFIG["openai"]["api_key"],
         organization=CONFIG["openai"]["organization"],
     )
-
-    age = int(date.today().year) - int(birthday.split("-")[-1])
-    
-    prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
+    if _type=="user":
+        age = int(date.today().year) - int(birthday.split("-")[-1])
+        prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
+    else:
+        prompt = description_prompt(name=name, birthday=birthday, **kwargs)
 
     completion = open_ai_client.chat.completions.create(
         model = CONFIG["openai"]["model"], 
@@ -493,6 +497,7 @@ class InfoTree():
         )
         res["name"] = add_info["name"]
         res["birthday"] = add_info["birthday"]
+        res["age"] = int((datetime.strptime("01-01-2024", "%m-%d-%Y") - datetime.strptime(add_info["birthday"], "%m-%d-%Y")).days // 365.2425)
         res["zipcode"] = add_info["zipcode"]
         res["language"] = add_info["language"]
         res["building"] = add_info["building"]

@@ -210,8 +210,9 @@ class User:
 
 
     def generate_description(self):
+        self.description = gpt_description(**self.info, _type="user")
         try:
-            self.description = gpt_description(**self.info)["description"]
+            self.description = gpt_description(**self.info, _type="user")
             self.status = "ready"
             logger.info(f"UUID {self._uuid} generate description successfully")
         except:
