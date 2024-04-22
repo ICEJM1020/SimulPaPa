@@ -133,13 +133,13 @@ class Brain:
             raise Exception("Simulation type error!")
         self.status = "working"
         simul_process = mp.Process(
-            target=self._plan, 
-            kwargs={
-                '_status':self.running_status, 
-                'days':days, 
-                'start_date':start_date, 
-                'start_time':cur_time
-                }
+                target=self._plan, 
+                kwargs={
+                    '_status':self.running_status, 
+                    'days':days, 
+                    'start_date':start_date, 
+                    'start_time':cur_time
+                    }
                 )
         simul_process.start()
 

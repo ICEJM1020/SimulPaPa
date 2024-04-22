@@ -641,7 +641,7 @@ function GenerateInfoTree(){
             async: true,
             dataType: 'json',
             success: function(res) {
-                check_tree_interval[cur_user] = setInterval(check_info_tree, check_interval*50, cur_user);
+                check_tree_interval[cur_user] = setInterval(check_info_tree, check_interval*10, cur_user);
             }
           });
     }
@@ -689,7 +689,7 @@ function GenerateAgentsPool(username){
                 dataType: 'json',
                 success: function(res) {
                     if (!(cur_user in check_pool_interval)){
-                        check_pool_interval[cur_user] = setInterval(check_agents_pool, check_interval, cur_user);
+                        check_pool_interval[cur_user] = setInterval(check_agents_pool, check_interval*10, cur_user);
                     }
                 }
                 });
@@ -782,6 +782,9 @@ function load_user_page(username){
         clearInterval(check_simul_interval[cur_user]);
         delete check_simul_interval[cur_user];
     }
+    if (update_stat_interval)
+        clearInterval(update_stat_interval);
+        update_stat_interval = null
 
     if (if_activated) {
         cur_user = username

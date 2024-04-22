@@ -34,6 +34,7 @@ def description_prompt(**kwargs):
     prompt += has_info
     prompt += "The following information is missing and you could jump them: "
     prompt += missing_info
+    prompt += "Today is 01-01-2024 (compute age based on today's date). "
     prompt += "The generated profile should match the following guidance:\n<"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
     prompt += "The physical status of {Pronoun} is {diesease}, {descirbe the effect of the disease}."
@@ -51,7 +52,7 @@ def gpt_description(name, birthday, _type="agent", retry=5, **kwargs):
     # return description["description"]
     for try_idx in range(retry):
         try:
-            description = _gpt_description(name, birthday, **kwargs)
+            description = _gpt_description(name, birthday, _type=_type, **kwargs)
             assert "description" in description.keys()
         except:
             if try_idx + 1 == retry:
@@ -106,7 +107,7 @@ def _random_generate(short_description) -> dict:
     prompt = "Generate a realistic profile corresponding to the following short description:\n"
     prompt += short_description
     prompt += "\n\n"
-    prompt += "This year is 2023. "
+    prompt += "Today is 01-01-2024 (compute age based on today's date). "
     prompt += "The income should be in dollars. "
     prompt += "The birthday should be in the MM-DD-YYYY format. "
     prompt += "Every information should be specific and realistic. "
@@ -269,15 +270,24 @@ class InfoTree():
                     self.tree["option"][str(idx)] = {
                             "city" : city["city"],
                             "state" : city["state"],
-                            "education" : {"option":[k for k in city["education"]], "prob":[float(city["education"][k]) for k in city["education"]]},
-                            "race" : {"option":[k for k in city["race"]], "prob":[float(city["race"][k]) for k in city["race"]]},
-                            "income" : {"option":[k for k in city["income"]], "prob":[float(city["income"][k]) for k in city["income"]]},
-                            "industry" : {"option":[k for k in city["industry"]], "prob":[float(city["industry"][k]) for k in city["industry"]]},
-                            "gender" : {"option":["male", "female"], "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
+                            # "education" : {"option":[k for k in city["education"]], "prob":[float(city["education"][k]) for k in city["education"]]},
+                            # "race" : {"option":[k for k in city["race"]], "prob":[float(city["race"][k]) for k in city["race"]]},
+                            # "income" : {"option":[k for k in city["income"]], "prob":[float(city["income"][k]) for k in city["income"]]},
+                            # "industry" : {"option":[k for k in city["industry"]], "prob":[float(city["industry"][k]) for k in city["industry"]]},
+                            # "gender" : {"option":["male", "female"], "prob":[float(city["gender"]["male"]), float(city["gender"]["female"])]},
+                            "education" : self._compute_prob("education", city),
+                            "race" : self._compute_prob("race", city),
+                            "income" : self._compute_prob("income", city),
+                            "industry" : self._compute_prob("industry", city),
+                            "gender" : self._compute_prob("gender", city),
                             "district" : {},
                         }
-                    self.tree["prob"].append(float(city["similarity"]))
-                    _p += float(city["similarity"])
+                    if city["city"]==self.user_info["city"]:
+                        self.tree["prob"].append(float(city["similarity"]) + CONFIG["user_info_rate"])
+                        _p += float(city["similarity"]) + CONFIG["user_info_rate"]
+                    else:
+                        self.tree["prob"].append(float(city["similarity"]))
+                        _p += float(city["similarity"])
                 self.tree["prob"] = [x / _p for x in self.tree["prob"]]
             except:
                 if try_idx + 1 == retry:
@@ -287,20 +297,37 @@ class InfoTree():
                     continue
             else:
                 return True
+            
+    def _compute_prob(self, aim_key:str, ans_dic:list) -> dict:
+        if self.user_info[aim_key]:
+            options = []
+            probs = []
+            for k in ans_dic[aim_key]:
+                options.append(k)
+                if k==self.user_info[aim_key]:
+                    probs.append(float(ans_dic[aim_key][k]) + CONFIG["user_info_rate"])
+                else:
+                    probs.append(float(ans_dic[aim_key][k]))
+            probs = [p / sum(probs) for p in probs]
+            return {"option":options, "prob":probs}
+        else:
+            return {"option":[k for k in ans_dic[aim_key]], "prob":[float(ans_dic[aim_key][k]) for k in ans_dic[aim_key]]}
+
 
     def _search_city_state_chat(self, city, state, size=5):
         industries = {key : "population_percentage_in_decimal" for key in CONFIG["industry"]}
         educations = {key : "population_percentage_in_decimal" for key in CONFIG["education"]}
         races = {key : "population_percentage_in_decimal" for key in CONFIG["race"]}
         incomes = {key : "population_percentage_in_decimal" for key in CONFIG["income"]}
-
-        prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development. " 
-        prompt += f"Please find me {size} cities with similar conditions in the US. "
-        prompt += "Furthermore, tell me about the population statistic in this state. These data need to be based on real data, from resources like census bureau or government report. "
-        #### data based on? gpt3.5 2010-2020, gpt4 census?
+        if "city":
+            prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development. " 
+            # prompt = f"Please find me {size} cities in the US (including {city}), rating them use the similarity to the {city}. " 
+        else:
+            prompt = f"Please find me {size} most representive cities in the US, rating them use the similarity. " 
+        prompt += "Furthermore, tell me about the population statistic in each state. These data need to be based on real data, from resources like census bureau or government report. "
         prompt += "The data should based on real information during 2010 to 2020. Decimal precision needs to reach 4 decimal places. "
         prompt += "Return your answer in the following JSON format without any other information: "
-        prompt += "{\"response\" : [{\"city\" : \"city_1\", \"state\" : \"state/province_1\", \"similarity\" : \"similarity_to_given_city_in_decimal\", "
+        prompt += "{\"response\" : [{\"city\" : \"city_name\", \"state\" : \"state/province\", \"similarity\" : \"similarity_to_given_city_in_decimal\", "
         prompt += f"\"education\": {json.dumps(educations)}, "
         prompt += f"\"income\": {json.dumps(incomes)}, "
         prompt += f"\"industry\": {json.dumps(industries)}, "
@@ -323,7 +350,7 @@ class InfoTree():
         return cities
     
 
-    def _search_district(self, u_city, u_state, city, state, district, size=3, retry=5):
+    def _search_district(self, u_city, u_state, city, state, district, size=5, retry=5):
         for try_idx in range(retry):
             try:
                 res = self._search_district_chat(u_city, u_state, city, state, district, size)
@@ -336,7 +363,7 @@ class InfoTree():
             else:
                 return res
 
-    def _search_district_chat(self, u_city, u_state, city, state, district, size=3):
+    def _search_district_chat(self, u_city, u_state, city, state, district, size=5):
         prompt = f"{district} is a zone in {u_city}, {u_state}. "
         prompt += "Based on your knowledge, to evaluate the convenience of this district, including the population, the infrastructure, and the medical and educational resources. "
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
@@ -371,19 +398,21 @@ class InfoTree():
     def _search_disease(self, disease, size=10, retry=5):
         # res = self._search_disease_chat(disease, size)
         # self.tree["disease"] = res
-
-        for try_idx in range(retry):
-            try:
-                res = self._search_disease_chat(disease, size)
-            except:
-                if try_idx + 1 == retry:
-                    self.status = "error"
-                    raise Exception(f"Search disease failed {retry} times")
+        if self.user_info["disease"]:
+            self.tree["disease"] = {"option": [self.user_info["disease"]], "prob": [1.0]}
+        else:
+            for try_idx in range(retry):
+                try:
+                    res = self._search_disease_chat(disease, size)
+                except:
+                    if try_idx + 1 == retry:
+                        self.status = "error"
+                        raise Exception(f"Search disease failed {retry} times")
+                    else:
+                        continue
                 else:
-                    continue
-            else:
-                self.tree["disease"] = res
-                return True
+                    self.tree["disease"] = res
+                    return True
 
     def _search_disease_chat(self, disease, size=10):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
@@ -522,7 +551,10 @@ class InfoTree():
         if random.random() > healthy_rate:
             res["disease"] = "Healthy"
         else:
-            res["disease"] = random.choices(self.tree["disease"]["option"], weights=self.tree["disease"]["prob"])[0]
+            if len(self.tree["disease"]["option"]) == 1:
+                res["disease"] = self.tree["disease"]["option"][0]
+            else:
+                res["disease"] = random.choices(self.tree["disease"]["option"], weights=self.tree["disease"]["prob"])[0]
         
         return res
 

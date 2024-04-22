@@ -80,16 +80,19 @@ class AgentsPool:
             else:
                 os.mkdir(agent_folder)
             
-            try:
-                agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
-            except:
-                if_err = True
-                rmtree(agent_folder)
-                logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
-                error += f"{i}, "
-            else:
-                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
-                self.pool[i].save()
+            agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
+            self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
+            self.pool[i].save()
+            # try:
+            #     agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
+            # except:
+            #     if_err = True
+            #     rmtree(agent_folder)
+            #     logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
+            #     error += f"{i}, "
+            # else:
+            #     self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
+            #     self.pool[i].save()
         
         if if_err:
             self._status = "error create" + error
