@@ -1191,8 +1191,9 @@ function show_chat_hist(){
         // console.log(chat_his[idx]["time"])
         // <div class="balon1 p-2 m-0 position-relative" data-is="You - 3:20 pm"><a class="float-right"> Hey there! What's up? </a></div>
         if (chat_his[idx]["chatbot"].includes(";")){
-            _temp = chat_his[idx]["chatbot"].split(";")
+            var _temp = chat_his[idx]["chatbot"].split(";")
             for (var idx_2 in _temp){
+                if (_temp[idx_2].length <= 0) {continue};
                 // console.log(_temp[idx])
                 // console.log(_temp[idx].toLowerCase().includes("chatbot:"))
                 if ( (_temp[idx_2].toLowerCase().includes("chatbot:")) || (_temp[idx_2].toLowerCase().includes("coco:")) || (_temp[idx_2].toLowerCase().includes("alexa:"))) {
@@ -1205,7 +1206,7 @@ function show_chat_hist(){
                     _html += "<div class=\"row balonuser p-2 m-0 position-relative\" data-is=\"" 
                     _html += chat_his[idx]["time"] 
                     _html += "\"><a class=\"float-right ml-auto mt-auto\">" 
-                    _html += get_utter(_temp[idx_2]) 
+                    _html += get_utter(_temp[idx_2])
                     _html += "</a><img class=\"float-right balon-img mt-3 mx-1\" src=\""
                     _html += "/agent/"+cur_user+"/"+cur_agent_id+"/portrait"
                     _html += "\"></div>"
