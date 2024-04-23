@@ -80,19 +80,21 @@ class AgentsPool:
             else:
                 os.mkdir(agent_folder)
             
-            agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
-            self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
-            self.pool[i].save()
-            # try:
-            #     agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
-            # except:
-            #     if_err = True
-            #     rmtree(agent_folder)
-            #     logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
-            #     error += f"{i}, "
-            # else:
-            #     self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
-            #     self.pool[i].save()
+            if CONFIG["debug"]:
+                agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
+                self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
+                self.pool[i].save()
+            else:
+                try:
+                    agent_info = self.info_tree.generate_info_dict(healthy_rate=self.healthy_rate)
+                except:
+                    if_err = True
+                    rmtree(agent_folder)
+                    logger.error(f"try to create agent {i} for {self.info['name']}({self._uuid}) failed")
+                    error += f"{i}, "
+                else:
+                    self.pool[i] = Agent(index=i, user_folder=self.user_folder, info=agent_info, start_date=self.start_date)
+                    self.pool[i].save()
         
         if if_err:
             self._status = "error create" + error
@@ -151,17 +153,25 @@ class AgentsPool:
 
 
     def start_simulation(self):
-        logger.info(f"start simulation for {self.info['name']}({self._uuid})")
-        self.simul_status = "working"
-        for agent in self.pool.values():
-            agent.start_planing(self.simul_days)
+        self._monitor_agent_status()
+        if self.simul_status == "working":
+            return 0
+        else:
+            logger.info(f"start simulation for {self.info['name']}({self._uuid})")
+            self.simul_status = "working"
+            for agent in self.pool.values():
+                agent.start_planing(self.simul_days)
 
     
     def continue_simulation(self, days=1):
-        logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
-        self.simul_status = "working"
-        for agent in self.pool.values():
-            agent.continue_planing(days)
+        self._monitor_agent_status()
+        if self.simul_status == "working":
+            return 0
+        else:
+            logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
+            self.simul_status = "working"
+            for agent in self.pool.values():
+                agent.continue_planing(days)
 
     def set_intervention(self, plan, agent_list):
         logger.info(f"Set intervention plan for {self.info['name']}({self._uuid}): {plan}")
@@ -425,97 +435,112 @@ class Agent:
 
 
     def fetch_chatbot(self, date):
-        _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
-        _hist = _hist[_hist["chatbot"].notna()].loc[:, ['time', 'chatbot']]
-        return _hist.T.to_dict()
+        try:
+            _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        except:
+            return {}
+        else:
+            _hist = _hist[_hist["chatbot"].notna()].loc[:, ['time', 'chatbot']]
+            return _hist.T.to_dict()
 
     def fetch_heartrate(self, date):
-        _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
-        _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'heartrate']]
-        return _hist.T.to_dict()
+        try:
+            _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        except:
+            return {}
+        else:
+            _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'heartrate']]
+            return _hist.T.to_dict()
     
     def fetch_location_hist(self, date):
-        _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
-        _hist = _hist[_hist["location"].notna()]
+        try:
+            _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        except:
+            return {}
+        else:
+            _hist = _hist[_hist["location"].notna()]
 
-        cur_loc = _hist["location"][0]
-        cur_longi = _hist["longitude"][0]
-        cur_lati = _hist["latitude"][0]
-        loc_start_time = _hist["time"][0]
-        last_time = ""
-        loc_hist = []
-        for idx, row in _hist.iterrows():
+            cur_loc = _hist["location"][0]
+            cur_longi = _hist["longitude"][0]
+            cur_lati = _hist["latitude"][0]
+            loc_start_time = _hist["time"][0]
+            last_time = ""
+            loc_hist = []
+            for idx, row in _hist.iterrows():
 
-            if not cur_loc==row["location"]:
-                loc_hist.append({
-                    "location" : cur_loc,
-                    "longitude" : cur_longi,
-                    "latitude" : cur_lati,
-                    "start_time" : loc_start_time,
-                    "end_time" : last_time,
-                })
-                cur_loc = row["location"]
-                cur_longi = row["longitude"]
-                cur_lati = row["latitude"]
-                loc_start_time = row["time"]
-            last_time = row["time"]
+                if not cur_loc==row["location"]:
+                    loc_hist.append({
+                        "location" : cur_loc,
+                        "longitude" : cur_longi,
+                        "latitude" : cur_lati,
+                        "start_time" : loc_start_time,
+                        "end_time" : last_time,
+                    })
+                    cur_loc = row["location"]
+                    cur_longi = row["longitude"]
+                    cur_lati = row["latitude"]
+                    loc_start_time = row["time"]
+                last_time = row["time"]
 
-        return loc_hist
+            return loc_hist
     
     def fetch_schedule(self, date):
-        data = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        try:
+            data = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        except:
+            return {}
+        else:
+            schedule = []
+            cur_event = data["event"][0]
+            event_start_time = data["time"][0]
+            cur_activity = data["activity"][0]
+            activity_start_time = data["time"][0]
+            last_time = ""
+            activities = []
+            cur_location = data["location"][0]
+            location_list = []
+            for idx, row in data.iterrows():
+                if not cur_activity==row["activity"]:
+                    activities.append({
+                        "activity": cur_activity,
+                        "start_time" : activity_start_time,
+                        "end_time" : last_time
+                    })
+                    cur_activity = row["activity"]
+                    activity_start_time = row["time"]
 
-        schedule = []
-        cur_event = data["event"][0]
-        event_start_time = data["time"][0]
-        cur_activity = data["activity"][0]
-        activity_start_time = data["time"][0]
-        last_time = ""
-        activities = []
-        cur_location = data["location"][0]
-        location_list = []
-        for idx, row in data.iterrows():
-            if not cur_activity==row["activity"]:
-                activities.append({
-                    "activity": cur_activity,
-                    "start_time" : activity_start_time,
-                    "end_time" : last_time
-                })
-                cur_activity = row["activity"]
-                activity_start_time = row["time"]
+                if not cur_location==row["location"]:
+                    location_list.append(cur_location)
+                    cur_location = row["location"]
 
-            if not cur_location==row["location"]:
-                location_list.append(cur_location)
-                cur_location = row["location"]
+                if not cur_event==row["event"]:
+                    schedule.append({
+                        "event": cur_event,
+                        "start_time" : event_start_time,
+                        "end_time" : last_time,
+                        "activities" : activities,
+                        "location_list" : location_list
+                    })
+                    cur_event = row["event"]
+                    event_start_time = row["time"]
+                    activities = []
+                    location_list = []
 
-            if not cur_event==row["event"]:
-                schedule.append({
-                    "event": cur_event,
-                    "start_time" : event_start_time,
-                    "end_time" : last_time,
-                    "activities" : activities,
-                    "location_list" : location_list
-                })
-                cur_event = row["event"]
-                event_start_time = row["time"]
-                activities = []
-                location_list = []
+                last_time = row["time"]
 
-            last_time = row["time"]
-
-        activities.append({
-            "activity": cur_activity,
-            "start_time" : activity_start_time,
-            "end_time" : last_time
-        })
-        schedule.append({
-            "event": cur_event,
-            "start_time" : event_start_time,
-            "end_time" : last_time,
-            "activities" : activities,
-            "location_list" : location_list
-        })
-        return schedule
+            activities.append({
+                "activity": cur_activity,
+                "start_time" : activity_start_time,
+                "end_time" : last_time
+            })
+            schedule.append({
+                "event": cur_event,
+                "start_time" : event_start_time,
+                "end_time" : last_time,
+                "activities" : activities,
+                "location_list" : location_list
+            })
+            return schedule
     
     def fetch_records(self, date, col:list=["time", "activity"]):
         if not "time" in col:

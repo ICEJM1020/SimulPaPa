@@ -261,6 +261,7 @@ class Brain:
         for try_idx in range(self._retry_times):
             try:
                 purpose = self._define_daily_purpose_chat()
+                assert "answer" in purpose.keys()
             except:
                 if try_idx + 1 == self._retry_times:
                     # self.status = "error"
@@ -268,7 +269,7 @@ class Brain:
                 else:
                     continue
             else:
-                return purpose
+                return purpose["answer"]
 
     def _define_daily_purpose_chat(self):
         human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["define_purpose"])
@@ -296,7 +297,8 @@ class Brain:
             )
         results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
         if CONFIG["debug"]: print(results.content)
-        return results.content
+        print(results.content)
+        return json.loads(results.content)
 
 
     ###############
