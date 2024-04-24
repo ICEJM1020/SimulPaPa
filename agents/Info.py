@@ -474,16 +474,18 @@ class InfoTree():
     def _infer_occupation(self, name, income_range, location, education, industry):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. "
-        prompt += f"Based on collected information, we that {name} working in {industry}, with income range {income_range}. "
+        prompt += f"Based on collected information, we know that {name} working in {industry}, with income range {income_range}. "
         prompt += "Based on all of the provided information and your inference, provide a reasonable job for him/her and if he/she is retired. "
         prompt += f"And grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
         prompt += "This job needs to be specific and consistent with the career plan of this industry. "
         prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
+        prompt += "After find a job for him/her, the retirement status could be infer from the age. "
+        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are, like professors, CEO, etc."
         prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
         prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
         prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
         prompt += "Return your answer in the following JSON format: "
-        prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary_format_as\""
+        prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
         prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
         
