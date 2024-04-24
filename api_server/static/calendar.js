@@ -121,13 +121,13 @@ function generate_event_list(schedules) {
         }
     }
     return event_list;
-}
+};
 
 function randomClass() {
     choices = ["bg-primary", "bg-secondary","bg-success","bg-info","bg-warning","bg-danger","bg-dark"]
     var index = Math.floor(Math.random() * choices.length);
     return choices[index];
-  }
+};
 
 function init_calendar(e, schedules) {
     const first_date = Object.keys(schedules)[0]

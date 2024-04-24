@@ -227,7 +227,7 @@ class AgentsPool:
         for id in self.pool:
             _donedates = self.pool[id].fetch_done_dates()
             if donedates:
-                donedates = list(set(donedates).intersection(_donedates))
+                donedates = list(set(donedates).union(_donedates))
             else:
                 donedates = _donedates
 

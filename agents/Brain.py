@@ -297,7 +297,6 @@ class Brain:
             )
         results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
         if CONFIG["debug"]: print(results.content)
-        print(results.content)
         return json.loads(results.content)
 
 
