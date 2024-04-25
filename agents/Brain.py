@@ -149,7 +149,7 @@ class Brain:
             _status,
             days:int=1,
             start_date:str="03-01-2024",
-            start_time:str="00:00", 
+            start_time:str="08:00", 
             end_time:str="00:00"
             ):
         _status.value = 1
@@ -359,26 +359,28 @@ class Brain:
             partial_variables={"format_instructions": schedule_parser.get_format_instructions()},
         )
 
+
         chain = LLMChain(
-            llm=ChatOpenAI(
-                    api_key=CONFIG["openai"]["api_key"],
-                    organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-16k"],
-                    temperature=llm_temperature,
-                    verbose=self._verbose,
-                ),
+                llm=ChatOpenAI(
+                        api_key=CONFIG["openai"]["api_key"],
+                        organization=CONFIG["openai"]["organization"],
+                        model_name=CONFIG["openai"]["model-16k"],
+                        temperature=llm_temperature,
+                        verbose=self._verbose,
+                    ),
                 prompt=prompt,
             )
         
         results = chain.invoke(input={
             'intervention':self.long_memory.intervention,
             'description':self.long_memory.description,
+            'name':self.long_memory.name,
             'home_addr':self.long_memory.home_addr,
             'work_addr':self.long_memory.work_addr,
             'daily_purpose':self.long_memory.daily_purpose,
             'start_date':start_date,
             'start_time':start_time,
-            "event_examples":label_list_to_str(self._schedule_prompts["event_examples"])
+            # "event_examples":label_list_to_str(self._schedule_prompts["event_examples"])
         }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
         response = results['text'].replace("24:00", "23:59")
         return schedule_parser.parse(response)
@@ -478,6 +480,7 @@ class Brain:
         results = chain.invoke(input={
             'description':self.long_memory.description,
             'intervention':self.long_memory.intervention,
+            'name': self.long_memory.name,
             'cur_time':self.short_memory.date_time if re_decompose else self.short_memory.cur_event['start_time'],
             'end_time':self.short_memory.cur_event['end_time'],
             'cur_activity':self.short_memory.cur_activity,

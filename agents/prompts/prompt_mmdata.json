@@ -1,5 +1,5 @@
 {
-    "location_prefix" : "Personal Description:\n{description}\nLiving address: {home_addr}\nWorking address:{work_addr}\n\nHistory:\n{loc_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict the location trajectory during this activity plan.",
+    "location_prefix" : "Personal Description:\n{description}\nLiving address: {home_addr}\nWorking address:{work_addr}\n\nHistory:\n{loc_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict your location trajectory during this activity plan.",
     "location_example_prompt" : "For example: doing {activity}, the location could be {location}(longitude: {longitude}, latitude: {latitude})",
     "location_example" : [
             {"activity":"Eating Lunch", "location":"Starbucks, 4th Avenue", "latitude":47.607283, "longitude":-122.334550},
@@ -19,7 +19,7 @@
             {"activity":"Coffee break", "location" : "Gramercy Green, 3rd Avenue", "longitude":40.739414, "latitude":-73.983696},
             {"activity":"Friends dinner", "location" : "4 Union Square, East 14th Street", "longitude":40.734808, "latitude":-73.992022}
         ],
-    "location_suffix" : "Now it is {cur_time}, based on the history of location records and current Activity Plan, predict the future location trajectory during the Activity Plan. The location should match what this person is doing and following normal human activity banner. The future location trajectory need to continue the past location trajectory. The location should contain the room (optional), the building, the street.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
+    "location_suffix" : "Now it is {cur_time}, based on your history of location records and current Activity Plan, predict the future location trajectory during the Activity Plan. The location should match what this person is doing and following normal human activity banner. The future location trajectory need to continue the past location trajectory. The location should contain the room (optional), the building, the street.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
     "CoT" : "To answer this question, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:",
     
     "chatbot_prefix" : "Personal Description:\n{description}\nChatbot preferecen:{preference}\n\nHistory:\n{chat_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict when the smart Chatbot will be used during this activity plan.",

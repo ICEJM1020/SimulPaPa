@@ -56,6 +56,10 @@ class LongMemory:
         self.memory_tree["intervention"] = plan
 
     @property
+    def name(self):
+        return self.info["name"]
+
+    @property
     def description(self):
         return self.info["description"]
     
