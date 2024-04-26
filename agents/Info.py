@@ -550,13 +550,16 @@ class InfoTree():
         res["work_longitude"] = job_info["work_longitude"]
         res["work_latitude"] = job_info["work_latitude"]
 
-        if random.random() > healthy_rate:
-            res["disease"] = "Healthy"
+        if self.user_info['disease']:
+            res["disease"] = self.user_info['disease']
         else:
-            if len(self.tree["disease"]["option"]) == 1:
-                res["disease"] = self.tree["disease"]["option"][0]
+            if random.random() > healthy_rate:
+                res["disease"] = "Healthy"
             else:
-                res["disease"] = random.choices(self.tree["disease"]["option"], weights=self.tree["disease"]["prob"])[0]
+                if len(self.tree["disease"]["option"]) == 1:
+                    res["disease"] = self.tree["disease"]["option"][0]
+                else:
+                    res["disease"] = random.choices(self.tree["disease"]["option"], weights=self.tree["disease"]["prob"])[0]
         
         return res
 

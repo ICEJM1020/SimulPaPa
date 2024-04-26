@@ -364,7 +364,7 @@ class Brain:
                 llm=ChatOpenAI(
                         api_key=CONFIG["openai"]["api_key"],
                         organization=CONFIG["openai"]["organization"],
-                        model_name=CONFIG["openai"]["model-16k"],
+                        model_name=CONFIG["openai"]["model-turbo"],
                         temperature=llm_temperature,
                         verbose=self._verbose,
                     ),
@@ -470,7 +470,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-16k"],
+                    model_name=CONFIG["openai"]["model-turbo"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -560,7 +560,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-16k"],
+                    model_name=CONFIG["openai"]["model-turbo"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -625,7 +625,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-16k"],
+                    model_name=CONFIG["openai"]["model-turbo"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -689,7 +689,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-16k"],
+                    model_name=CONFIG["openai"]["model-turbo"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
