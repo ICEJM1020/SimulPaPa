@@ -441,7 +441,6 @@ class Brain:
             decompose_examples.append({
                     "event": entry["event"], 
                     "cur_activity" : entry["cur_activity"],
-                    "options" : entry["options"] if self.activities_by_labels else "",
                     "decompose":[]
                 })
             for event_entry in entry["decompose"]:
@@ -450,7 +449,7 @@ class Brain:
                         # json.dumps(event_entry).replace("{", "{{").replace("}", "}}")
                     )
         example_prompt = PromptTemplate(
-            input_variables=["event", "cur_activity", "options", "decompose"],
+            input_variables=["event", "cur_activity", "decompose"],
             template=self._decompose_prompts["example_prompt"]
         )
 
