@@ -324,7 +324,7 @@ class Brain:
                 self,
                 start_date,
                 start_time,
-                llm_temperature=1.0,
+                llm_temperature=1.2,
             ) -> Schedule:
         
         # Generate schedule examples
@@ -560,7 +560,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-turbo"],
+                    model_name=CONFIG["openai"]["model"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -625,7 +625,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-turbo"],
+                    model_name=CONFIG["openai"]["model"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
@@ -689,7 +689,7 @@ class Brain:
             llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model-turbo"],
+                    model_name=CONFIG["openai"]["model"],
                     temperature=llm_temperature,
                     verbose=self._verbose,
                 ),
