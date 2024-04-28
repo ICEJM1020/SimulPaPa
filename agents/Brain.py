@@ -395,6 +395,7 @@ class Brain:
             decompose = decompose.dump_list()
         self.short_memory.cur_decompose = decompose
         if CONFIG["debug"]: print(decompose)
+        print(decompose)
 
         location = self._predict_location(decompose=decompose)
         if isinstance(location, Location):
@@ -422,6 +423,7 @@ class Brain:
                 assert len(_decompose.decompose) > 0
             except:
                 if try_idx + 1 == self._retry_times:
+                    print("Decompose Error")
                     # self.status = "error"
                     return [{
                         "start_time" : self.short_memory.cur_event["start_time"],
@@ -434,7 +436,7 @@ class Brain:
             else:
                 return _decompose
 
-    def _decompose_task_chat(self, re_decompose, llm_temperature=1.5):
+    def _decompose_task_chat(self, re_decompose, llm_temperature=1.0):
         # Generate decompose examples
         decompose_examples = []
         for idx, entry in enumerate(self._decompose_prompts['example']):
