@@ -1,12 +1,11 @@
 {
     "prefix" : "Personal Description:\n{description}\n\nActivity Records:\n{past_activity_summary}\n\nIntervention Plan:\n{intervention}\n\nNow ({cur_time}), you ({name}) are {cur_activity} and want to decompose next schedule event ({cur_event}) into several activities.",
     "re_prefix" : "{description}\n\n{past_activity_summary}.\n\nAt {cur_time}, he/she has changed idea and want to do {cur_activity}. So he/she need to re-decompose remaining schedule event ({cur_event}) start from {cur_time} and end at {end_time}.",
-    "example_prompt" : "Current activity is {cur_activity}. Given these options:{options}. Here is an example of how to decompose a schedule event, {event}: {decompose}",
+    "example_prompt" : "Current activity is {cur_activity}. Here is an example of how to decompose a schedule event, {event}: {decompose}",
     "example" : [
         {
             "event":"{{\"start_time\" : \"02-01-2024 10:00\", \"end_time\" : \"02-01-2024 11:00\", \"event\" : \"Meeting\"}}",
             "cur_activity" : "Sitting at officedesk",
-            "options" : "Given these options which could be expanded: Scheduling follow-up events, Cleaning up the meeting space, Networking with participants, Problem-solving collaboratively, Taking a brief smoking break, Grabbing a quick soda, Adjusting the room setup.",
             "decompose":[
                 {"activity":"Walking to the meeting room", "start_time":"02-01-2024 10:00", "duration":"2 minutes", "end_time":"02-01-2024 10:02"},
                 {"activity":"Reviewing and modifying agendas", "start_time":"02-01-2024 10:02","duration":"10 minutes", "end_time":"02-01-2024 10:12"},
@@ -20,7 +19,6 @@
         {
             "event":"{{\"start_time\" : \"02-03-2024 10:00\", \"end_time\" : \"02-03-2024 10:30\", \"event\" : \"Commute to office\"}}",
             "cur_activity" : "Cleaning breakfast plate and cup",
-            "options" : "Given these options which could be expanded: Reading news or emails on the phone, Checking the route on a smartphone GPS, Eating a quick snack while walking, Sitting in a car or on public transport, Carrying a bag to the vehicle, Biking to the office, Walking to the car or transit stop", 
             "decompose":[
                 {"activity":"Walking to door and wear shoes", "start_time":"02-03-2024 10:00","duration":"2 minutes", "end_time":"02-03-2024 10:02"},
                 {"activity":"Walking to the car or transit stop", "start_time":"02-03-2024 10:02","duration":"5 minutes", "end_time":"02-03-2024 10:07"},
@@ -33,7 +31,6 @@
         {
             "event":"{{\"start_time\" : \"02-02-2024 09:00\", \"end_time\" : \"02-02-2024 09:15\", \"event\" : \"Morning routine\"}}",
             "cur_activity" : "Sleeping",
-            "options" : "Given these options which could be expanded: Stretching in bed, Walking to the bathroom, Putting on makeup (brief routine), Feeding pets, Drinking a shot of espresso, Reviewing notifications, Brushing teeth",
             "decompose":[
                 {"activity":"Stretching in bed", "start_time":"02-02-2024 09:00","duration":"1 minutes", "end_time":"02-02-2024 09:01"},
                 {"activity":"Walking to the bathroom", "start_time":"02-02-2024 09:01","duration":"2 minutes", "end_time":"02-02-2024 09:03"},

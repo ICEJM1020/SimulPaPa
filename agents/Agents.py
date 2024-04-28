@@ -204,7 +204,9 @@ class AgentsPool:
         for i, id in enumerate(self.pool):
             try:
                 _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catelog", "heartrate"])
-
+            except:
+                logger.error(f"{self._uuid} agent({id}) fetch {date} activity data failed.")
+            else:
                 for time in _temp_records.keys():
                     # or (time.endswith("20")) or (time.endswith("40"))
                     if (time.endswith("0")) :
@@ -217,8 +219,6 @@ class AgentsPool:
                             heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"]
                     else:
                         continue
-            except:
-                logger.error(f"{self._uuid} agent({id}) fetch {date} activity data failed.")
         return {"activity":activity_stat, "heartrate":heartrate_stat}
 
     def fetch_all_donedates(self):
@@ -227,7 +227,8 @@ class AgentsPool:
         for id in self.pool:
             _donedates = self.pool[id].fetch_done_dates()
             if donedates:
-                donedates = list(set(donedates).intersection(_donedates))
+                donedates = list(set(donedates).union(_donedates))
+                # donedates = list(set(donedates).intersection(_donedates))
             else:
                 donedates = _donedates
 
