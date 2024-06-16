@@ -40,7 +40,10 @@ class AgentsPool:
         if not os.path.exists(self.folder):
             os.mkdir(self.folder)
 
-        self.info_tree = InfoTree(info, folder=self.folder)
+        # self.info_tree = InfoTree(info, folder=self.folder)
+        ## For evidence-based 
+        self.info_tree = InfoTreeEB(info, folder=self.folder)
+        #####################
 
         ######################
         # ready :  finish creating and ready to simulate

@@ -131,8 +131,9 @@
         {
             "intervention" : "No intervention plan.",
             "description" : "Margaret Chen is a 76-year-old Asian female living at 2032 Pine Street, Oakland, Lake Merritt, California, 94612. The physical status of her is healthy. She is a retired nurse with an annual income from pensions and investments of $35,000. She previously worked at Oakland Medical Center, 350 Highland Avenue, Oakland, CA. She speaks English and Mandarin. Her education background is a Bachelor of Science in Nursing from San Francisco State University. Her date of birth is June 18, 1948.",
-            "start_time" :"02-02-2024 06:30",
+            "start_time" :"02-02-2024 00:00",
             "schedule" : [
+                {"start_time": "02-02-2024 00:00", "end_time": "02-02-2024 06:30", "event": "Sleeping"},
                 {"start_time": "02-02-2024 06:30", "end_time": "02-02-2024 07:00", "event": "Wake up and morning routine"},
                 {"start_time": "02-02-2024 07:00", "end_time": "02-02-2024 07:30", "event": "Breakfast"},
                 {"start_time": "02-02-2024 07:30", "end_time": "02-02-2024 08:00", "event": "Morning walk"},
