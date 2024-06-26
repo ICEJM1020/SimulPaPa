@@ -38,6 +38,7 @@ def description_prompt(**kwargs):
     prompt += "Today is June-15-2024 (compute age based on today's date). "
     prompt += "The generated profile should match the following guidance:\n<"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
+    prompt += "The weight of {Pronoun} is {weight} and the BMI is {BMI}."
     prompt += "The physical status of {Pronoun} is {diesease}, {descirbe the effect of the disease}."
     prompt += "{Pronoun} is a {occupation} with annual income {income} at {company} ({company_address}), {infer_retirement_status}. "
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
@@ -840,7 +841,7 @@ class InfoTreeEB():
         return json.loads(completion.choices[0].message.content)["response"]
     
 
-    def _infer_occupation(self, name, income_range, location, education, industry):
+    def _infer_occupation(self, name, income_range, location, education, industry, disease):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. "
         prompt += f"Based on collected information, we know that {name} working in {industry}, with income range {income_range}. "
@@ -848,11 +849,10 @@ class InfoTreeEB():
         prompt += f"And grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
         prompt += "This job needs to be specific and consistent with the career plan of this industry. "
         prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
-        prompt += "After find a job for him/her, the retirement status could be infer from the age. "
-        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are, like professors, CEO, etc."
+        prompt += f"Normmaly people usaully get retired after a specific age, you need consider the {name}'s age ({age}) amd body status ({disease}). "
+        prompt += "There are some jobs that allow people to work no matter how old they are, like professors, CEO, etc."
         prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
-        prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
-        prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
+        prompt += "The company address need to be exact and format as \"{building}, {strteet}, {district}, {city}, {state}\""
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
@@ -905,21 +905,6 @@ class InfoTreeEB():
         res["home_longitude"] = add_info["home_longitude"]
         res["home_latitude"] = add_info["home_latitude"]
 
-        job_info = self._infer_occupation(
-            name=res["name"],
-            income_range=income_range,
-            education=res["education"],
-            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}",
-            industry=res["industry"]
-        )
-        res["income"] = job_info["income"]
-        res["occupation"] = job_info["job"]
-        res["retirement"] = job_info["retirement"]
-        res["company"] = job_info["company"]
-        res["work_addr"] = job_info["work_addr"]
-        res["work_longitude"] = job_info["work_longitude"]
-        res["work_latitude"] = job_info["work_latitude"]
-
         
         ## For Evidence-Based
         if self.user_info['disease']=="healthy controll":
@@ -959,6 +944,23 @@ class InfoTreeEB():
             res["disease"] += random.choices(["osteoporosis, ", ""], weights=[0.55, 0.45])[0]
             res["disease"] += random.choices(["take more than four medications.", "Healthy"], weights=[0.41, 0.59])[0]
         #####################
+
+
+        job_info = self._infer_occupation(
+            name=res["name"],
+            income_range=income_range,
+            education=res["education"],
+            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}",
+            industry=res["industry"],
+            disease=res["disease"]
+        )
+        res["income"] = job_info["income"]
+        res["occupation"] = job_info["job"]
+        res["retirement"] = job_info["retirement"]
+        res["company"] = job_info["company"]
+        res["work_addr"] = job_info["work_addr"]
+        res["work_longitude"] = job_info["work_longitude"]
+        res["work_latitude"] = job_info["work_latitude"]
 
         return res
 

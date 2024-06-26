@@ -575,36 +575,36 @@ function send_intervention(){
 function start_simulation(username){
     // if (simul_status == "working") return;
 
-    // if (username){
-    //     console.log("Start simulate for " + username)
-    //     $.ajax({
-    //         url: "/simulation/start/" + username,
-    //         type: 'GET',
-    //         async: true,
-    //         success: function(res) {
-    //             if (username in check_simul_interval){
-    //                 clearInterval(check_simul_interval[username]);
-    //                 delete check_simul_interval[username];
-    //             }
-    //             check_simul_interval[username] = setInterval(check_simulation, check_interval*100, username);
-    //         }
-    //       });
-    // }
-    // else{
-    //     send_intervention()
-    //     $.ajax({
-    //         url: "/simulation/start/" + cur_user,
-    //         type: 'GET',
-    //         async: true,
-    //         success: function(res) {
-    //             if (cur_user in check_simul_interval){
-    //                 clearInterval(check_simul_interval[cur_user]);
-    //                 delete check_simul_interval[cur_user];
-    //             }
-    //             check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
-    //         }
-    //       });
-    // }
+    if (username){
+        console.log("Start simulate for " + username)
+        $.ajax({
+            url: "/simulation/start/" + username,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                if (username in check_simul_interval){
+                    clearInterval(check_simul_interval[username]);
+                    delete check_simul_interval[username];
+                }
+                check_simul_interval[username] = setInterval(check_simulation, check_interval*100, username);
+            }
+          });
+    }
+    else{
+        send_intervention()
+        $.ajax({
+            url: "/simulation/start/" + cur_user,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                if (cur_user in check_simul_interval){
+                    clearInterval(check_simul_interval[cur_user]);
+                    delete check_simul_interval[cur_user];
+                }
+                check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+            }
+          });
+    }
 }
 
 function continue_simulation(){

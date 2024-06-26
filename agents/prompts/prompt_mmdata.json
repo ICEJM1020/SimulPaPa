@@ -42,5 +42,20 @@
         {"age": 72, "cur_hr": 58, "activity":"Meeting", "mean":60, "std":8},
         {"age": 81, "cur_hr": 57, "activity":"Sleeping", "mean":55, "std":5}
     ],
-    "heartrate_suffix" : "Now it is {cur_time}, and the heart rate is {cur_hr}. Based on the history of heart rate records and current Activity Plan, predict the future heart rate range during the Activity Plan. You need to figure out your answer based on realistic human heart rate fluctuation.\n\n!! NOTICE !!: The heart rate mostly depends on what activity is doing, and it need to follow the physical statuts of this person ({description}), such as age ({age}), disease ({disease}), and so on, which indicates in Personal Description. You can summarize your thoughts and give a reaasonable estimation of the mean value and standard deviation.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}"
-}       
+    "heartrate_suffix" : "Now it is {cur_time}, and the heart rate is {cur_hr}. Based on the history of heart rate records and current Activity Plan, predict the future heart rate range during the Activity Plan. You need to figure out your answer based on realistic human heart rate fluctuation.\n\n!! NOTICE !!: The heart rate mostly depends on what activity is doing, and it need to follow the physical statuts of this person ({description}), such as age ({age}), disease ({disease}), and so on, which indicates in Personal Description. You can summarize your thoughts and give a reaasonable estimation of the mean value and standard deviation.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
+
+
+    "steps_prefix" : "Personal Description:\n{description}\n\nSteps History:\n{steps_hist}\n\nActivity Plan:\n{decompose}\n\nYou need to predict the average steps per one minute of every activity during this activity plan.",
+    "steps_example_prompt" : "For example, a {age} years old person, when doing {activity}, the average steps per one minute may be {steps}",
+    "steps_example" : [
+        {"age": 19, "activity":"Exercising", "steps":120},
+        {"age": 76, "activity":"Exercising", "steps":90},
+        {"age": 25, "activity":"Eating", "steps":1},
+        {"age": 78, "activity":"Shopping", "steps":50},
+        {"age": 68, "activity":"Walking to the station", "steps":70},
+        {"age": 72, "activity":"Meeting", "steps":2},
+        {"age": 81, "activity":"Sleeping", "steps":0}
+    ],
+    "steps_suffix" : "Now it is {cur_time}. Based on the history of steps records and current Activity Plan, predict the average steps per one minute during the Activity Plan. You need to figure out your answer based on realistic human step speed.\n\n!! NOTICE !!: The steps mostly depends on what activity is doing, and it need to follow the physical statuts of this person ({description}), such as age ({age}), disease ({disease}), and so on, which indicates in Personal Description. You can summarize your thoughts and give a reaasonable estimation of the mean value and standard deviation.\n\nLet's think step by step, you need to return your thought until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}"
+
+} 

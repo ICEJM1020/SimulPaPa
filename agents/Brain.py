@@ -124,7 +124,7 @@ class Brain:
             start_date = self.base_date
             cur_time = "00:00"
             with open(self._out_activity_file, "w") as f:
-                f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
+                f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot,steps\n")
         elif simul_type=="continue":
             start_date = self.short_memory.cur_date
             cur_time = self.short_memory.cur_time
@@ -395,7 +395,6 @@ class Brain:
             decompose = decompose.dump_list()
         self.short_memory.cur_decompose = decompose
         if CONFIG["debug"]: print(decompose)
-        print(decompose)
 
         location = self._predict_location(decompose=decompose)
         if isinstance(location, Location):
@@ -414,6 +413,12 @@ class Brain:
             heartrate = heartrate.dump_list()
         self.short_memory.cur_heartrate_list = heartrate
         if CONFIG["debug"]: print(heartrate)
+
+        steps = self._predict_steps(decompose=decompose)
+        if isinstance(steps, Steps):
+            steps = steps.dump_dict()
+        self.short_memory.cur_steps_dict = steps
+        if CONFIG["debug"]: print(steps)
 
 
     def _decompose_task(self, re_decompose=False) -> Decompose:
@@ -618,7 +623,7 @@ class Brain:
             example_prompt=example_prompt,
             prefix=self._mmdata_prompts["heartrate_prefix"],
             suffix=self._mmdata_prompts["heartrate_suffix"],
-            input_variables=['description', 'hr_hist', 'decompose', 'cur_time', 'cur_hr'],
+            input_variables=['description', 'hr_hist', 'decompose', 'cur_time', 'cur_hr', 'age', 'disease'],
             partial_variables={"format_instructions": hr_parser.get_format_instructions()},
         )
 
@@ -635,7 +640,6 @@ class Brain:
         
         results = chain.invoke(input={
             'description' : self.long_memory.description,
-            'preference' : self.long_memory.chatbot_preference,
             'hr_hist' : self._summarize_mmdata(self.short_memory.fetch_heartrate_records(num_items=60)),
             'decompose' : json.dumps(decompose),
             'cur_time' : self.short_memory.cur_time,
@@ -647,6 +651,68 @@ class Brain:
 
         response = results['text'].replace("24:00", "23:59")
         return hr_parser.parse(response)
+    
+
+    def _predict_steps(self, decompose) -> Steps:
+        for try_idx in range(self._retry_times):
+            try:
+                steps = self._predict_steps_chat(decompose)
+            except:
+                if try_idx + 1 == self._retry_times:
+                    return {}
+                else:
+                    continue
+            else:
+                return steps
+            
+    def _predict_steps_chat(self, decompose, llm_temperature=1.0) -> Steps:
+        hr_example = []
+        for entry in self._mmdata_prompts['steps_example']:
+            # print(entry)
+            hr_example.append({
+                    "age": entry["age"],
+                    "activity": entry["activity"],
+                    "steps": entry["steps"],
+                })
+        example_prompt = PromptTemplate(
+            input_variables=["age", "activity", "steps"],
+            template=self._mmdata_prompts["steps_example_prompt"]
+        )
+
+        steps_parser = PydanticOutputParser(pydantic_object=Steps)
+        
+        prompt = FewShotPromptTemplate(
+            examples=hr_example,
+            example_prompt=example_prompt,
+            prefix=self._mmdata_prompts["steps_prefix"],
+            suffix=self._mmdata_prompts["steps_suffix"],
+            input_variables=['description', 'steps_hist', 'decompose', 'cur_time', 'age', 'disease'],
+            partial_variables={"format_instructions": steps_parser.get_format_instructions()},
+        )
+
+        chain = LLMChain(
+            llm=ChatOpenAI(
+                    api_key=CONFIG["openai"]["api_key"],
+                    organization=CONFIG["openai"]["organization"],
+                    model_name=CONFIG["openai"]["model"],
+                    temperature=llm_temperature,
+                    verbose=self._verbose,
+                ),
+                prompt=prompt,
+            )
+        
+        results = chain.invoke(input={
+            'description' : self.long_memory.description,
+            'steps_hist' : self._summarize_mmdata(self.short_memory.fetch_steps_records(num_items=60)),
+            'decompose' : json.dumps(decompose),
+            'cur_time' : self.short_memory.cur_time,
+            'age': self.long_memory.age,
+            'disease': self.long_memory.disease,
+
+        }, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
+
+        response = results['text'].replace("24:00", "23:59")
+        return steps_parser.parse(response)
 
 
     def _predict_botusage(self, decompose) -> Chatbot:
@@ -682,7 +748,7 @@ class Brain:
             example_prompt=example_prompt,
             prefix=self._mmdata_prompts["chatbot_prefix"],
             suffix=self._mmdata_prompts["chatbot_suffix"],
-            input_variables=['description', 'chat_hist', 'decompose', 'cur_time'],
+            input_variables=['description', 'preference', 'chat_hist', 'decompose', 'cur_time'],
             partial_variables={"format_instructions": usage_parser.get_format_instructions()},
         )
 
@@ -848,7 +914,7 @@ class Brain:
         os.replace(self._out_activity_file, target_file)
 
         with open(self._out_activity_file, "w") as f:
-            f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot\n")
+            f.write("time,activity,event,location,longitude,latitude,heartrate,chatbot,steps\n")
 
         self._smooth_heartrate(target_file)
         self._categorize_activity(target_file)

@@ -96,6 +96,33 @@ class Location(BaseModel):
 
     def dump_list(self):
         return [i.dump_dict() for i in self.location]
+    
+
+class StepsEntry(BaseModel):
+    start_time : str = Field(description='Start time of this activity in the format of MM-DD-YYYY HH:MM.')
+    end_time : str = Field(description='End time of this activity in the format of MM-DD-YYYY HH:MM.')
+    activity: str = Field(description='The activity taking during this time period.')
+    steps: int = Field(description='Average steps per one minute when doing the given activity.')
+
+    def dump_dict(self):
+        res = {
+            'activity' : self.activity,
+            'steps' : self.steps,
+            'start_time' : self.start_time, 
+            'end_time' : self.end_time
+        }
+        return res
+
+
+class Steps(BaseModel):
+    step: list[StepsEntry]
+
+    def dump_dict(self):
+        _temp = {}
+        for _s in self.step:
+            _s_d = _s.dump_dict()
+            _temp[_s_d["activity"]] = _s_d["steps"]
+        return _temp
 
 
 class ChatBotEntry(BaseModel):

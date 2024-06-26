@@ -5,7 +5,7 @@ Date: 2024-01-09
 """ 
 import os
 import json
-import random
+import re
 import sys
 from datetime import datetime, timedelta
 
@@ -70,6 +70,7 @@ class ShortMemory:
         self._cur_location_list = []
         self._cur_location_list_index = 0
         self._cur_chatbot_dict = {}
+        self._cur_steps_dict = {}
         self._cur_heartrate_list = []
         self._cur_heartrate_list_index = 0
 
@@ -179,6 +180,14 @@ class ShortMemory:
         self._cur_chatbot_dict = uasge
 
     @property
+    def cur_steps_dict(self):
+        return self._cur_steps_dict
+    
+    @cur_steps_dict.setter
+    def cur_steps_dict(self, steps):
+        self._cur_steps_dict = steps
+
+    @property
     def cur_heartrate_list(self):
         return self._cur_heartrate_list
     
@@ -211,6 +220,7 @@ class ShortMemory:
             "latitude" : self.cur_location['latitude'],
             "chatbot":  self.cur_chatbot,
             "heartrate" : self.cur_heartrate,
+            "steps" : self.cur_steps,
         })
 
     @property
@@ -295,7 +305,13 @@ class ShortMemory:
 
                 return int(np.random.normal(loc=float(_heartrate_entry['mean']), scale=float(_heartrate_entry['std'])))
             
-    
+    @property
+    def cur_steps(self):
+        if self.cur_activity in self._cur_steps_dict.keys():
+            return str(self._cur_steps_dict[self.cur_activity])
+        else:
+            return "0"
+
     @property
     def cur_chatbot(self):
         if self.date_time in self._cur_chatbot_dict.keys():
@@ -306,7 +322,7 @@ class ShortMemory:
 
     def csv_record(self):
         entry = self.memory_cache.get_current()
-        return f"{entry['time']},\"{entry['activity']}\",\"{entry['schedule_event']}\",\"{entry['location']}\",\"{entry['longitude']}\",\"{entry['latitude']}\",\"{entry['heartrate']}\",\"{entry['chatbot']}\"\n"
+        return f"{entry['time']},\"{entry['activity']}\",\"{entry['schedule_event']}\",\"{entry['location']}\",\"{entry['longitude']}\",\"{entry['latitude']}\",\"{entry['heartrate']}\",\"{entry['chatbot']}\",\"{entry['steps']}\"\n"
 
 
     def check_new_event(self):
@@ -357,6 +373,19 @@ class ShortMemory:
                 "activity" : entry['activity'],
                 "heartrate" : entry['heartrate']
             })
+        return records
+    
+    def fetch_steps_records(self, num_items):
+        records = []
+        _temp_a =""
+        for entry in self.memory_cache.fetch(num_items):
+            if not _temp_a == entry['activity']:
+                records.append({
+                    "time" : entry["time"],
+                    "activity" : entry['activity'],
+                    "steps" : entry['steps']
+                })
+                _temp_a = entry['activity']
         return records
 
     def save_cache(self):
