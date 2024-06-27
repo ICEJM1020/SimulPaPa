@@ -5,7 +5,7 @@ Date: 2024-01-09
 """ 
 import os
 import json
-import re
+import random
 import sys
 from datetime import datetime, timedelta
 
@@ -308,7 +308,7 @@ class ShortMemory:
     @property
     def cur_steps(self):
         if self.cur_activity in self._cur_steps_dict.keys():
-            return str(self._cur_steps_dict[self.cur_activity])
+            return str(self._cur_steps_dict[self.cur_activity] - random.randint(self._cur_steps_dict[self.cur_activity] // 2, self._cur_steps_dict[self.cur_activity]))
         else:
             return "0"
 

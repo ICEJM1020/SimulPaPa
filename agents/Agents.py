@@ -276,8 +276,6 @@ class AgentsPool:
     def fetch_simul_status(self):
         self._monitor_agent_status()
         return self.simul_status
-    
-    
 
 
 class Agent:
@@ -293,9 +291,12 @@ class Agent:
         self.user_folder = user_folder
         self.folder = user_folder + f"/agents/{index}"
         self.activity_folder = self.folder + "/activity_hist"
+        self.thoughts_folder = self.folder + "/thoughts_log"
         self.start_date = start_date
         if not os.path.exists(self.activity_folder):
             os.mkdir(self.activity_folder)
+        if not os.path.exists(self.thoughts_folder):
+            os.mkdir(self.thoughts_folder)
 
         # Agent status
         ######################
@@ -389,6 +390,11 @@ class Agent:
         if os.path.exists(self.activity_folder):
             rmtree(self.activity_folder)
             os.mkdir(self.activity_folder)
+
+        if os.path.exists(self.thoughts_folder):
+            rmtree(self.thoughts_folder)
+            os.mkdir(self.thoughts_folder)
+
         self._status = "working"
         self.brain.plan(days=days, simul_type="new")
 

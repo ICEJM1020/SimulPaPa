@@ -43,6 +43,7 @@ class Brain:
         self.user_folder = user_folder
         self.agent_folder = agent_folder
         self.activity_folder = os.path.join(agent_folder, "activity_hist")
+        self.thoughts_folder = os.path.join(agent_folder, "thoughts_log")
 
         ########
         # Memory
@@ -85,9 +86,15 @@ class Brain:
         ########
         # utils
         ########
+        ## Records
         self._output_cache = ""
         self._output_cache_length = 500
         self._out_activity_file = os.path.join(agent_folder, "activity.csv")
+        ## Thoughts
+        self._thoughts_cache = ""
+        self._thoughts_cache_length = 1000
+        self._out_thoughts_file = os.path.join(agent_folder, "thoughts.txt")
+
         self._retry_times = retry_times
         self._verbose = verbose
         ## status
@@ -173,7 +180,9 @@ class Brain:
             for _ in range(days + 1):
                 # if not self.long_memory.daily_purpose:
                 _purpose = self._define_daily_purpose()
-                self.long_memory.daily_purpose = _purpose
+                self.long_memory.daily_purpose = _purpose["answer"]
+                if CONFIG["save_thoughts"]:
+                    self.save_thoughts("Thoughts when defining purpose of today", json.dumps(_purpose))
 
                 # if not self.short_memory.schedule:
                 _schedule = self._create_range_schedule(
@@ -181,6 +190,8 @@ class Brain:
                     start_time=self.short_memory.cur_time
                 )
                 self.short_memory.schedule =_schedule.dump_dict()
+                if CONFIG["save_thoughts"]:
+                    self.save_thoughts("Thoughts when create schedule of today", _schedule.fetch_thoughts())
                 if CONFIG["debug"]: print(self.short_memory.schedule)
 
                 response = self._run_schedule()
@@ -198,7 +209,9 @@ class Brain:
                 for _ in range(days + 1):
                     # if not self.long_memory.daily_purpose:
                     _purpose = self._define_daily_purpose()
-                    self.long_memory.daily_purpose = _purpose
+                    self.long_memory.daily_purpose = _purpose["answer"]
+                    if CONFIG["save_thoughts"]:
+                        self.save_thoughts("Thoughts when defining purpose of today", json.dumps(_purpose))
 
                     # if not self.short_memory.schedule:
                     _schedule = self._create_range_schedule(
@@ -206,6 +219,8 @@ class Brain:
                         start_time=self.short_memory.cur_time
                     )
                     self.short_memory.schedule =_schedule.dump_dict()
+                    if CONFIG["save_thoughts"]:
+                        self.save_thoughts("Thoughts when create schedule of today", _schedule.fetch_thoughts())
                     if CONFIG["debug"]: print(self.short_memory.schedule)
 
                     response = self._run_schedule()
@@ -239,6 +254,7 @@ class Brain:
             self.short_memory.cur_time = self.short_memory.cur_time_dt + timedelta(minutes=1)
             if self.short_memory.cur_time_dt == datetime.strptime("00:00", "%H:%M"):
                 self.save_hist()
+                self.save_thoughts_log()
                 self.short_memory.cur_date = self.short_memory.cur_date_dt + timedelta(days=1)
 
             if self.short_memory.check_new_event():
@@ -269,7 +285,7 @@ class Brain:
                 else:
                     continue
             else:
-                return purpose["answer"]
+                return purpose
 
     def _define_daily_purpose_chat(self):
         human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["define_purpose"])
@@ -392,30 +408,40 @@ class Brain:
     def _decompose(self):
         decompose = self._decompose_task()
         if isinstance(decompose, Decompose):
+            if CONFIG["save_thoughts"]:
+                self.save_thoughts(f"Thoughts when decompose {self.short_memory.cur_event_str}", decompose.fetch_thoughts())
             decompose = decompose.dump_list()
         self.short_memory.cur_decompose = decompose
         if CONFIG["debug"]: print(decompose)
 
         location = self._predict_location(decompose=decompose)
         if isinstance(location, Location):
+            if CONFIG["save_thoughts"]:
+                self.save_thoughts(f"Thoughts when predict the location when {self.short_memory.cur_event_str}", location.fetch_thoughts())
             location = location.dump_list()
         self.short_memory.cur_location_list = location
         if CONFIG["debug"]: print(location)
 
         chatbot = self._predict_botusage(decompose=decompose)
         if isinstance(chatbot, Chatbot):
+            if CONFIG["save_thoughts"]:
+                self.save_thoughts(f"Thoughts when predict the Chatbot usage when {self.short_memory.cur_event_str}", chatbot.fetch_thoughts())
             chatbot = chatbot.dump_dict()
         self.short_memory.cur_chatbot_dict = chatbot
         if CONFIG["debug"]: print(chatbot)
 
         heartrate = self._predict_heartrate(decompose=decompose)
         if isinstance(heartrate, HeartRate):
+            if CONFIG["save_thoughts"]:
+                self.save_thoughts(f"Thoughts when predict the heart rate when {self.short_memory.cur_event_str}", heartrate.fetch_thoughts())
             heartrate = heartrate.dump_list()
         self.short_memory.cur_heartrate_list = heartrate
         if CONFIG["debug"]: print(heartrate)
 
         steps = self._predict_steps(decompose=decompose)
         if isinstance(steps, Steps):
+            if CONFIG["save_thoughts"]:
+                self.save_thoughts(f"Thoughts when predict the steps when {self.short_memory.cur_event_str}", steps.fetch_thoughts())
             steps = steps.dump_dict()
         self.short_memory.cur_steps_dict = steps
         if CONFIG["debug"]: print(steps)
@@ -880,9 +906,11 @@ class Brain:
         for file in file_list:
             self._categorize_activity(file)
 
+
     def update_catelogue(self, file_list):
         thread = threading.Thread(target=self._update_catelogue, args=[file_list])
         thread.start()
+
 
     def _smooth_heartrate(self, _file):
         act_data = pd.read_csv(_file, dtype=str)
@@ -919,8 +947,25 @@ class Brain:
         self._smooth_heartrate(target_file)
         self._categorize_activity(target_file)
         self._avoid_nan(target_file)
-        # thread = threading.Thread(target=self._categorize_activity, args=target_file)
-        # thread.start()
+
+
+    def save_thoughts(self, prefix, thoughts):
+        self._thoughts_cache += f"\n===================================={prefix}=========================================\n"
+        self._thoughts_cache += thoughts
+        self._thoughts_cache += "\n=================================================================================================================\n"
+
+        if len(self._thoughts_cache) >= self._thoughts_cache_length:
+            with open(self._out_thoughts_file, "a+") as f:
+                f.write(self._thoughts_cache)
+            self._thoughts_cache = ""
+
+    def save_thoughts_log(self):
+        with open(self._out_thoughts_file, "a+") as f:
+            f.write(self._thoughts_cache)
+        self._thoughts_cache = ""
+
+        target_file = os.path.join(self.thoughts_folder, self.short_memory.cur_date + ".txt")
+        os.replace(self._out_thoughts_file, target_file)
 
 
     def save_cache(self):

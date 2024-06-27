@@ -46,6 +46,10 @@ class ScheduleEntry(BaseModel):
     
 class Schedule(BaseModel):
     schedule: list[ScheduleEntry]
+    thoughts: str = Field(description='Multiple thoughts that support your reasoning, format as:\nThought 1: your thought about this question\n...\nThought n: your thought about this question')
+
+    def fetch_thoughts(self):
+        return self.thoughts
 
     def dump_dict(self):
         return {idx : entry.dump_dict() for idx, entry in enumerate(self.schedule)}
@@ -68,6 +72,10 @@ class DecomposeEntry(BaseModel):
 
 class Decompose(BaseModel):
     decompose: list[DecomposeEntry]
+    thoughts: str = Field(description='Multiple thoughts that support your reasoning, format as:\nThought 1: your thought about this question\n...\nThought n: your thought about this question')
+
+    def fetch_thoughts(self):
+        return self.thoughts
 
     def dump_list(self):
         return [i.dump_dict() for i in self.decompose]
@@ -93,6 +101,10 @@ class LocationEntry(BaseModel):
 
 class Location(BaseModel):
     location: list[LocationEntry]
+    thoughts: str = Field(description='Multiple thoughts that support your reasoning, format as:\nThought 1: your thought about this question\n...\nThought n: your thought about this question')
+
+    def fetch_thoughts(self):
+        return self.thoughts
 
     def dump_list(self):
         return [i.dump_dict() for i in self.location]
@@ -116,6 +128,10 @@ class StepsEntry(BaseModel):
 
 class Steps(BaseModel):
     step: list[StepsEntry]
+    thoughts: str = Field(description='Multiple thoughts that support your reasoning, format as:\nThought 1: your thought about this question\n...\nThought n: your thought about this question')
+
+    def fetch_thoughts(self):
+        return self.thoughts
 
     def dump_dict(self):
         _temp = {}
@@ -138,6 +154,10 @@ class ChatBotEntry(BaseModel):
 
 class Chatbot(BaseModel):
     chatbot: list[ChatBotEntry]
+    thoughts: str = Field(description='Multiple thoughts that support your reasoning, format as:\nThought 1: your thought about this question\n...\nThought n: your thought about this question')
+
+    def fetch_thoughts(self):
+        return self.thoughts
 
     def dump_dict(self):
         res = {}
@@ -164,9 +184,14 @@ class HeartRateEntry(BaseModel):
 
 class HeartRate(BaseModel):
     heartrate: list[HeartRateEntry]
+    thoughts: str = Field(description='Multiple thoughts that support your reasoning, format as:\nThought 1: your thought about this question\n...\nThought n: your thought about this question')
+
+    def fetch_thoughts(self):
+        return self.thoughts
 
     def dump_list(self):
         return [i.dump_dict() for i in self.heartrate]
+
     
 
 class CatelogueMapEntry(BaseModel):
