@@ -964,7 +964,9 @@ function intervention_agent(agent){
     update_intervention_agent_btn();
 }
 
-// single agent
+///////////////////////////
+// single agent ///////////
+///////////////////////////
 let cur_agent_id = ""
 let agent_info = {}
 let donedates =  []
@@ -1017,6 +1019,7 @@ function load_agent_page(){
     }
 
     draw_agent_heartrate(cur_date);
+    draw_agent_steps(cur_date);
     draw_chat(cur_date);
     show_location_hist(cur_date);
     init_schedule();
@@ -1270,6 +1273,20 @@ function draw_agent_heartrate(date){
         });
 }
 
+//
+// draw steps
+// 
+function draw_agent_steps(date){
+    $.ajax({
+        url: "/agent/" + cur_user + "/" + cur_agent_id + "/steps/" + date,
+        type: 'GET',
+        async: true,
+        dataType: 'json',
+        success: function(res) {
+            draw_agent_steps_charjs(res["data"])
+        }
+        });
+}
 
 //
 // draw maps

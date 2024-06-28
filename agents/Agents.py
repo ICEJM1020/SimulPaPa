@@ -266,6 +266,9 @@ class AgentsPool:
     
     def fetch_agent_schedule(self, id, date):
         return self.pool[id].fetch_schedule(date)
+    
+    def fetch_agent_steps(self, id, date):
+        return self.pool[id].fetch_steps(date)
 
     def fetch_tree_status(self):
         return self.info_tree.get_status()
@@ -460,6 +463,15 @@ class Agent:
             return {}
         else:
             _hist = _hist[_hist["heartrate"].notna()].loc[:, ['time', 'heartrate']]
+            return _hist.T.to_dict()
+        
+    def fetch_steps(self, date):
+        try:
+            _hist = pd.read_csv(self.activity_folder + f"/{date}.csv")
+        except:
+            return {}
+        else:
+            _hist = _hist[_hist["steps"].notna()].loc[:, ['time', 'steps']]
             return _hist.T.to_dict()
     
     def fetch_location_hist(self, date):

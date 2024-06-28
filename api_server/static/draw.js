@@ -401,7 +401,6 @@ function draw_heart_rate_activity(time) {
 }
 
 let agent_heartrate = null;
-
 function draw_agent_heartrate_charjs(data) {
     if (agent_heartrate) {agent_heartrate.destroy();}
     const _agent_heartrate = document.getElementById("agent-heartrate").getContext('2d');
@@ -455,6 +454,97 @@ function draw_agent_heartrate_charjs(data) {
                         padding: 5
                     }
                 }]
+            }
+        }
+    });
+}
+
+let agent_steps = null;
+function draw_agent_steps_charjs(data) {
+    if (agent_steps) {agent_steps.destroy();}
+    const _agent_steps = document.getElementById("agent-steps").getContext('2d');
+
+    labels = [];
+    steps = [];
+    var _cur_h = 0;
+    var _cur_steps = 0;
+    for (var idx in data){
+        if (parseInt(data[idx]["time"].split(" ")[1])==_cur_h){
+            _cur_steps = _cur_steps + parseInt(data[idx]["steps"]);
+        }
+        else{
+            labels.push(_cur_h.toString() + ":00");
+            steps.push(_cur_steps);
+            _cur_h = _cur_h + 1;
+            _cur_steps = 0;
+        }
+    }
+
+    agent_steps = new Chart(_agent_steps, {
+        type: 'bar',
+        data: {
+            defaultFontFamily: 'Poppins',
+            labels: labels,
+            datasets: [
+                {
+                    labels: labels,
+                    data: steps,
+                    borderColor: 'rgba(26, 51, 213, 0.8)',
+                    borderWidth: "0",
+                    backgroundColor: 'rgba(26, 51, 213, 0.8)'
+                }
+            ]
+        },
+        options: {
+            tooltips: {
+                callbacks: {
+                    title :function(tooltipItems, data) {
+                        var label = labels[tooltipItems[0].index];
+                        label += "-"
+                        try{
+                            label += labels[tooltipItems[0].index+1] || '';
+                        } catch{
+                            label += "0:00";
+                        }
+                        return label;
+                    },
+                    label: function(tooltipItem, data) {
+                        var label = 'Step Count : ';
+                        label += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] || '';
+                        return label;
+                    },
+                    footer: function(tooltipItems, data) {
+                        return "";
+                    },
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: false, 
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }],
+                xAxes: [{
+                    barPercentage: 1.0,
+                    type: 'time',
+                    time: {
+                      parser: 'HH',
+                      unit: 'hour',
+                      displayFormats: {
+                        hour: 'Ha'
+                      },
+                      tooltipFormat: 'Ha'
+                    },
+                    gridLines: {
+                      offsetGridLines: true
+                    },
+                    ticks: {
+                      min: moment(labels[0], 'HH').subtract(1, 'hours'),
+                    }
+                  }]
             }
         }
     });
