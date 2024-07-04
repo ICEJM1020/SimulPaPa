@@ -303,6 +303,7 @@ function random_create_user(){
         contentType: false,
         dataType: 'json',
         success: function(res) {
+            console.log(res)
             infos = res["infos"]
             for (var key in infos){
                 var value = infos[key];
@@ -516,33 +517,33 @@ function update_status_area(res, type){
 }
 
 function check_simulation(username){
-    // if (tree_status=="ready" && pool_status=="ready"){
-    //     $.ajax({
-    //         url: "/simulation/status/" + username ,
-    //         type: 'GET',
-    //         async: false,
-    //         dataType: 'json',
-    //         success: function(res) {
-    //             console.log("Simulation status: " + res["message"])
-    //             update_status_area(res, "Simulation status")
-    //             if (res["message"].includes("ing")){
-    //                 simul_status = "working";
-    //                 if (cur_user in check_simul_interval){
-    //                     clearInterval(check_simul_interval[cur_user]);
-    //                     delete check_simul_interval[cur_user];
-    //                 }
-    //                 check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
-    //             }
-    //             else if (res["message"].includes("ready") || res["message"].includes("failed")){
-    //                 clearInterval(check_simul_interval[username]);
-    //                 delete check_simul_interval[username];
-    //             }
-    //             else {
+    if (tree_status=="ready" && pool_status=="ready"){
+        $.ajax({
+            url: "/simulation/status/" + username ,
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(res) {
+                console.log("Simulation status: " + res["message"])
+                update_status_area(res, "Simulation status")
+                if (res["message"].includes("ing")){
+                    simul_status = "working";
+                    if (cur_user in check_simul_interval){
+                        clearInterval(check_simul_interval[cur_user]);
+                        delete check_simul_interval[cur_user];
+                    }
+                    check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+                }
+                else if (res["message"].includes("ready") || res["message"].includes("failed")){
+                    clearInterval(check_simul_interval[username]);
+                    delete check_simul_interval[username];
+                }
+                else {
                     
-    //             }
-    //         }
-    //     });
-    // }
+                }
+            }
+        });
+    }
 }
 
 function send_intervention(){
@@ -575,36 +576,36 @@ function send_intervention(){
 function start_simulation(username){
     // if (simul_status == "working") return;
 
-    if (username){
-        console.log("Start simulate for " + username)
-        $.ajax({
-            url: "/simulation/start/" + username,
-            type: 'GET',
-            async: true,
-            success: function(res) {
-                if (username in check_simul_interval){
-                    clearInterval(check_simul_interval[username]);
-                    delete check_simul_interval[username];
-                }
-                check_simul_interval[username] = setInterval(check_simulation, check_interval*100, username);
-            }
-          });
-    }
-    else{
-        send_intervention()
-        $.ajax({
-            url: "/simulation/start/" + cur_user,
-            type: 'GET',
-            async: true,
-            success: function(res) {
-                if (cur_user in check_simul_interval){
-                    clearInterval(check_simul_interval[cur_user]);
-                    delete check_simul_interval[cur_user];
-                }
-                check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
-            }
-          });
-    }
+    // if (username){
+    //     console.log("Start simulate for " + username)
+    //     $.ajax({
+    //         url: "/simulation/start/" + username,
+    //         type: 'GET',
+    //         async: true,
+    //         success: function(res) {
+    //             if (username in check_simul_interval){
+    //                 clearInterval(check_simul_interval[username]);
+    //                 delete check_simul_interval[username];
+    //             }
+    //             check_simul_interval[username] = setInterval(check_simulation, check_interval*100, username);
+    //         }
+    //       });
+    // }
+    // else{
+    //     send_intervention()
+    //     $.ajax({
+    //         url: "/simulation/start/" + cur_user,
+    //         type: 'GET',
+    //         async: true,
+    //         success: function(res) {
+    //             if (cur_user in check_simul_interval){
+    //                 clearInterval(check_simul_interval[cur_user]);
+    //                 delete check_simul_interval[cur_user];
+    //             }
+    //             check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+    //         }
+    //       });
+    // }
 }
 
 function continue_simulation(){

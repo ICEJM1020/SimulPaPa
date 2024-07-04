@@ -33,9 +33,9 @@ def description_prompt(**kwargs):
 
     prompt = "Generate a description from the following information: "
     prompt += has_info
-    prompt += "The following information is missing and you could jump them: "
-    prompt += missing_info
-    prompt += "Today is June-15-2024 (compute age based on today's date). "
+    # prompt += "The following information is missing and you could jump them: "
+    # prompt += missing_info
+    # prompt += "Today is June-15-2024 (compute age based on today's date). "
     prompt += "The generated profile should match the following guidance:\n<"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
     prompt += "The weight of {Pronoun} is {weight} and the BMI is {BMI}."
@@ -74,8 +74,7 @@ def _gpt_description(name, birthday, _type="agent", **kwargs) -> dict:
         # print(int(date.today().year))
         # print(int(birthday.split("-")[-1]))
         age = int(date.today().year) - int(birthday.split("-")[-1])
-        # prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
-        print(age)
+        prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
     else:
         prompt = description_prompt(name=name, birthday=birthday, **kwargs)
 
@@ -91,6 +90,8 @@ def _gpt_description(name, birthday, _type="agent", **kwargs) -> dict:
 
 
 def random_generate(short_description, retry=5):
+    # infos = _random_generate(short_description)
+    # return infos
     for try_idx in range(retry):
         try:
             infos = _random_generate(short_description)
@@ -830,6 +831,7 @@ class InfoTreeEB():
         else:
             raise Exception("GPT response error.")
         
+
     def _infer_addtional(self, gender, race, location, education, income_range, age):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"There is a {race} {gender} living in {location} who has a {education} degree, age {age}. "
@@ -902,12 +904,20 @@ class InfoTreeEB():
         res["city"] = city["city"]
         res["state"] = city["state"]
 
+
         ## For Evidence-Based
         res["gender"] = random.choices(["male", "female"], weights=[0.2, 0.8])[0]
-        ##################### 
+        if self.user_info['disease']=="healthy controll":
+            res["age"] = int(np.random.normal(loc=70.55, scale=7.5, size=None))
+        elif self.user_info['disease']=="subjects":
+            res["age"] = int(np.random.normal(loc=69.31, scale=7.3, size=None))
+        else:
+            res["age"] = int(np.random.normal(loc=70.0, scale=7.5, size=None))
+        #####################
+
+
         res["race"] = random.choices(city["race"]["option"][:-1], weights=city["race"]["prob"][:-1])[0]
         res["education"] = random.choices(city["education"]["option"], weights=city["education"]["prob"])[0]
-
         income_range =  random.choices(city["income"]["option"], weights=city["income"]["prob"])[0]
         res["industry"] = random.choices(city["industry"]["option"], weights=city["industry"]["prob"])[0]
 
@@ -921,7 +931,8 @@ class InfoTreeEB():
             race=res["race"],
             education=res["education"],
             income_range=income_range,
-            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}"
+            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}",
+            age=res["age"]
         )
         res["name"] = add_info["name"]
         res["birthday"] = add_info["birthday"]
@@ -931,10 +942,9 @@ class InfoTreeEB():
         res["home_longitude"] = add_info["home_longitude"]
         res["home_latitude"] = add_info["home_latitude"]
 
-        
+
         ## For Evidence-Based
         if self.user_info['disease']=="healthy controll":
-            res["age"] = int(np.random.normal(loc=70.55, scale=7.5, size=None))
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=179.95, scale=42.2, size=None)))
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=30.15, scale=7.0, size=None))
             res["disease"] = ""
@@ -946,7 +956,6 @@ class InfoTreeEB():
             res["disease"] += random.choices(["osteoporosis, ", ""], weights=[0.545, 0.455])[0]
             res["disease"] += random.choices(["take more than four medications.", "Healthy"], weights=[0.273, 0.727])[0]
         elif self.user_info['disease']=="subjects":
-            res["age"] = int(np.random.normal(loc=69.31, scale=7.3, size=None))
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=183.11, scale=39.8, size=None)) )
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=31.4, scale=7.4, size=None))
             res["disease"] = ""
@@ -958,7 +967,6 @@ class InfoTreeEB():
             res["disease"] += random.choices(["osteoporosis, ", ""], weights=[0.538, 0.462])[0]
             res["disease"] += random.choices(["take more than four medications.", "Healthy"], weights=[0.462, 0.538])[0]
         else:
-            res["age"] = int(np.random.normal(loc=70.0, scale=7.5, size=None))
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=181, scale=41.0, size=None)))
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=31.0, scale=7.0, size=None))
             res["disease"] = ""
@@ -974,6 +982,7 @@ class InfoTreeEB():
 
         job_info = self._infer_occupation(
             name=res["name"],
+            age=res["age"],
             income_range=income_range,
             education=res["education"],
             location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}",
