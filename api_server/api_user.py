@@ -93,6 +93,11 @@ def create_random_user():
         short_description = req_form["short_description"]
     
     return_body = {}
+    # infos = random_user(short_description)
+    # return_body = {
+    #     "status" : True,
+    #     "infos" : infos
+    # }
     try:
         infos = random_user(short_description)
     except:

@@ -33,9 +33,9 @@ def description_prompt(**kwargs):
 
     prompt = "Generate a description from the following information: "
     prompt += has_info
-    prompt += "The following information is missing and you could jump them: "
-    prompt += missing_info
-    prompt += "Today is June-15-2024 (compute age based on today's date). "
+    # prompt += "The following information is missing and you could jump them: "
+    # prompt += missing_info
+    # prompt += "Today is June-15-2024 (compute age based on today's date). "
     prompt += "The generated profile should match the following guidance:\n<"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
     prompt += "The weight of {Pronoun} is {weight} and the BMI is {BMI}."
@@ -74,8 +74,7 @@ def _gpt_description(name, birthday, _type="agent", **kwargs) -> dict:
         # print(int(date.today().year))
         # print(int(birthday.split("-")[-1]))
         age = int(date.today().year) - int(birthday.split("-")[-1])
-        # prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
-        print(age)
+        prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
     else:
         prompt = description_prompt(name=name, birthday=birthday, **kwargs)
 
@@ -91,6 +90,8 @@ def _gpt_description(name, birthday, _type="agent", **kwargs) -> dict:
 
 
 def random_generate(short_description, retry=5):
+    # infos = _random_generate(short_description)
+    # return infos
     for try_idx in range(retry):
         try:
             infos = _random_generate(short_description)
@@ -821,13 +822,12 @@ class InfoTreeEB():
             raise Exception("GPT response error.")
         
 
-    def _infer_addtional(self, gender, race, location, education, income_range, age_range=5):
-        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+    def _infer_addtional(self, gender, race, location, education, income_range, age):
         prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
         prompt += "Based on the gender and race information, firstly figure out a name. Tell me the exact zip code of where he/she lives, and possible spoken language. "
         prompt += f"Secondly, based on income range {income_range}, you need to find a building in the location that is suitable to live as home in {location}. "
         prompt += "The building should be affordable and consistent with income levels, whether rented, financed, or already owned. "
-        prompt += f"Next, the range of the age is {age-age_range}-{age+age_range}, please generate a birthday in this range. "
+        prompt += f"Next, the age is {age}, please generate a birthday in this age, today is 06-30-2024. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", "
         prompt += "\"language\" : \"language\", \"zipcode\" : \"zipcode\", \"building\":\"building_name\","
@@ -844,18 +844,18 @@ class InfoTreeEB():
         return json.loads(completion.choices[0].message.content)["response"]
     
 
-    def _infer_occupation(self, name, income_range, location, education, industry, disease):
-        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
-        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. "
-        prompt += f"Based on collected information, we know that {name} working in {industry}, with income range {income_range}. "
-        prompt += "Based on all of the provided information and your inference, provide a reasonable job for him/her and if he/she is retired. "
-        prompt += f"And grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
-        prompt += "This job needs to be specific and consistent with the career plan of this industry. "
+    def _infer_occupation(self, name, age, income_range, location, education, industry, disease):
+        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. His body status is {disease}"
+        prompt += "Based on all of the provided information and your inference, provide a reasonable job for them and if they are retired. "
+        prompt += f"This job needs to be specific and consistent with the career plan of this industry, {industry}. "
         prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
-        prompt += f"Normmaly people usaully get retired after a specific age, you need consider the {name}'s age ({age}) amd body status ({disease}). "
-        prompt += "There are some jobs that allow people to work no matter how old they are, like professors, CEO, etc."
+        prompt += f"After find a job for them, the retirement status could be infer from the age ({age}) and their health status ({disease}). "
+        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are. There might be some part-time job options as well."
         prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
-        prompt += "The company address need to be exact and format as \"{building}, {strteet}, {district}, {city}, {state}\""
+        prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
+        prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
+        prompt += f"Then grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
+        prompt += f"Based on collected information, we know that {name} has an income range {income_range}, specifically considering their retirement status, occupation, and location. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
@@ -879,12 +879,20 @@ class InfoTreeEB():
         res["city"] = city["city"]
         res["state"] = city["state"]
 
+
         ## For Evidence-Based
         res["gender"] = random.choices(["male", "female"], weights=[0.2, 0.8])[0]
-        ##################### 
+        if self.user_info['disease']=="healthy controll":
+            res["age"] = int(np.random.normal(loc=70.55, scale=7.5, size=None))
+        elif self.user_info['disease']=="subjects":
+            res["age"] = int(np.random.normal(loc=69.31, scale=7.3, size=None))
+        else:
+            res["age"] = int(np.random.normal(loc=70.0, scale=7.5, size=None))
+        #####################
+
+
         res["race"] = random.choices(city["race"]["option"][:-1], weights=city["race"]["prob"][:-1])[0]
         res["education"] = random.choices(city["education"]["option"], weights=city["education"]["prob"])[0]
-
         income_range =  random.choices(city["income"]["option"], weights=city["income"]["prob"])[0]
         res["industry"] = random.choices(city["industry"]["option"], weights=city["industry"]["prob"])[0]
 
@@ -898,7 +906,8 @@ class InfoTreeEB():
             race=res["race"],
             education=res["education"],
             income_range=income_range,
-            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}"
+            location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}",
+            age=res["age"]
         )
         res["name"] = add_info["name"]
         res["birthday"] = add_info["birthday"]
@@ -908,10 +917,9 @@ class InfoTreeEB():
         res["home_longitude"] = add_info["home_longitude"]
         res["home_latitude"] = add_info["home_latitude"]
 
-        
+
         ## For Evidence-Based
         if self.user_info['disease']=="healthy controll":
-            res["age"] = int(np.random.normal(loc=70.55, scale=7.5, size=None))
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=179.95, scale=42.2, size=None)))
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=30.15, scale=7.0, size=None))
             res["disease"] = ""
@@ -923,7 +931,6 @@ class InfoTreeEB():
             res["disease"] += random.choices(["osteoporosis, ", ""], weights=[0.545, 0.455])[0]
             res["disease"] += random.choices(["take more than four medications.", "Healthy"], weights=[0.273, 0.727])[0]
         elif self.user_info['disease']=="subjects":
-            res["age"] = int(np.random.normal(loc=69.31, scale=7.3, size=None))
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=183.11, scale=39.8, size=None)) )
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=31.4, scale=7.4, size=None))
             res["disease"] = ""
@@ -935,7 +942,6 @@ class InfoTreeEB():
             res["disease"] += random.choices(["osteoporosis, ", ""], weights=[0.538, 0.462])[0]
             res["disease"] += random.choices(["take more than four medications.", "Healthy"], weights=[0.462, 0.538])[0]
         else:
-            res["age"] = int(np.random.normal(loc=70.0, scale=7.5, size=None))
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=181, scale=41.0, size=None)))
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=31.0, scale=7.0, size=None))
             res["disease"] = ""
@@ -951,6 +957,7 @@ class InfoTreeEB():
 
         job_info = self._infer_occupation(
             name=res["name"],
+            age=res["age"],
             income_range=income_range,
             education=res["education"],
             location=f"{res['street']}, {res['district']}, {res['city']}, {res['state']}",
