@@ -71,8 +71,11 @@ def _gpt_description(name, birthday, _type="agent", **kwargs) -> dict:
         organization=CONFIG["openai"]["organization"],
     )
     if _type=="user":
+        # print(int(date.today().year))
+        # print(int(birthday.split("-")[-1]))
         age = int(date.today().year) - int(birthday.split("-")[-1])
-        prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
+        # prompt = description_prompt(name=name, birthday=birthday, age=age, **kwargs)
+        print(age)
     else:
         prompt = description_prompt(name=name, birthday=birthday, **kwargs)
 
@@ -476,16 +479,16 @@ class InfoTree():
     def _infer_occupation(self, name, income_range, location, education, industry):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. "
-        prompt += f"Based on collected information, we know that {name} working in {industry}, with income range {income_range}. "
-        prompt += "Based on all of the provided information and your inference, provide a reasonable job for him/her and if he/she is retired. "
-        prompt += f"And grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
+        prompt += "Based on all of the provided information and your inference, provide a reasonable job for them and if they are retired. "
         prompt += "This job needs to be specific and consistent with the career plan of this industry. "
         prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
-        prompt += "After find a job for him/her, the retirement status could be infer from the age. "
-        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are, like professors, CEO, etc."
+        prompt += "After find a job for them, the retirement status could be infer from the age and their health status. "
+        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are. There might be some part-time job options as well."
         prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
         prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
         prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
+        prompt += f"Then grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
+        prompt += f"Based on collected information, we know that {name} has an income range {income_range}, specifically considering their retirement status, occupation, and location. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
