@@ -830,16 +830,6 @@ class InfoTreeEB():
         else:
             raise Exception("GPT response error.")
         
-
-<<<<<<< Updated upstream
-    def _infer_addtional(self, gender, race, location, education, income_range, age_range=5):
-        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
-        prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
-        prompt += "Based on the gender and race information, firstly figure out a name. Tell me the exact zip code of where he/she lives, and possible spoken language. "
-        prompt += f"Secondly, based on income range {income_range}, you need to find a building in the location that is suitable to live as home in {location}. "
-        prompt += "The building should be affordable and consistent with income levels, whether rented, financed, or already owned. "
-        prompt += f"Next, the range of the age is {age-age_range}-{age+age_range}, please generate a birthday in this range. "
-=======
     def _infer_addtional(self, gender, race, location, education, income_range, age):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"There is a {race} {gender} living in {location} who has a {education} degree, age {age}. "
@@ -848,7 +838,6 @@ class InfoTreeEB():
         prompt += f"Based on their income range {income_range}, generate a home address for them."
         prompt += f"Find a residential building in {location} that is affordable and reasonable based on their age and income level. "
         prompt += "Be mindful that a place could be rented, financed, or owned. "
->>>>>>> Stashed changes
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", "
         prompt += "\"language\" : \"language\", \"zipcode\" : \"zipcode\", \"building\":\"building_name\","
@@ -867,20 +856,6 @@ class InfoTreeEB():
         return json.loads(completion.choices[0].message.content)["response"]
     
 
-<<<<<<< Updated upstream
-    def _infer_occupation(self, name, income_range, location, education, industry, disease):
-        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
-        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. "
-        prompt += f"Based on collected information, we know that {name} working in {industry}, with income range {income_range}. "
-        prompt += "Based on all of the provided information and your inference, provide a reasonable job for him/her and if he/she is retired. "
-        prompt += f"And grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
-        prompt += "This job needs to be specific and consistent with the career plan of this industry. "
-        prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
-        prompt += f"Normmaly people usaully get retired after a specific age, you need consider the {name}'s age ({age}) amd body status ({disease}). "
-        prompt += "There are some jobs that allow people to work no matter how old they are, like professors, CEO, etc."
-        prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
-        prompt += "The company address need to be exact and format as \"{building}, {strteet}, {district}, {city}, {state}\""
-=======
     def _infer_occupation(self, name, age, income_range, location, education, industry, disease):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
         prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. Their income range is {income_range}. They have these diseases: {disease}"
@@ -902,7 +877,6 @@ class InfoTreeEB():
         prompt += f"No matter if the company was made up or not, the address needs to be REAL, located in {location}, aligned with where {name} live. " 
         prompt += "The format of that address should be standard USPS address: \"{building}, {street}, {city}, {state}, {zipcode}\""
         prompt += "At last, based on all the information you have generated, add 2-3 sentences about some other information that could be helpful. Could be related to their hobbies, social networks, personality, or anything you can think of."
->>>>>>> Stashed changes
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\""
