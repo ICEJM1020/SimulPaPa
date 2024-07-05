@@ -339,7 +339,7 @@ class InfoTree():
         prompt += f"\"industry\": {json.dumps(industries)}, "
         prompt += f"\"race\": {json.dumps(races)}, "
         prompt += "\"gender\": {\"male\":\"gender_percentage_in_decimal\", \"female\":gender_percentage_in_decimal}}, ...], "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
 
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -375,7 +375,7 @@ class InfoTree():
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...], "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -456,16 +456,17 @@ class InfoTree():
 
     def _infer_addtional(self, gender, race, location, education, income_range, age_range=5):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
-        prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
-        prompt += "Based on the gender and race information, firstly figure out a name. Tell me the exact zip code of where he/she lives, and possible spoken language. "
-        prompt += f"Secondly, based on income range {income_range}, you need to find a building in the location that is suitable to live as home in {location}. "
-        prompt += "The building should be affordable and consistent with income levels, whether rented, financed, or already owned. "
-        prompt += f"Next, the range of the age is {age-age_range}-{age+age_range}, please generate a birthday in this range. "
+        prompt = f"There is a {race} {gender} living in {location} who has a {education} degree, ages between {age-age_range}-{age+age_range}. "
+        prompt += f"First, generate a birthday based on their age range. (It's {date.today().year} now.) "
+        prompt += "Based on their gender and race, generate a name and their spoken languages. "
+        prompt += f"Based on their income range {income_range}, generate a home address for them."
+        prompt += f"Find a residential building in {location} that is affordable and reasonable based on their age and income level. "
+        prompt += "Be mindful that a place could be rented, financed, or owned. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", "
         prompt += "\"language\" : \"language\", \"zipcode\" : \"zipcode\", \"building\":\"building_name\","
         prompt += "\"home_longitude\":\"home_longitude_format_as_xx.xxxxxx\", \"home_latitude\":\"home_latitude_format_as_xx.xxxxxx\"}, "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
 
         completion = self.gpt_client.chat.completions.create(
@@ -479,21 +480,29 @@ class InfoTree():
 
     def _infer_occupation(self, name, income_range, location, education, industry):
         age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
-        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. "
-        prompt += "Based on all of the provided information and your inference, provide a reasonable job for them and if they are retired. "
-        prompt += "This job needs to be specific and consistent with the career plan of this industry. "
-        prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
-        prompt += "After find a job for them, the retirement status could be infer from the age and their health status. "
-        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are. There might be some part-time job options as well."
-        prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
-        prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
-        prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
-        prompt += f"Then grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
-        prompt += f"Based on collected information, we know that {name} has an income range {income_range}, specifically considering their retirement status, occupation, and location. "
+        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. Their income range is {income_range}."
+        # #evidence-based
+        # prompt = f"Currently, the person's weight is {weight}. "
+        prompt += f"Based on all of the provided information, provide a job for them in industry: '{industry}', and determine if they have retired now. "
+        #prompt += "This job needs to be specific and consistent with the career plan of this industry. "
+        prompt += f"This job needs to be reasonable, specific, and aligned with the industry and their income range. "
+        prompt += "You also have to consider their educational background and age to determine if the job fits a reasonable career path. "
+        prompt += "After assigning a job for them, infer their retirement status based on their age. "
+            #"and their health status. "
+        prompt += "People normally retire after a specific age (based on policy). "
+        prompt += "Even if they have retired, they might be participating in some volunteering and part-time works, based on their expertise and interests. "
+        prompt += f"After determining their job, grant {name} an annual salary. "
+        prompt += f"Their annual salary should be a reasonable number in US dollar, within their income range '{income_range}', and aligned with their retirement status and location. "
+        prompt += f"Afterwards, based on {name}'s current job, find a specific company for them."
+        prompt += "First, generate a company name that aligned with their occupation and location. "
+        prompt += "Then, determine the address of that company."
+        prompt += f"No matter if the company was made up or not, the address needs to be REAL, located in {location}, aligned with where {name} live. " 
+        prompt += "The format of that address should be standard USPS address: \"{building}, {street}, {city}, {state}, {zipcode}\""
+        prompt += "At last, based on all the information you have generated, add 2-3 sentences about some other information that could be helpful. Could be related to their hobbies, social networks, personality, or anything you can think of."
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
         prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
 
         completion = self.gpt_client.chat.completions.create(
@@ -503,6 +512,7 @@ class InfoTree():
                 "role": "user", "content": prompt
                 }]
         )
+        print(json.loads(completion.choices[0].message.content)["response"])
         return json.loads(completion.choices[0].message.content)["response"]
 
 
@@ -707,7 +717,7 @@ class InfoTreeEB():
         prompt += f"\"industry\": {json.dumps(industries)}, "
         prompt += f"\"race\": {json.dumps(races)}, "
         prompt += "\"gender\": {\"male\":\"gender_percentage_in_decimal\", \"female\":gender_percentage_in_decimal}}, ...], "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
 
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -743,7 +753,7 @@ class InfoTreeEB():
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...], "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -823,16 +833,18 @@ class InfoTreeEB():
         
 
     def _infer_addtional(self, gender, race, location, education, income_range, age):
-        prompt = f"There is a {race} {gender} living in {location} who has {education} degree. "
-        prompt += "Based on the gender and race information, firstly figure out a name. Tell me the exact zip code of where he/she lives, and possible spoken language. "
-        prompt += f"Secondly, based on income range {income_range}, you need to find a building in the location that is suitable to live as home in {location}. "
-        prompt += "The building should be affordable and consistent with income levels, whether rented, financed, or already owned. "
-        prompt += f"Next, the age is {age}, please generate a birthday in this age, today is 06-30-2024. "
+        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+        prompt = f"There is a {race} {gender} living in {location} who has a {education} degree, age {age}. "
+        prompt += f"First, generate a birthday based on their age range. (It's {date.today().year} now.) "
+        prompt += "Based on their gender and race, generate a name and their spoken languages. "
+        prompt += f"Based on their income range {income_range}, generate a home address for them."
+        prompt += f"Find a residential building in {location} that is affordable and reasonable based on their age and income level. "
+        prompt += "Be mindful that a place could be rented, financed, or owned. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", "
         prompt += "\"language\" : \"language\", \"zipcode\" : \"zipcode\", \"building\":\"building_name\","
-        prompt += "\"home_longitude\":\"home_longitude_format_as_xx.xxxxxx\", \"home_latitude\":\"home_latitude_format_as_xx.xxxxxx\"}, "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"home_longitude\":\"home_longitude_format_as_xx.xxxxxx\", \"home_latitude\":\"home_latitude_format_as_xx.xxxxxx\""
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
 
         completion = self.gpt_client.chat.completions.create(
@@ -841,25 +853,36 @@ class InfoTreeEB():
                 "role": "user", "content": prompt
                 }]
         )
+        print("evidence-bases")
+        print(json.loads(completion.choices[0].message.content)["response"])
         return json.loads(completion.choices[0].message.content)["response"]
     
 
     def _infer_occupation(self, name, age, income_range, location, education, industry, disease):
-        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. His body status is {disease}"
-        prompt += "Based on all of the provided information and your inference, provide a reasonable job for them and if they are retired. "
-        prompt += f"This job needs to be specific and consistent with the career plan of this industry, {industry}. "
-        prompt += "You also have to consider his educational background and age to determine if the job fits your reasoning. "
-        prompt += f"After find a job for them, the retirement status could be infer from the age ({age}) and their health status ({disease}). "
-        prompt += "Normmaly people usaully get retired after a specific age (based on policy), but there are some jobs that allow people to work no matter how old they are. There might be some part-time job options as well."
-        prompt += f"And based on your inference, you need to find a working place in where {name} lives. You need provide a company name and address of this company. "
-        prompt += f"It's better to find a real company, but it is also possible to create a fake company. "
-        prompt += "However, no matter the company is real or fake, the address need to be exact real, and format as \"{building}, {strteet}, {district}, {city}, {state}\""
-        prompt += f"Then grant {name} a reasonable and annual salary, a exact number in US dollar in the given income range. "
-        prompt += f"Based on collected information, we know that {name} has an income range {income_range}, specifically considering their retirement status, occupation, and location. "
+        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+        prompt = f"{name}, {age} years old, lives in {location} who has {education} degree. Their income range is {income_range}. They have these diseases: {disease}"
+        # #evidence-based
+        # prompt = f"Currently, the person's weight is {weight}. "
+        prompt += f"Based on all of the provided information, provide a job for them in industry: '{industry}', and determine if they have retired now. "
+        #prompt += "This job needs to be specific and consistent with the career plan of this industry. "
+        prompt += f"This job needs to be reasonable, specific, and aligned with the industry and their income range. "
+        prompt += "You also have to consider their educational background and age to determine if the job fits a reasonable career path. "
+        prompt += "After assigning a job for them, infer their retirement status based on their age and health status. "
+            #"and their health status. "
+        prompt += "People normally retire after a specific age (based on policy). "
+        prompt += "Even if they have retired, they might be participating in some volunteering and part-time works, based on their expertise and interests. "
+        prompt += f"After determining their job, grant {name} an annual salary. "
+        prompt += f"Their annual salary should be a reasonable number in US dollar, within their income range '{income_range}', and aligned with their retirement status and location. "
+        prompt += f"Afterwards, based on {name}'s current job, find a specific company for them."
+        prompt += "First, generate a company name that aligned with their occupation and location. "
+        prompt += "Then, determine the address of that company."
+        prompt += f"No matter if the company was made up or not, the address needs to be REAL, located in {location}, aligned with where {name} live. " 
+        prompt += "The format of that address should be standard USPS address: \"{building}, {street}, {city}, {state}, {zipcode}\""
+        prompt += "At last, based on all the information you have generated, add 2-3 sentences about some other information that could be helpful. Could be related to their hobbies, social networks, personality, or anything you can think of."
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
-        prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\"}, "
-        prompt += "\"infomation\" : \"put_other_infomation_you_want_to_tell_here\"}"
+        prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\""
+        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
 
         completion = self.gpt_client.chat.completions.create(
@@ -869,6 +892,8 @@ class InfoTreeEB():
                 "role": "user", "content": prompt
                 }]
         )
+        print("evidence-based")
+        print(json.loads(completion.choices[0].message.content)["response"])
         return json.loads(completion.choices[0].message.content)["response"]
 
 
