@@ -9,10 +9,12 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 import shutil
+from config import CONFIG
 diseases = ['Use assisted device', 'uncontrolled heart', 'stroke', 'high blood pressure', 'diabetes', 'osteoporosis', 'take more than four medications']
 # Define the base directory containing the folders
-base_directory = os.getcwd()+'/.Users/484f871e-4947-3e45-9ea2-8168ab440507/agents'
-print(os.getcwd())
+print(CONFIG["base_dir"])
+base_directory = CONFIG["base_dir"]+'/.Users/final_intervention_100/agents'
+
 # Initialize an empty list to store the data
 data_list = []
 
@@ -118,7 +120,7 @@ df['BMI'] = df['BMI'].apply(lambda x: float(x))
 
 # Target mean and standard deviation for each column
 target_control_distribution = {
-    'female': {'mean': 8, 'std': 80, 'weight':1/8},
+    'female': {'mean': 8, 'std': 80, 'weight':1/4},
     'age': {'mean': 70.55, 'std': 7.5, 'weight':1/80},
     'BMI': {'mean': 30.15, 'std': 7.0, 'weight':1/30},
     'weight': {'mean': 179.95, 'std': 42.2, 'weight':1/180},
@@ -132,7 +134,7 @@ target_control_distribution = {
 }
 
 target_intervention_distribution = {
-    'female': {'mean': 21, 'std': 80.8, 'weight':10/26},
+    'female': {'mean': 21, 'std': 80.8, 'weight':15/26},
     'age': {'mean': 69.31, 'std': 7.3, 'weight':1/70},
     'BMI': {'mean': 31.4, 'std': 7.4, 'weight':1/30},
     'weight': {'mean': 183.11, 'std': 39.8, 'weight':1/180},
@@ -144,35 +146,43 @@ target_intervention_distribution = {
     'osteoporosis': {'mean': 14/26, 'weight':10/26},
     'take_more_than_four_medications': {'mean': 12/26, 'weight':10/26}
 }
+#-----------------------------
+# control
+#columns_to_consider = list(target_control_distribution.keys())
+#-----------------------------
+#intervention
+columns_to_consider = list(target_intervention_distribution.keys())
 
-columns_to_consider = list(target_control_distribution.keys())
 print(df.head(5))
 df_subset = df[columns_to_consider]
 
-# # Call the function to get selected rows
+#-----------------------------
+# control
+# Call the function to get selected rows
 # selected_rows_num = select_rows_with_distribution(df_subset, target_control_distribution, 10).index.values.tolist()
 # print(selected_rows_num)
 # control_10 = df.loc[selected_rows_num]
 # print(control_10)
-
-# # # Save the DataFrame to a CSV file
-# # csv_file_path = os.path.join(base_directory, 'control_10.csv')
-# # control_10.to_csv(csv_file_path)
-# # print(f"DataFrame saved to {csv_file_path}")
-
 # save_dataframe(control_10, "control_10",base_directory,selected_rows_num)
+#-----------------------------
 
 
-
+#------------------------------
+# intervention
 # Call the function to get selected rows
 selected_rows_num = select_rows_with_distribution(df_subset, target_intervention_distribution, 26).index.values.tolist()
 print(selected_rows_num)
 intervention_26 = df.loc[selected_rows_num]
 print(intervention_26)
+save_dataframe(intervention_26, "intervention_26",base_directory,selected_rows_num)
+#-----------------------------
 
+
+# # # Save the DataFrame to a CSV file
+# # csv_file_path = os.path.join(base_directory, 'control_10.csv')
+# # control_10.to_csv(csv_file_path)
+# # print(f"DataFrame saved to {csv_file_path}")
 # # Save the DataFrame to a CSV file
 # csv_file_path = os.path.join(base_directory, 'control_10.csv')
 # control_10.to_csv(csv_file_path)
 # print(f"DataFrame saved to {csv_file_path}")
-
-save_dataframe(intervention_26, "intervention_26",base_directory,selected_rows_num)
