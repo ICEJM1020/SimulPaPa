@@ -36,13 +36,13 @@ def description_prompt(**kwargs):
     # prompt += "The following information is missing and you could jump them: "
     # prompt += missing_info
     # prompt += "Today is June-15-2024 (compute age based on today's date). "
-    prompt += "The generated profile should match the following guidance:\n<"
+    prompt += "The generated profile should match the following guidance:\n"
     prompt += "{Name} is a {age} {race} {gender} living in {street}, {city}, {district}, {state}, {zipcode}. "
-    prompt += "The weight of {Pronoun} is {weight} and the BMI is {BMI}."
+    prompt += "{Pronoun}'s date of birth is {birthday}. The weight of {Pronoun} is {weight} and the BMI is {BMI}."
     prompt += "The physical status of {Pronoun} is {diesease}, {descirbe the effect of the disease}."
     prompt += "{Pronoun} is a {occupation} with annual income {income} at {company} ({company_address}), {infer_retirement_status}. "
     prompt += "{Pronoun} speaks {language}. Pronoun's education background is {education}. "
-    prompt += "{Pronoun}'s date of birth is {birthday}. {possible_life_activity_preference}>\n"
+    prompt += "{possible_life_activity_preference}. {other_information_from_others_}\n"
     prompt += "\nLimit the description within 100 words, return your answer in JSON format: "
     prompt += "{\"description\":\"profile_description\"}"
 
@@ -554,6 +554,7 @@ class InfoTree():
         res["building"] = add_info["building"]
         res["home_longitude"] = add_info["home_longitude"]
         res["home_latitude"] = add_info["home_latitude"]
+        res["others"] = add_info["information"]
 
         job_info = self._infer_occupation(
             name=res["name"],
@@ -569,6 +570,7 @@ class InfoTree():
         res["work_addr"] = job_info["work_addr"]
         res["work_longitude"] = job_info["work_longitude"]
         res["work_latitude"] = job_info["work_latitude"]
+        res["others"] += job_info["information"]
 
         if self.user_info['disease']:
             res["disease"] = self.user_info['disease']
@@ -956,6 +958,7 @@ class InfoTreeEB():
         res["home_latitude"] = add_info["home_latitude"]
         if "information" in add_info:
             res["others"] = add_info["information"]
+
 
 
         ## For Evidence-Based
