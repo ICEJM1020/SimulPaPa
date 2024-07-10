@@ -328,9 +328,13 @@ class InfoTree():
         if "city":
             prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development. " 
             # prompt = f"Please find me {size} cities in the US (including {city}), rating them use the similarity to the {city}. " 
+        if "city":
+            prompt = f"{city} is a city in {state} state. Based on your understanding, make an evaluation from the dimensions of climate, geographical conditions, and economic development. " 
+            # prompt = f"Please find me {size} cities in the US (including {city}), rating them use the similarity to the {city}. " 
         else:
             prompt = f"Please find me {size} most representive cities in the US, rating them use the similarity. " 
-        prompt += "Furthermore, tell me about the population statistic in each state. These data need to be based on real data, from resources like census bureau or government report. "
+        prompt += "Furthermore, estimate the population statistic in each state. "
+        prompt += "These data need to be based on resources like census bureau or government report before 2021. "
         prompt += "The data should based on real information during 2010 to 2020. Decimal precision needs to reach 4 decimal places. "
         prompt += "Return your answer in the following JSON format without any other information: "
         prompt += "{\"response\" : [{\"city\" : \"city_name\", \"state\" : \"state/province\", \"similarity\" : \"similarity_to_given_city_in_decimal\", "
@@ -710,7 +714,8 @@ class InfoTreeEB():
             # prompt = f"Please find me {size} cities in the US (including {city}), rating them use the similarity to the {city}. " 
         else:
             prompt = f"Please find me {size} most representive cities in the US, rating them use the similarity. " 
-        prompt += "Furthermore, tell me about the population statistic in each state. These data need to be based on real data, from resources like census bureau or government report. "
+        prompt += "Furthermore, estimate the population statistic in each state. "
+        prompt += "These data need to be based on resources like census bureau or government report before 2021. "
         prompt += "The data should based on real information during 2010 to 2020. Decimal precision needs to reach 4 decimal places. "
         prompt += "Return your answer in the following JSON format without any other information: "
         prompt += "{\"response\" : [{\"city\" : \"city_name\", \"state\" : \"state/province\", \"similarity\" : \"similarity_to_given_city_in_decimal\", "
@@ -754,8 +759,8 @@ class InfoTreeEB():
         prompt += "Based on your knowledge, to evaluate the convenience of this district, including the population, the infrastructure, and the medical and educational resources. "
         prompt += f"Please find me {size} districts with similar conditions in {city}, {state}. Besides, give me {size} streets in these districts that suitable for living. "
         prompt += "Return your answer in the following JSON format: "
-        prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...], "
-        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
+        prompt += "{\"response\" : [{\"district\" : \"district_1\", \"similarity\" : \"similarity_to_given_district_in_decimal\", \"streets\":[\"street_1\", ..., \"street_N\"], ...]}"
+        #prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
         if CONFIG["debug"]: print(prompt)
         completion = self.gpt_client.chat.completions.create(
@@ -835,9 +840,11 @@ class InfoTreeEB():
         
 
     def _infer_addtional(self, gender, race, location, education, income_range, age):
-        age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+        #age = int(date.today().year) - int(self.user_info["birthday"].split("-")[-1])
+        # print(age)
+        # print(date.today().year)
         prompt = f"There is a {race} {gender} living in {location} who has a {education} degree, age {age}. "
-        prompt += f"First, generate a birthday based on their age range. (It's {date.today().year} now.) "
+        prompt += f"First, generate a birthday based on their age. (It's {date.today().year} now.) "
         prompt += "Based on their gender and race, generate a name and their spoken languages. "
         prompt += f"Based on their income range {income_range}, generate a home address for them."
         prompt += f"Find a residential building in {location} that is affordable and reasonable based on their age and income level. "
@@ -845,8 +852,9 @@ class InfoTreeEB():
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"name\" : \"firstname familyname\", \"birthday\" : \"MM-DD-YYYYY\", "
         prompt += "\"language\" : \"language\", \"zipcode\" : \"zipcode\", \"building\":\"building_name\","
-        prompt += "\"home_longitude\":\"home_longitude_format_as_xx.xxxxxx\", \"home_latitude\":\"home_latitude_format_as_xx.xxxxxx\""
-        prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
+        prompt += "\"home_longitude\":\"home_longitude_format_as_xx.xxxxxx\", \"home_latitude\":\"home_latitude_format_as_xx.xxxxxx\"}"
+        prompt += "}"
+        #prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
 
         completion = self.gpt_client.chat.completions.create(
@@ -856,7 +864,7 @@ class InfoTreeEB():
                 }]
         )
         print("evidence-bases")
-        print(json.loads(completion.choices[0].message.content)["response"])
+        print(json.loads(completion.choices[0].message.content))
         return json.loads(completion.choices[0].message.content)["response"]
     
 
@@ -880,10 +888,10 @@ class InfoTreeEB():
         prompt += "Then, determine the address of that company."
         prompt += f"No matter if the company was made up or not, the address needs to be REAL, located in {location}, aligned with where {name} live. " 
         prompt += "The format of that address should be standard USPS address: \"{building}, {street}, {city}, {state}, {zipcode}\""
-        prompt += "At last, based on all the information you have generated, add 2-3 sentences about some other information that could be helpful. Could be related to their hobbies, social networks, personality, or anything you can think of."
+        prompt += "At last, based on all the information you have generated, add 2-3 sentences about some other information that could be helpful. Could be related to their hobbies, social networks, personality, or anything you can think of. Please be creative, and cover different aspects. "
         prompt += "Return your answer in the following JSON format: "
         prompt += "{\"response\" : {\"job\" : \"job\", \"company\" : \"company_name\", \"work_addr\":\"company_address\", \"income\":\"annual_salary\""
-        prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\""
+        prompt += "\"work_longitude\" : \"work_longitude_format_as_xx.xxxxxx\", \"work_latitude\" : \"work_latitude_format_as_xx.xxxxxx\", \"retirement\":\"retired_or_working\","
         prompt += "\"information\" : \"put_other_information_you_want_to_tell_here\"}"
         
 
@@ -909,9 +917,9 @@ class InfoTreeEB():
 
         ## For Evidence-Based
         res["gender"] = random.choices(["male", "female"], weights=[0.2, 0.8])[0]
-        if self.user_info['disease']=="healthy controll":
+        if self.user_info['disease']=="control":
             res["age"] = int(np.random.normal(loc=70.55, scale=7.5, size=None))
-        elif self.user_info['disease']=="subjects":
+        elif self.user_info['disease']=="intervention":
             res["age"] = int(np.random.normal(loc=69.31, scale=7.3, size=None))
         else:
             res["age"] = int(np.random.normal(loc=70.0, scale=7.5, size=None))
@@ -919,6 +927,11 @@ class InfoTreeEB():
 
 
         res["race"] = random.choices(city["race"]["option"][:-1], weights=city["race"]["prob"][:-1])[0]
+        # print("options:")
+        # print(city["race"]["option"][:-1])
+        # print("weight:")
+        # print(city["race"]["prob"][:-1])
+
         res["education"] = random.choices(city["education"]["option"], weights=city["education"]["prob"])[0]
         income_range =  random.choices(city["income"]["option"], weights=city["income"]["prob"])[0]
         res["industry"] = random.choices(city["industry"]["option"], weights=city["industry"]["prob"])[0]
@@ -943,11 +956,13 @@ class InfoTreeEB():
         res["building"] = add_info["building"]
         res["home_longitude"] = add_info["home_longitude"]
         res["home_latitude"] = add_info["home_latitude"]
-        res["others"] = add_info["information"]
+        if "information" in add_info:
+            res["others"] = add_info["information"]
+
 
 
         ## For Evidence-Based
-        if self.user_info['disease']=="healthy controll":
+        if self.user_info['disease']=="control":
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=179.95, scale=42.2, size=None)))
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=30.15, scale=7.0, size=None))
             res["disease"] = ""
@@ -958,7 +973,8 @@ class InfoTreeEB():
             res["disease"] += random.choices(["diabetes, ", ""], weights=[0.273, 0.727])[0]
             res["disease"] += random.choices(["osteoporosis, ", ""], weights=[0.545, 0.455])[0]
             res["disease"] += random.choices(["take more than four medications.", "Healthy"], weights=[0.273, 0.727])[0]
-        elif self.user_info['disease']=="subjects":
+            res["race"] = "Black or African American"
+        elif self.user_info['disease']=="intervention":
             res["weight"] = "{:.2f} lbs".format(int(np.random.normal(loc=183.11, scale=39.8, size=None)) )
             res["BMI"] = "{:.2f}".format(np.random.normal(loc=31.4, scale=7.4, size=None))
             res["disease"] = ""
@@ -992,14 +1008,51 @@ class InfoTreeEB():
             industry=res["industry"],
             disease=res["disease"]
         )
-        res["income"] = job_info["income"]
-        res["occupation"] = job_info["job"]
-        res["retirement"] = job_info["retirement"]
-        res["company"] = job_info["company"]
-        res["work_addr"] = job_info["work_addr"]
-        res["work_longitude"] = job_info["work_longitude"]
-        res["work_latitude"] = job_info["work_latitude"]
-        res["others"] += job_info["information"]
+        if "income" in job_info:
+            res["income"] = job_info["income"]
+        else:
+            res["income"] = "missing"
+
+        if "job" in job_info:
+            res["occupation"] = job_info["job"]
+        else:
+            res["occupation"] = "missing"
+
+        if "retirement" in job_info:
+            res["retirement"] = job_info["retirement"]
+        else:
+            res["retirement"] = "missing"
+        
+        if "company" in job_info:
+            res["company"] = job_info["company"]
+        else:
+            res["company"] = "missing"
+        
+        if "work_addr" in job_info:
+            res["work_addr"] = job_info["work_addr"]
+        else:
+            res["work_addr"] = "missing"
+
+        if "work_longitude" in job_info:
+            res["work_longitude"] = job_info["work_longitude"]
+        else:
+            res["work_longitude"] = "missing"
+        
+        if "work_latitude" in job_info:
+            res["work_latitude"] = job_info["work_latitude"]
+        else:
+            res["work_latitude"] = "missing"
+        
+        if "information" in job_info:
+            res["others"] = job_info["information"]
+        else:
+            res["others"] = "missing"
+        
+        # res["company"] = job_info["company"]
+        # res["work_addr"] = job_info["work_addr"]
+        # res["work_longitude"] = job_info["work_longitude"]
+        # res["work_latitude"] = job_info["work_latitude"]
+        # res["others"] += job_info["information"]
 
         return res
 
