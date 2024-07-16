@@ -1,3 +1,3 @@
-[submodule "chatgpt-lite"]
-	path = chatgpt-lite
-	url = ./chatgpt-lite
+[submodule "chatgpt-lite-eba"]
+	path = chatgpt-lite-eba
+	url = git@github.com:ICEJM1020/chatgpt-lite-eba.git
