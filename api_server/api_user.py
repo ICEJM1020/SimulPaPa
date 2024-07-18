@@ -4,7 +4,7 @@ Author: Xucheng(Timber) Zhang
 Date: 2023-12-28
 """ 
 
-from flask import Blueprint, request, make_response
+from flask import Blueprint, request, make_response, Response
 import json
 import os
 
@@ -539,6 +539,39 @@ def set_intervention(username):
         return_body = {
                     "status" : False,
                     "message" : f"No intervention plan, missing \"plan\" key in form data."
+                }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+########
+#
+# inspector group
+#
+########
+@ubp.route(f"/inspector/<username>/chat", methods=["POST"])
+def inspector_chat(username):
+    status, user_list = check_user(username=username)
+    if "messages" in request.json.keys(): 
+        if status:
+            _uuid = user_list[username]
+            if not USER_POOL.exist(_uuid):
+                USER_POOL.append(_uuid)
+            res = USER_POOL.inspector_chat(_uuid, request.json)
+            return_body = {
+                    "status" : True,
+                    "message" : res
+                } 
+        else:
+            return_body = {
+                    "status" : False,
+                    "message" : f"{username} doesn't exist"
+                } 
+    else:
+        return_body = {
+                    "status" : False,
+                    "message" : f"No messages."
                 }
     response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
     response.headers["Content-Type"] = "application/json"

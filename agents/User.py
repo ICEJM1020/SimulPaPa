@@ -16,6 +16,7 @@ from logger import logger
 from agents.Info import gpt_description, random_generate, extract_info
 from agents.Agents import AgentsPool
 from agents.utils import *
+from agents.Inspector import Inspector
 
 def init_pool():
     pool = UserPool()
@@ -143,6 +144,14 @@ class UserPool:
 
     def fetch_agent_schedule(self, _uuid, agent_id, date):
         return self.pool[_uuid].agents_pool.fetch_agent_schedule(agent_id, date)
+    
+
+    ############
+    # inspector
+    ############
+    def inspector_chat(self, _uuid, openai_req):
+        return self.pool[_uuid].inspector_chat(openai_req)
+
 
 
 class User:
@@ -181,6 +190,9 @@ class User:
 
         # activity file
         # self.generate_activity_file()
+        self.inspector = Inspector(
+            rag_folder=self.user_folder
+        )
 
 
     def _load_info(self):
@@ -305,6 +317,10 @@ class User:
 
     def check_ready(self):
         return self.status=="ready"
+    
+    def inspector_chat(self, request):
+        return self.inspector.chat(req=request)
+        
 
 
 def create_user_filetree(name, birthday, username, **kwargs):
