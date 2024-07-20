@@ -194,17 +194,17 @@ class HeartRate(BaseModel):
 
     
 
-class CatelogueMapEntry(BaseModel):
+class catalogueMapEntry(BaseModel):
     activity: str = Field(description='The activity in the given activity list.')
-    catelogue: str = Field(description='The catelogue to which the activity belongs.')
+    catalogue: str = Field(description='The catalogue to which the activity belongs.')
 
-class CatelogueMap(BaseModel):
-    maps: list[CatelogueMapEntry]
+class catalogueMap(BaseModel):
+    maps: list[catalogueMapEntry]
 
     def dump_dict(self):
         res = {}
         for item in self.maps:
-            res[item.activity] = item.catelogue
+            res[item.activity] = item.catalogue
         return res
 
 

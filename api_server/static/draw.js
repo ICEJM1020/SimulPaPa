@@ -1,5 +1,5 @@
 
-const catelog = [
+const catalogue = [
     "Personal care activities",
     "Eating and drinking",
     "Household activities",
@@ -82,13 +82,13 @@ function draw_act_dist_line() {
     let count_max = 0;
     
     let time_labels = [];
-    let catelog_datasets = {};
+    let catalogue_datasets = {};
     let datasets = [];
 
-    for (var i=0;i<catelog.length;i++){
-        // console.log(catelog[i])
-        catelog_datasets[catelog[i]] = {
-            label: catelog[i],
+    for (var i=0;i<catalogue.length;i++){
+        // console.log(catalogue[i])
+        catalogue_datasets[catalogue[i]] = {
+            label: catalogue[i],
             data: [],
             borderColor: colors_rgb[i],
             borderWidth: "2",
@@ -105,13 +105,13 @@ function draw_act_dist_line() {
         time_labels.push(time)
 
         let _temp_act = {}
-        for (const key of catelog) {_temp_act[key] = 0;}
+        for (const key of catalogue) {_temp_act[key] = 0;}
 
         for (const agent_id in act_stat[time]){_temp_act[act_stat[time][agent_id]] += 1;}
         
-        for (const key of catelog){catelog_datasets[key].data.push(_temp_act[key])}
+        for (const key of catalogue){catalogue_datasets[key].data.push(_temp_act[key])}
     }
-    for (const key of catelog){datasets.push(catelog_datasets[key])}
+    for (const key of catalogue){datasets.push(catalogue_datasets[key])}
         
     _act_dist_line.height = 100;
     act_dist_line = new Chart(_act_dist_line, {
@@ -161,10 +161,10 @@ function draw_act_dist(time) {
     let _temp_act = {}
     let data = []
     let labels = []
-    for (const key of catelog) {_temp_act[key] = [];}
+    for (const key of catalogue) {_temp_act[key] = [];}
     for (const agent_id in act_stat[time]){_temp_act[act_stat[time][agent_id]].push(agent_id);}
-    for (const key of catelog) {data.push(_temp_act[key].length)}
-    for (var key of catelog){
+    for (const key of catalogue) {data.push(_temp_act[key].length)}
+    for (var key of catalogue){
         let _agents = "\n"
         for (const agent of _temp_act[key]){
             _agents += agent;
@@ -177,7 +177,7 @@ function draw_act_dist(time) {
         type: 'bar',
         data: {
             defaultFontFamily: 'Poppins',
-            labels: catelog,
+            labels: catalogue,
             datasets: [
                 {
                     labels: labels,
@@ -324,13 +324,13 @@ function draw_heart_rate_activity(time) {
     const _cur_time_hr = hr_stat[time];
     const _cur_time_act = act_stat[time];
     
-    let catelog_datasets = {};
+    let catalogue_datasets = {};
     let datasets = [];
 
-    for (var i=0;i<catelog.length;i++){
-        // console.log(catelog[i])
-        catelog_datasets[catelog[i]] = {
-            label: catelog[i],
+    for (var i=0;i<catalogue.length;i++){
+        // console.log(catalogue[i])
+        catalogue_datasets[catalogue[i]] = {
+            label: catalogue[i],
             data: [0,0,0,0],
             backgroundColor: colors_rgb[i],
             agents : ["","","",""]
@@ -339,23 +339,23 @@ function draw_heart_rate_activity(time) {
 
     for (const agent_id in _cur_time_hr) {
         if (_cur_time_hr[agent_id] < 60){
-            catelog_datasets[_cur_time_act[agent_id]].data[0] += 1;
-            catelog_datasets[_cur_time_act[agent_id]].agents[0] += agent_id +"\n"
+            catalogue_datasets[_cur_time_act[agent_id]].data[0] += 1;
+            catalogue_datasets[_cur_time_act[agent_id]].agents[0] += agent_id +"\n"
         }
         else if (_cur_time_hr[agent_id] < 80 && _cur_time_hr[agent_id] >= 60){
-            catelog_datasets[_cur_time_act[agent_id]].data[1] += 1;
-            catelog_datasets[_cur_time_act[agent_id]].agents[1] += agent_id +"\n"
+            catalogue_datasets[_cur_time_act[agent_id]].data[1] += 1;
+            catalogue_datasets[_cur_time_act[agent_id]].agents[1] += agent_id +"\n"
         }
         else if (_cur_time_hr[agent_id] < 100 && _cur_time_hr[agent_id] >= 80){
-            catelog_datasets[_cur_time_act[agent_id]].data[2] += 1;
-            catelog_datasets[_cur_time_act[agent_id]].agents[2] += agent_id +"\n"
+            catalogue_datasets[_cur_time_act[agent_id]].data[2] += 1;
+            catalogue_datasets[_cur_time_act[agent_id]].agents[2] += agent_id +"\n"
         }
         else{
-            catelog_datasets[_cur_time_act[agent_id]].data[3] += 1;
-            catelog_datasets[_cur_time_act[agent_id]].agents[3] += agent_id +"\n"
+            catalogue_datasets[_cur_time_act[agent_id]].data[3] += 1;
+            catalogue_datasets[_cur_time_act[agent_id]].agents[3] += agent_id +"\n"
         }
     }
-    for (const key of catelog){datasets.push(catelog_datasets[key])}
+    for (const key of catalogue){datasets.push(catalogue_datasets[key])}
 
     _heart_rate_activity.height = 100;
 

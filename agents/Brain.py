@@ -72,7 +72,7 @@ class Brain:
                 self.labels = labels
         else:
             self.free = True
-        self.labels = CONFIG["activity_catelogue"]
+        self.labels = CONFIG["activity_catalogue"]
         ## if use labels to generate activities
         self.activities_by_labels = activities_by_labels
     
@@ -871,21 +871,21 @@ class Brain:
                     continue
             else:
                 act_map = act_map.dump_dict()
-                act_data["catelog"] = act_data["activity"].map(act_map)
-                act_data["catelog"] = act_data["catelog"].fillna("Other activities, not elsewhere classified")
+                act_data["catalogue"] = act_data["activity"].map(act_map)
+                act_data["catalogue"] = act_data["catalogue"].fillna("Other activities, not elsewhere classified")
                 act_data.to_csv(_file, index=False)
                 break
 
-    def _categorize_activity_chat(self, act_list) -> CatelogueMap:
+    def _categorize_activity_chat(self, act_list) -> catalogueMap:
         human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["categorize_activity"])
         chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
 
-        catelogue_parser = PydanticOutputParser(pydantic_object=CatelogueMap)
+        catalogue_parser = PydanticOutputParser(pydantic_object=catalogueMap)
 
         request = chat_prompt.format_prompt(
-                catelogue = self.labels,
+                catalogue = self.labels,
                 activities = json.dumps(act_list),
-                format_instructions = catelogue_parser.get_format_instructions()
+                format_instructions = catalogue_parser.get_format_instructions()
             ).to_messages()
 
         model = ChatOpenAI(
@@ -898,17 +898,17 @@ class Brain:
         results = model.invoke(request, config={"callbacks": [CustomHandler(verbose=CONFIG["debug"])]})
         if CONFIG["debug"]: print(results.content)
 
-        act_map = catelogue_parser.parse(results.content)
+        act_map = catalogue_parser.parse(results.content)
 
         return act_map
 
-    def _update_catelogue(self, file_list):
+    def _update_catalogue(self, file_list):
         for file in file_list:
             self._categorize_activity(file)
 
 
-    def update_catelogue(self, file_list):
-        thread = threading.Thread(target=self._update_catelogue, args=[file_list])
+    def update_catalogue(self, file_list):
+        thread = threading.Thread(target=self._update_catalogue, args=[file_list])
         thread.start()
 
 

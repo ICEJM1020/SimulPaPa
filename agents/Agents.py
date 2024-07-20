@@ -206,7 +206,7 @@ class AgentsPool:
         heartrate_stat = {}
         for i, id in enumerate(self.pool):
             try:
-                _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catelog", "heartrate"])
+                _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catalogue", "heartrate"])
             except:
                 logger.error(f"{self._uuid} agent({id}) fetch {date} activity data failed.")
             else:
@@ -215,10 +215,10 @@ class AgentsPool:
                     if (time.endswith("0")) :
                         _time = time.split(" ")[1]
                         if i==0:
-                            activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catelog"]}
+                            activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catalogue"]}
                             heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"]}
                         else:
-                            activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catelog"]
+                            activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catalogue"]
                             heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"]
                     else:
                         continue
@@ -242,9 +242,9 @@ class AgentsPool:
         return sorted_date_strings
         
 
-    def update_agents_catelogue(self):
+    def update_agents_catalogue(self):
         for id in self.pool:
-            self.pool[id].update_catelogue()
+            self.pool[id].update_catalogue()
 
     def fetch_agent_info(self, id):
         return self.pool[id].fetch_info()
@@ -579,6 +579,6 @@ class Agent:
         sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y') for date_obj in sorted_dates]
         return sorted_date_strings
     
-    def update_catelogue(self):
+    def update_catalogue(self):
         done_files = [os.path.join(self.activity_folder, file) for file in os.listdir(self.activity_folder)]
-        self.brain.update_catelogue(done_files)
+        self.brain.update_catalogue(done_files)
