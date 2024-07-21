@@ -499,7 +499,7 @@ function update_status_area(res, type){
         document.getElementById("status_area").classList.add("alert", "alert-warning", "solid", "alert-right-icon", "col-md-12", "mb-0")
         document.getElementById("status_text").innerText = type + "-" + res["message"]
     }
-    else if (res["message"].includes("ready")){
+    else if (res["message"].includes("ready") || res["message"].includes("init")){
         document.getElementById("status_icon").classList = ""
         document.getElementById("status_icon").classList.add("mdi", "mdi-check")
         document.getElementById("status_area").classList = ""
@@ -539,7 +539,8 @@ function check_simulation(username){
                     delete check_simul_interval[username];
                 }
                 else {
-                    
+                    clearInterval(check_simul_interval[username]);
+                    delete check_simul_interval[username];
                 }
             }
         });

@@ -117,9 +117,11 @@ class AgentsPool:
         error = ""
         if_err = 0
         exists = 0
-        for i in range(1, self.size+1):
+        for i in os.listdir(self.folder):
+            if "." in i : continue
+            # self.pool[i] = Agent(index=i, user_folder=self.user_folder)
             try:
-                self.pool[i] = Agent(index=i, user_folder=self.user_folder)
+                self.pool[int(i)] = Agent(index=int(i), user_folder=self.user_folder)
             except:
                 if_err += 1
                 error += f"Agent {i}, "
@@ -378,10 +380,14 @@ class Agent:
 
 
     def draw_portrait(self):
+        # self._draw_portrait()
         thread = threading.Thread(target=self._draw_portrait)
         thread.start()
     
     def _draw_portrait(self):
+        # content = dalle_portrait(self.description)   
+        # with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
+        #     file.write(content)
         try:
             content = dalle_portrait(self.description)   
             with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
