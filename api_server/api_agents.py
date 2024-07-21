@@ -263,15 +263,15 @@ def fetch_all_donedates(username):
     return response
 
 
-@abp.route(f"/{route_group}/<username>/update-catelogue", methods=["POST", "GET"])
-def update_agents_catelogue(username):
+@abp.route(f"/{route_group}/<username>/update-catalog", methods=["POST", "GET"])
+def update_agents_catalog(username):
     status, user_list = check_user(username=username)
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
             return_body = {
                 "status" : True,
-                "message" : USER_POOL.update_agents_catelogue(_uuid)
+                "message" : USER_POOL.update_agents_catalog(_uuid)
             }
             logger.info(f"User {username}'s agents pool has loaded from local machine")
         else:
