@@ -464,11 +464,39 @@ def continue_simulation(username):
         days = int(request.form['days'])
     else:
         days=1
+    agent_list = request.form['agent_list']
+
     status, user_list = check_user(username=username)
     if status:
         _uuid = user_list[username]
         if USER_POOL.exist(_uuid):
-            USER_POOL.continue_simulation(_uuid, days)
+            USER_POOL.continue_simulation(_uuid, days, agent_list)
+            return_body = {
+                "status" : True,
+            }
+        else:
+            return_body = {
+                "status" : False,
+                "message" : f"{username} has not been activated"
+            }
+    else:
+        return_body = {
+                "status" : False,
+                "message" : f"{username} doesn't exist"
+            }
+    response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+@ubp.route(f"/simulation/regenerate/<username>", methods=["POST"])
+def regenerate_simulation(username):
+    agent_list = request.form['agent_list']
+    status, user_list = check_user(username=username)
+    if status:
+        _uuid = user_list[username]
+        if USER_POOL.exist(_uuid):
+            USER_POOL.regenerate_simulation(_uuid, agent_list)
             return_body = {
                 "status" : True,
             }
@@ -543,6 +571,9 @@ def set_intervention(username):
     response = make_response(json.dumps(return_body), 200 if return_body["status"] else 500)
     response.headers["Content-Type"] = "application/json"
     return response
+
+
+
 
 
 ########

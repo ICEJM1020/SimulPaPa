@@ -1,7 +1,7 @@
 let user_dict = {}
 let cur_user = ""
 let agent_list = []
-let intervention_list = []
+let selected_agents_list = []
 
 let check_tree_interval = {}
 let tree_status = ""
@@ -553,7 +553,7 @@ function send_intervention(){
     else{
         var formData = new FormData();
         formData.set("plan", intervention_plan)
-        formData.set('agent_list', intervention_list)
+        formData.set('agent_list', selected_agents_list)
     
         $.ajax({
             url: "/simulation/interplan/" + username,
@@ -574,48 +574,78 @@ function send_intervention(){
     }
 }
 
-function start_simulation(username){
-    // if (simul_status == "working") return;
+function start_simulation( ){
+    if (simul_status == "working") return;
 
-    // if (username){
-    //     console.log("Start simulate for " + username)
-    //     $.ajax({
-    //         url: "/simulation/start/" + username,
-    //         type: 'GET',
-    //         async: true,
-    //         success: function(res) {
-    //             if (username in check_simul_interval){
-    //                 clearInterval(check_simul_interval[username]);
-    //                 delete check_simul_interval[username];
-    //             }
-    //             check_simul_interval[username] = setInterval(check_simulation, check_interval*100, username);
-    //         }
-    //       });
-    // }
-    // else{
-    //     send_intervention()
-    //     $.ajax({
-    //         url: "/simulation/start/" + cur_user,
-    //         type: 'GET',
-    //         async: true,
-    //         success: function(res) {
-    //             if (cur_user in check_simul_interval){
-    //                 clearInterval(check_simul_interval[cur_user]);
-    //                 delete check_simul_interval[cur_user];
-    //             }
-    //             check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
-    //         }
-    //       });
-    // }
+    if (username){
+        console.log("Start simulate for " + username)
+        $.ajax({
+            url: "/simulation/start/" + username,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                if (username in check_simul_interval){
+                    clearInterval(check_simul_interval[username]);
+                    delete check_simul_interval[username];
+                }
+                check_simul_interval[username] = setInterval(check_simulation, check_interval*100, username);
+            }
+          });
+    }
+    else{
+        // send_intervention()
+        $.ajax({
+            url: "/simulation/start/" + cur_user,
+            type: 'GET',
+            async: true,
+            success: function(res) {
+                if (cur_user in check_simul_interval){
+                    clearInterval(check_simul_interval[cur_user]);
+                    delete check_simul_interval[cur_user];
+                }
+                check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+            }
+          });
+    }
+}
+
+function regenerate_simulation()
+{
+    if (simul_status == "working"){
+        alert("Simulation on Working")
+    }
+
+    // send_intervention()
+    var formData = new FormData()
+    formData.set('agent_list', selected_agents_list)
+
+    $.ajax({
+        url: "/simulation/regenerate/" + cur_user,
+        type: 'POST',
+        async: true,
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(res) {
+            if (cur_user in check_simul_interval){
+                clearInterval(check_simul_interval[cur_user]);
+                delete check_simul_interval[cur_user];
+            }
+            check_simul_interval[cur_user] = setInterval(check_simulation, check_interval*100, cur_user);
+        }
+      });
 }
 
 function continue_simulation(){
-    if (simul_status == "working") return;
+    if (simul_status == "working"){
+        alert("Simulation on Working")
+    }
 
-    send_intervention()
+    // send_intervention()
 
     var formData = new FormData()
     formData.set("days", document.getElementsByName("new_days")[0].value)
+    formData.set('agent_list', selected_agents_list)
 
     $.ajax({
         url: "/simulation/continue/" + cur_user,
@@ -914,7 +944,7 @@ function update_intervention_agent_btn(){
     var agent_btns = document.getElementsByName("agent-intervention-btn");
 
     for (var btn of agent_btns){
-        if (intervention_list.includes(btn.innerText)){
+        if (selected_agents_list.includes(btn.innerText)){
             btn.classList.remove("btn-outline-primary");
             btn.classList.add("btn-primary");
         }
@@ -926,7 +956,7 @@ function update_intervention_agent_btn(){
 }
 
 function inter_all_agent(){
-    intervention_list = agent_list;
+    selected_agents_list = agent_list;
     update_intervention_agent_btn();
 }
 
@@ -942,25 +972,25 @@ function getRandomSubarray(arr, size) {
 }
 
 function inter_random_agent(){
-    intervention_list = getRandomSubarray(agent_list, Math.floor(agent_list.length / 2));
+    selected_agents_list = getRandomSubarray(agent_list, Math.floor(agent_list.length / 2));
     update_intervention_agent_btn();
 }
 
 function inter_clear_agent(){
-    intervention_list = [];
+    selected_agents_list = [];
     update_intervention_agent_btn();
 }
 
 function intervention_agent(agent){
     if (agent_list.includes(agent)){
-        if (intervention_list.includes(agent)){
-            const index = intervention_list.indexOf(agent);
+        if (selected_agents_list.includes(agent)){
+            const index = selected_agents_list.indexOf(agent);
             if (index > -1) {
-                intervention_list.splice(index, 1);
+                selected_agents_list.splice(index, 1);
             }
         }
         else{
-            intervention_list.push(agent);
+            selected_agents_list.push(agent);
         }
     }
     update_intervention_agent_btn();

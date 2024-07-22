@@ -68,9 +68,11 @@ class UserPool:
     def start_simulation(self, _uuid):
         self.pool[_uuid].start_simulation()
 
+    def continue_simulation(self, _uuid, days, agent_list):
+        self.pool[_uuid].continue_simulation(days, agent_list)
 
-    def continue_simulation(self, _uuid, days):
-        self.pool[_uuid].continue_simulation(days)
+    def regenerate_simulation(self, _uuid, agent_list):
+        self.pool[_uuid].regenerate_simulation(agent_list)
         
     def fetch_simulation_status(self, _uuid):
         return self.pool[_uuid].agents_pool.fetch_simul_status()
@@ -278,10 +280,12 @@ class User:
         self.agents_pool.start_simulation()
 
 
-    def continue_simulation(self, days):
-        self.agents_pool.continue_simulation(days)
+    def continue_simulation(self, days, agent_list):
+        self.agents_pool.continue_simulation(days, agent_list)
 
-    
+    def regenerate_simulation(self, agent_list):
+        self.agents_pool.regenerate_simulation(agent_list)
+
     def set_intervention(self, plan, agent_list):
         self.agents_pool.set_intervention(plan, agent_list)
 
