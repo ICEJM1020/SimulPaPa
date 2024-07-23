@@ -202,12 +202,14 @@ class AgentsPool:
                         logger.info(f"continue simulation for {self.info['name']}({self._uuid}) Agent-{str(_id)}")
                         agent.continue_planing(days)
 
+
     def set_intervention(self, plan, agent_list):
         logger.info(f"Set intervention plan for {self.info['name']}({self._uuid}): {plan}")
         for idx, agent in self.pool.items():
             if (f"Agent-{str(idx)}" in agent_list):
                 logger.info(f"Set intervention for agent {idx}")
                 agent.set_intervention(plan)
+
 
     def _monitor_agent_status(self):
         _status = ""
