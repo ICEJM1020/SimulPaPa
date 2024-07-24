@@ -820,7 +820,7 @@ class Brain:
         return results.content
     
     def _generate_chatbot_preference(self):
-        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["chatbot_prefenrece"])
+        human_prompt = HumanMessagePromptTemplate.from_template(self._utils_prompts["chatbot_preference"])
         chat_prompt = ChatPromptTemplate.from_messages([human_prompt])
 
         request = chat_prompt.format_prompt(description = self.long_memory.description).to_messages()
