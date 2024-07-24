@@ -278,7 +278,11 @@ class AgentsPool:
         return self.pool[id].fetch_info()
     
     def fetch_agent_portrait(self, id):
-        return os.path.join(self.pool[id].folder, "portrait.png")
+        pic_path = os.path.join(self.pool[id].folder, "portrait.png")
+        if os.path.exists(pic_path):
+            return os.path.join(self.pool[id].folder, "portrait.png")
+        else:
+            return os.path.join(CONFIG["base_dir"], "api_server/static/elderly.png")
 
     def fetch_agent_done_dates(self, id):
         return self.pool[id].fetch_done_dates()
@@ -419,7 +423,7 @@ class Agent:
             with open(os.path.join(self.folder, "portrait.png"), mode="wb") as file:
                 file.write(content)
         except:
-            self._status = "error-load portrait"
+            self._status = "warning-load portrait"
 
     def start_planing(self, days=1):
         if os.path.exists(self.activity_folder):

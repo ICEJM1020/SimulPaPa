@@ -758,29 +758,35 @@ function fetch_activity_statistic(date){
         });
 }
 
-function show_donedates_cal(){
-    $('.year-calendar').pignoseCalendar({
-        format: 'MM-DD-YYYY',
-        date: cur_date,
-        minDate: all_donedates[0],
-        maxDate: all_donedates[all_donedates.length-1],
-        theme: 'blue', // light, dark, blue
-
-        select: function(date, context) {
-
-            
-            cur_date = date[0].format('MM-DD-YYYY');
-            if (page_status=='user'){
-                fetch_activity_statistic(cur_date);
-                draw_stat(act_stat, hr_stat);
+function show_donedates_cal(empty){
+    if (empty){
+        $('.year-calendar').pignoseCalendar({
+            format: 'MM-DD-YYYY',
+            date: '01-01-2024',
+            theme: 'blue', // light, dark, blue
+        });
+    } else {
+        $('.year-calendar').pignoseCalendar({
+            format: 'MM-DD-YYYY',
+            date: cur_date,
+            minDate: all_donedates[0],
+            maxDate: all_donedates[all_donedates.length-1],
+            theme: 'blue', // light, dark, blue
+    
+            select: function(date, context) {
+                cur_date = date[0].format('MM-DD-YYYY');
+                if (page_status=='user'){
+                    fetch_activity_statistic(cur_date);
+                    draw_stat(act_stat, hr_stat);
+                }
+                else{
+                    draw_agent_heartrate(cur_date);
+                    draw_chat(cur_date);
+                    draw_map(cur_date);
+                }
             }
-            else{
-                draw_agent_heartrate(cur_date);
-                draw_chat(cur_date);
-                draw_map(cur_date);
-            }
-        }
-    });
+        });
+    }
 }
 
 function show_stat(){
@@ -792,9 +798,11 @@ function show_stat(){
         if (all_donedates.length > 0){
             cur_date = all_donedates[0]
             fetch_activity_statistic(cur_date);
-    
-            show_donedates_cal();
+            
+            show_donedates_cal(false);
             draw_stat(act_stat, hr_stat);
+        } else {
+            show_donedates_cal(true);
         }
     }
 }
