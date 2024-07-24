@@ -176,13 +176,13 @@ class AgentsPool:
 
             if len(agent_list)==0:
                 logger.info(f"regenerate simulation for {self.info['name']}({self._uuid})")
-                for agent in self.pool.values():
-                    agent.start_planing(self.simul_days)
+                # for agent in self.pool.values():
+                #     agent.start_planing(self.simul_days)
             else:
                 for _id, agent in self.pool.items():
                     if (f"Agent-{str(_id)}" in agent_list):
                         logger.info(f"regenerate simulation for {self.info['name']}({self._uuid}) Agent-{str(_id)}")
-                        agent.start_planing(self.simul_days)
+                        # agent.start_planing(self.simul_days)
 
     
     def continue_simulation(self, days=1, agent_list=[]):
@@ -194,13 +194,13 @@ class AgentsPool:
 
             if len(agent_list)==0:
                 logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
-                for agent in self.pool.values():
-                    agent.continue_planing(days)
+                # for agent in self.pool.values():
+                #     agent.continue_planing(days)
             else:
                 for _id, agent in self.pool.items():
                     if (f"Agent-{str(_id)}" in agent_list):
                         logger.info(f"continue simulation for {self.info['name']}({self._uuid}) Agent-{str(_id)}")
-                        agent.continue_planing(days)
+                        # agent.continue_planing(days)
 
 
     def set_intervention(self, plan, agent_list):
@@ -232,7 +232,7 @@ class AgentsPool:
 
         activity_stat = {}
         heartrate_stat = {}
-        for i, id in enumerate(self.pool):
+        for _, id in enumerate(self.pool):
             try:
                 _temp_records = self.pool[id].fetch_records(date=date, col=["time", "catalogue", "heartrate"])
             except:
@@ -242,12 +242,13 @@ class AgentsPool:
                     # or (time.endswith("20")) or (time.endswith("40"))
                     if (time.endswith("0")) :
                         _time = time.split(" ")[1]
-                        if i==0:
-                            activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catalogue"]}
-                            heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"]}
-                        else:
+
+                        if _time in activity_stat.keys() or _time in heartrate_stat.keys():
                             activity_stat[_time][f"Agent {id}"] = _temp_records[time]["catalogue"]
                             heartrate_stat[_time][f"Agent {id}"] = _temp_records[time]["heartrate"]
+                        else:
+                            activity_stat[_time] = {f"Agent {id}" : _temp_records[time]["catalogue"]}
+                            heartrate_stat[_time] = {f"Agent {id}" : _temp_records[time]["heartrate"]}
                     else:
                         continue
         return {"activity":activity_stat, "heartrate":heartrate_stat}

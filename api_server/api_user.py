@@ -491,7 +491,11 @@ def continue_simulation(username):
 
 @ubp.route(f"/simulation/regenerate/<username>", methods=["POST"])
 def regenerate_simulation(username):
-    agent_list = request.form['agent_list'].split(",")
+    if len(request.form['agent_list'])==0:
+        agent_list = []
+    else:
+        agent_list = request.form['agent_list'].split(",")
+
     status, user_list = check_user(username=username)
     if status:
         _uuid = user_list[username]
