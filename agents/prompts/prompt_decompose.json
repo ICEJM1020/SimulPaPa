@@ -1,8 +1,15 @@
 {
-    "prefix" : "Personal Description:\n{description}\n\nActivity Records:\n{past_activity_summary}\n\nIntervention Plan:\n{intervention}\n\nNow ({cur_time}), you ({name}) are {cur_activity} and want to decompose next schedule event ({cur_event}) into several activities.",
+    "prefix" : "###Basic Information###\n\nPersonal Description:\n{description}\n\nActivity Records:\n{past_activity_summary}\n\nIntervention Plan:\n{intervention}\n\n",
     "re_prefix" : "{description}\n\n{past_activity_summary}.\n\nAt {cur_time}, he/she has changed idea and want to do {cur_activity}. So he/she need to re-decompose remaining schedule event ({cur_event}) start from {cur_time} and end at {end_time}.",
-    "example_prompt" : "Current activity is {cur_activity}. Here is an example of how to decompose a schedule event, {event}: {decompose}",
+    "example_prompt" : "###Examples###\n\nHere is an example of how to decompose a schedule event, {event}: {decompose}",
     "example" : [
+        {
+            "event":"{{\"start_time\" : \"02-01-2024 00:00\", \"end_time\" : \"02-01-2024 06:15\", \"event\" : \"Sleep\"}}",
+            "cur_activity" : "Sleep",
+            "decompose":[
+                {"activity":"Sleep", "start_time":"02-01-2024 00:00", "duration":"375 minutes", "end_time":"02-01-2024 06:15"}
+            ]
+        },
         {
             "event":"{{\"start_time\" : \"02-01-2024 10:00\", \"end_time\" : \"02-01-2024 11:00\", \"event\" : \"Meeting\"}}",
             "cur_activity" : "Sitting at officedesk",
@@ -21,8 +28,8 @@
             "cur_activity" : "Cleaning breakfast plate and cup",
             "decompose":[
                 {"activity":"Walking to door and wear shoes", "start_time":"02-03-2024 10:00","duration":"2 minutes", "end_time":"02-03-2024 10:02"},
-                {"activity":"Walking to the car or transit stop", "start_time":"02-03-2024 10:02","duration":"5 minutes", "end_time":"02-03-2024 10:07"},
-                {"activity":"Sitting in a car or on public transport", "start_time":"02-03-2024 10:07","duration":"15 minutes", "end_time":"02-03-2024 10:22"},
+                {"activity":"Walking to the car", "start_time":"02-03-2024 10:02","duration":"5 minutes", "end_time":"02-03-2024 10:07"},
+                {"activity":"Sitting in a car", "start_time":"02-03-2024 10:07","duration":"15 minutes", "end_time":"02-03-2024 10:22"},
                 {"activity":"Walking to the office", "start_time":"02-03-2024 10:22","duration":"8 minutes", "end_time":"02-03-2024 10:30"}
             ]
         }
@@ -41,7 +48,6 @@
             ]
         }
     ],
-    "suffix_cot" : "Now, decompose the current event {cur_event}, start from {cur_time} and end at {end_time}. As for this event, you need to decompose it into several activities step by step following regular human activity routine. Decomposition needs to be based on current activities and have coherence with past activities (do not repeat already done activity in a short time period). \n\n!! NOTICE !!:\n1. You need to continue your following activities based on what you are doing now ({cur_activity}), Try to make the you plan smooth.\n2. You need to pay attention to the Intervention plan ({intervention}).\n3. Your personal information ({description}) is impportant, since factors like physical status could hugely affect the way of how you doing matters. You need to think it carefully.\n\nLet's think step by step, you need to return your thoughts until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
-    "suffix" : "Now, decompose the current event {cur_event}, start from {cur_time} and end at {end_time}. As for this event, you need to decompose it into several activities step by step following regular human activity routine. Decomposition needs to be based on current activities and have coherence with past activities (do not repeat already done activity in a short time period). \n\n!! NOTICE !!:\n1. You need to continue your following activities based on what you are doing now ({cur_activity}), Try to make the you plan smooth.\n2. You need to pay attention to the Intervention plan ({intervention}).\n3. Your personal information ({description}) is impportant, since factors like physical status could hugely affect the way of how you doing matters. You need to think it carefully.\n\nLet's think step by step, you need to return your thoughts until get final Answer. Do it in the following format, and keep the JSON format of the final Answer:\n{format_instructions}"
-
+    "suffix_cot" :"Decompose the current event '{cur_event}', starting from {cur_time} and ending at {end_time}, into several activities that align with a regular human activity routine. Ensure each activity flows logically from the current activity '{cur_activity}' and maintains coherence with previous activities, avoiding any repetition of recently completed activities.\n\nInstructions:\n1. Continuity: Ensure the planned activities transition smoothly from your current task.\n2.Intervention Plan: If given, consider any scheduled interventions and how they might integrate into or alter your plans.\n3.Personal Considerations: Reflect on your personal profile, such as physical status, which could significantly influence your activity choices. Make thoughtful decisions that accommodate your specific needs and circumstances.\n4. If the event is 'Sleep', return only 1 activity 'sleep' as in the example.\n\nLet's think step by step. Document your thoughts and reasoning process using the following JSON format.Be sure to include a final answer in the end following this JSON format:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}",
+    "suffix" :"Decompose the current event '{cur_event}', starting from {cur_time} and ending at {end_time}, into several activities that align with a regular human activity routine. Ensure each activity flows logically from the current activity '{cur_activity}' and maintains coherence with previous activities, avoiding any repetition of recently completed activities.\n\nInstructions:\n1. Continuity: Ensure the planned activities transition smoothly from your current task.\n2.Intervention Plan: If given, consider any scheduled interventions and how they might integrate into or alter your plans.\n3.Personal Considerations: Reflect on your personal profile, such as physical status, which could significantly influence your activity choices. Make thoughtful decisions that accommodate your specific needs and circumstances.\n4. If the event is 'Sleep', return only 1 activity 'sleep' as in the example.\n\nLet's think step by step. Document your thoughts and reasoning process using the following JSON format.Be sure to include a final answer in the end following this JSON format:\nThought 1: your thought about this question\n...\nThought n: your thought about this question\nFinal Answer:\n{format_instructions}"
 }
