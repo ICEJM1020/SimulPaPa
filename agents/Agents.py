@@ -176,13 +176,13 @@ class AgentsPool:
 
             if len(agent_list)==0:
                 logger.info(f"regenerate simulation for {self.info['name']}({self._uuid})")
-                # for agent in self.pool.values():
-                #     agent.start_planing(self.simul_days)
+                for agent in self.pool.values():
+                    agent.start_planing(self.simul_days)
             else:
                 for _id, agent in self.pool.items():
                     if (f"Agent-{str(_id)}" in agent_list):
                         logger.info(f"regenerate simulation for {self.info['name']}({self._uuid}) Agent-{str(_id)}")
-                        # agent.start_planing(self.simul_days)
+                        agent.start_planing(self.simul_days)
 
     
     def continue_simulation(self, days=1, agent_list=[]):
@@ -194,13 +194,13 @@ class AgentsPool:
 
             if len(agent_list)==0:
                 logger.info(f"continue simulation for {self.info['name']}({self._uuid})")
-                # for agent in self.pool.values():
-                #     agent.continue_planing(days)
+                for agent in self.pool.values():
+                    agent.continue_planing(days)
             else:
                 for _id, agent in self.pool.items():
                     if (f"Agent-{str(_id)}" in agent_list):
                         logger.info(f"continue simulation for {self.info['name']}({self._uuid}) Agent-{str(_id)}")
-                        # agent.continue_planing(days)
+                        agent.continue_planing(days)
 
 
     def set_intervention(self, plan, agent_list):
