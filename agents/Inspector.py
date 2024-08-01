@@ -115,6 +115,20 @@ class Inspector:
             schedule[f"{event_start_time}-{last_time}"] = cur_event
 
             return json.dumps(schedule)
+        
+    @tool("search-agent-infor-tool")
+    def search_agent_info(agent_id: int) -> str:
+        """
+        Search the personal profile for any agents.
+        agent_id: (int) Agent ID
+        """
+        try:
+            with open(os.path.join(CONFIG["RAG_FOLDER"], f"agents/{agent_id}/info.json"), "r") as f:
+                profile = json.load(f)
+        except:
+            return "No profile records available for this agent."
+        else:
+            return profile["description"]
     
     @tool
     def fetch_agent_list() -> str:
@@ -156,6 +170,7 @@ class Inspector:
                 self.fetch_agent_list,
                 self.search_activity,
                 self.search_schedule,
+                self.search_agent_info,
             ]
 
         agent = create_openai_tools_agent(llm=llm, tools=tools, prompt=prompt)

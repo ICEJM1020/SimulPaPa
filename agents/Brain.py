@@ -423,10 +423,10 @@ class Brain:
         if CONFIG["debug"]: print(location)
 
         chatbot = self._predict_botusage(decompose=decompose)
-        if isinstance(chatbot, Chatbot):
-            if CONFIG["save_thoughts"]:
-                self.save_thoughts(f"Thoughts when predict the Chatbot usage when {self.short_memory.cur_event_str}", chatbot.fetch_thoughts())
-            chatbot = chatbot.dump_dict()
+        # if isinstance(chatbot, Chatbot):
+        #     if CONFIG["save_thoughts"]:
+        #         self.save_thoughts(f"Thoughts when predict the Chatbot usage when {self.short_memory.cur_event_str}", chatbot.fetch_thoughts())
+        #     chatbot = chatbot.dump_dict()
         self.short_memory.cur_chatbot_dict = chatbot
         if CONFIG["debug"]: print(chatbot)
 
@@ -743,17 +743,17 @@ class Brain:
 
     def _predict_botusage(self, decompose) -> Chatbot:
         # usage = self._predict_botusage_chat(decompose)
-        # return {}
-        for try_idx in range(self._retry_times):
-            try:
-                usage = self._predict_botusage_chat(decompose)
-            except:
-                if try_idx + 1 == self._retry_times:
-                    return {}
-                else:
-                    continue
-            else:
-                return usage
+        return {}
+        # for try_idx in range(self._retry_times):
+        #     try:
+        #         usage = self._predict_botusage_chat(decompose)
+        #     except:
+        #         if try_idx + 1 == self._retry_times:
+        #             return {}
+        #         else:
+        #             continue
+        #     else:
+        #         return usage
     
     def _predict_botusage_chat(self, decompose, llm_temperature=1.0) -> Chatbot:
         chat_example = []
