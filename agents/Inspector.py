@@ -6,6 +6,7 @@ Date: 2024-07-16
 
 import json
 import os
+from datetime import datetime, timedelta
 
 import pandas as pd
 
@@ -13,17 +14,9 @@ from langchain_core.tools import tool
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from langchain.agents import AgentExecutor, create_openai_tools_agent
-from pydantic import BaseModel, Field
 
 from config import CONFIG
 
-
-class ThoughtsSearchInput(BaseModel):
-    agent_id: int = Field(description="Agent ID")
-    date: str = Field(description="The date you want to check, format as MM-DD-YYYY.")
-    keywords: str = Field(description="A set of key words, that you may interest, such as 'heartrate', 'location', 'purpose', and so on. Use ';' to seperate each keyword. Max number of the keywords is three")
-
-RAG_FOLDER = ""
 
 class Inspector:
 
@@ -37,6 +30,7 @@ class Inspector:
     def search_thoughts(agent_id: int, date: str, keywords: str) -> str:
         """
         Search the thoughts log for any agents on specific date. The thoughts may include why this agent make a decision to define a purpose of one day, to decompose a schedule event, or to simulate personal activity data.
+        PARAMETERS:
         agent_id: (int) Agent ID
         date: (string) The date you want to check, format as MM-DD-YYYY.
         keywords: (string) A set of key words, that you may interest, such as 'heartrate', 'location', 'purpose', and so on. Use ';' to seperate each keyword. Max number of the keywords is three
@@ -67,6 +61,7 @@ class Inspector:
     def search_activity(agent_id: int, date: str, start_time: str, end_time: str, data_type: str) -> str:
         """
         Search the activity records of one of the given data type for any agents on specific date and time range (max 2 hours).
+        PARAMETERS:
         agent_id: (int) Agent ID
         date: (string) The date you want to check, format as MM-DD-YYYY.
         start_time: The start time of the records, format as HH:MM.
@@ -94,6 +89,7 @@ class Inspector:
     def search_schedule(agent_id: int, date: str) -> str:
         """
         Search a daily schedule for any specific agent on specific date.
+        PARAMETERS:
         agent_id: (int) Agent ID
         date: (string) The date you want to check, format as MM-DD-YYYY.
         """
@@ -116,10 +112,48 @@ class Inspector:
 
             return json.dumps(schedule)
         
+    @tool("search-experiment-all-dates")
+    def fetch_all_donedates():
+        """
+        Search how many days in this experiemnt. Return full experiment date list.
+        """
+        donedates = []
+
+        for id in os.listdir(os.path.join(CONFIG["RAG_FOLDER"], "agents")):
+            if "." in id: continue
+            _donedates = [i.split(".")[0] for i in os.listdir(os.path.join(CONFIG["RAG_FOLDER"], f"agents/{id}/activity_hist"))]
+            if donedates:
+                donedates = list(set(donedates).union(_donedates))
+            else:
+                donedates = _donedates
+
+        dates = [datetime.strptime(date_str, '%m-%d-%Y') for date_str in donedates]
+        sorted_dates = sorted(dates)
+        sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y') for date_obj in sorted_dates]
+        return sorted_date_strings
+    
+    @tool("search-agent-dates")
+    def fetch_agent_donedates(agent_id: int):
+        """
+        Search how many days an agent has done in this experiemnt. Return full experiment date list.
+        PARAMETERS:
+        agent_id: (int) Agent ID
+        """
+        try:
+            donedates = [i.split(".")[0] for i in os.listdir(os.path.join(CONFIG["RAG_FOLDER"], f"agents/{agent_id}/activity_hist"))]
+        except:
+            return f"No records for agent {agent_id}"
+
+        dates = [datetime.strptime(date_str, '%m-%d-%Y') for date_str in donedates]
+        sorted_dates = sorted(dates)
+        sorted_date_strings = [datetime.strftime(date_obj, '%m-%d-%Y') for date_obj in sorted_dates]
+        return sorted_date_strings
+        
     @tool("search-agent-infor-tool")
     def search_agent_info(agent_id: int) -> str:
         """
         Search the personal profile for any agents.
+        PARAMETERS:
         agent_id: (int) Agent ID
         """
         try:
@@ -130,14 +164,11 @@ class Inspector:
         else:
             return profile["description"]
     
-    @tool
+    @tool("search-agent-list")
     def fetch_agent_list() -> str:
         """Return the agents list."""
         agent_list = os.listdir(os.path.join(CONFIG["RAG_FOLDER"], "agents"))
-        # res = []
-        # for _ag in agent_list:
-        #     if os.path.exists(os.path.join(CONFIG["RAG_FOLDER"], f"agents/{_ag}/")):
-        #         res.append(_ag)
+        agent_list = list(filter(lambda x: "." in x, agent_list))
         return json.dumps(agent_list)
 
 
@@ -155,7 +186,7 @@ class Inspector:
         llm=ChatOpenAI(
                     api_key=CONFIG["openai"]["api_key"],
                     organization=CONFIG["openai"]["organization"],
-                    model_name=CONFIG["openai"]["model"],
+                    model_name=CONFIG["openai"]["model-turbo"],
                     temperature=req['temperature'],
                     max_tokens=req['max_tokens'],
                     streaming=req['stream'],
@@ -171,6 +202,8 @@ class Inspector:
                 self.search_activity,
                 self.search_schedule,
                 self.search_agent_info,
+                self.fetch_all_donedates,
+                self.fetch_agent_donedates,
             ]
 
         agent = create_openai_tools_agent(llm=llm, tools=tools, prompt=prompt)

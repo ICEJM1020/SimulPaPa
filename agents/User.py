@@ -191,7 +191,8 @@ class User:
         # activity file
         # self.generate_activity_file()
         self.inspector = Inspector(
-            rag_folder=self.user_folder
+            rag_folder=self.user_folder,
+            # agents_pool=self.agents_pool
         )
 
 
