@@ -192,6 +192,25 @@ class LongMemory:
     #                 if _sum > limit:
     #                     return chat_history
     #     return chat_history
+
+    def fetch_intervention(self, date:datetime, start_time:str, end_time:str, intro=False):
+        # try:
+        plan = self.memory_tree["intervention"]
+        if intro:
+            return plan["intro"]
+        _weekdays = plan["weekdays"]
+        start_time = datetime.strptime(start_time, "%H:%M")
+        end_time = datetime.strptime(end_time, "%H:%M")
+        if date.weekday() in _weekdays:
+            for _p in plan.keys():
+                if _p=="intro" or _p=="weekdays": continue
+                if start_time <= datetime.strptime(_p, "%H:%M") <= end_time:
+                    return plan[_p]
+            return "No Intervention Plan."
+        else:
+            return "No Intervention Plan."
+        # except:
+        #     return self.memory_tree["intervention"]
     
 
     def _fetch_heart_rate(self, activity_df:pd.DataFrame, hour:int=None, minute:int | list=None):
@@ -306,4 +325,6 @@ class LongMemory:
     def load_cache(self):
         if os.path.exists(self.cache_file):
             with open(self.cache_file, "r") as f:
-                self.memory_tree = json.load(f)
+                _local_mem = json.load(f)
+                for key in _local_mem:
+                    self.memory_tree[key] = _local_mem[key]

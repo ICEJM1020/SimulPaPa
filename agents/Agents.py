@@ -435,6 +435,9 @@ class Agent:
             rmtree(self.thoughts_folder)
             os.mkdir(self.thoughts_folder)
 
+        ## For Ev-Base
+        self.brain.long_memory.load_cache()
+        ##############
         self._status = "working"
         self.brain.plan(days=days, simul_type="new")
 

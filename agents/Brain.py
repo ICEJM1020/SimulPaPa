@@ -388,7 +388,13 @@ class Brain:
             )
         
         results = chain.invoke(input={
-            'intervention':self.long_memory.intervention,
+            # 'intervention':self.long_memory.intervention,
+            'intervention':self.long_memory.fetch_intervention(
+                    date="", 
+                    start_time="",
+                    end_time="",
+                    intro=True
+                ),
             'description':self.long_memory.description,
             'name':self.long_memory.name,
             'home_addr':self.long_memory.home_addr,
@@ -448,6 +454,8 @@ class Brain:
 
 
     def _decompose_task(self, re_decompose=False) -> Decompose:
+        # _decompose = self._decompose_task_chat(re_decompose)
+        # return _decompose
         for try_idx in range(self._retry_times):
             try:
                 _decompose = self._decompose_task_chat(re_decompose)
@@ -511,7 +519,13 @@ class Brain:
         
         results = chain.invoke(input={
             'description':self.long_memory.description,
-            'intervention':self.long_memory.intervention,
+            # 'intervention':self.long_memory.intervention,
+            'intervention': self.long_memory.fetch_intervention(
+                    date=self.short_memory.cur_date_dt, 
+                    start_time=self.short_memory.cur_event["start_time"].split(" ")[-1],
+                    end_time=self.short_memory.cur_event["end_time"].split(" ")[-1],
+                    intro=False
+                ),
             'name': self.long_memory.name,
             'cur_time':self.short_memory.date_time if re_decompose else self.short_memory.cur_event['start_time'],
             'end_time':self.short_memory.cur_event['end_time'],
