@@ -168,7 +168,7 @@ class Inspector:
     def fetch_agent_list() -> str:
         """Return the agents list."""
         agent_list = os.listdir(os.path.join(CONFIG["RAG_FOLDER"], "agents"))
-        agent_list = list(filter(lambda x: "." in x, agent_list))
+        agent_list = list(filter(lambda x: "." not in x, agent_list))
         return json.dumps(agent_list)
 
 
